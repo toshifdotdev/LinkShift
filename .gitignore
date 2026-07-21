@@ -2,4 +2,5 @@
 backend/node_modules/
 backend/.env
 backend/src/generated/prisma/
+backend/dist
 
