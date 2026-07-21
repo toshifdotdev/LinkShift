@@ -1,18 +1,19 @@
 import { prisma, config } from '../../config';
-import bcrypt from 'bcrypt';
+import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { AppError } from '../../errors/AppError';
 
 export const registerUser = async (name : string, email : string, password : string) => {
+
     const existingUser = await prisma.user.findUnique({
         where : {
             email
         }
     })
-    if(!existingUser) {
-        throw new Error("EmailAlreadyExistsError");
+    if(existingUser !== null) {
+        throw new AppError("Conflict",409);
     }
-
-    const hashPassword = await bcrypt.hash(password, 10); // saltRounds = 10
+    const hashPassword = await bcrypt.hash(password , 10); // saltRounds = 10
     const createdUser = await prisma.user.create({
                         data : {
                             name,

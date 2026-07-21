@@ -1,8 +1,10 @@
 import { Request, Response } from "express";
 import { registerUser } from "./auth.service";
+import { asyncHandler } from "../../utils/asyncHandler";
 
-export const registerController = async (req : Request, res : Response) => {
+export const registerController = asyncHandler(async(req : Request, res : Response) => {
     const {name, email, password} = req.body;
+
 
     // ------- Zod Validation ------------------
     // if(!email || !password || !name) {       
@@ -14,13 +16,10 @@ export const registerController = async (req : Request, res : Response) => {
     //------------------------------------------
 
     const { user, token } = await registerUser(name, email, password);
-
-
     res.status(201).json({
-        message : "User successfully signed.",
+        message : "User successfully created.",
         user,
         token
+    })
     
-        })
-    
-}
+})
