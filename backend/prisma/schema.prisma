@@ -14,36 +14,61 @@ model User {
   password   String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-  qrCodes    QrCode[]
-
+  links      Link[]
 }
+model Link {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String?
+  targetUrl  String
+  shortId    String   @unique
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-model QrCode {
-  id        String       @id   @default(cuid())
-  userId    String 
-  name      String    
-  targetUrl String
-  shortId   String    @unique
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  user      User      @relation(fields: [userId], references: [id])
-  scans      Scan[]
+  user   User   @relation(fields: [userId], references: [id])
+  qr     Qr[]
+  scans  Scan[]
 
   @@index([userId])
 }
 
-model Scan {
-  id        String       @id @default(cuid())
-  qrId      String
-  device    String
-  browser   String
-  os        String
-  country   String?
-  city      String?
-  ipAddress String?
-  scannedAt DateTime  @default(now())
-  qrCode    QrCode    @relation(fields: [qrId], references: [id]) 
+model Qr {
+  id               String   @id @default(cuid())
 
-  @@index([qrId])
+  linkId           String
+
+  foregroundColor  String?  @default("#000000")
+  backgroundColor  String?  @default("#FFFFFF")
+
+  logoUrl          String?
+
+  pattern          String?  @default("square")
+  eyeStyle         String?  @default("square")
+  eyeBallStyle     String?  @default("square")
+
+  margin           Int?     @default(2)
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  link Link @relation(fields: [linkId], references: [id])
+
+  @@index([linkId])
+}
+
+model Scan {
+  id         String   @id @default(cuid())
+  linkId     String
+  device     String?
+  browser    String?
+  os         String?
+  country    String?
+  city       String?
+  ipAddress  String?
+  scannedAt  DateTime @default(now())
+
+  link Link @relation(fields: [linkId], references: [id])
+
+  @@index([linkId])
 }
