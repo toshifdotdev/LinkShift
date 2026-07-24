@@ -12,7 +12,7 @@ export const registerUser = async (name : string, email : string, password : str
     if(existingUser !== null) {
         throw new AppError("Conflict",409);
     }
-    const hashPassword = await bcrypt.hash(password , 10); // saltRounds = 10
+    const hashPassword = await bcrypt.hash(password , 6); // saltRounds = 6
     const createdUser = await prisma.user.create({
                         data : {
                             name,
