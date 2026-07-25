@@ -1,5 +1,5 @@
 import { nanoid } from 'nanoid';
-import { prisma, config } from '../../config';
+import { prisma } from '../../config';
 import { Prisma } from '../../generated/prisma/client';
 import { AppError } from '../../errors/AppError';
 
@@ -46,5 +46,5 @@ export const createLink = async (data : CreateLinkData) => {
         throw new AppError("Failed to generate a unique short link. Please try again.", 409);
     }
 
-    return createdLink
+    return createdLink;
 }
