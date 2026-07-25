@@ -8,6 +8,7 @@ import { AppError } from './errors/AppError';
 
 
 export const app = express();
+app.set('trust proxy', true);
 app.use(express.json());
 
 app.get("/health", (req, res) => {

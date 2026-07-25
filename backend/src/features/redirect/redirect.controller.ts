@@ -10,7 +10,7 @@ type RedirectParams = {
 export const redirect = asyncHandler(async(req : Request<RedirectParams>, res : Response) => {
     const { shortId } = req.params as {shortId : string};
 
-    const targetUrl = await redirectService(shortId);
+    const targetUrl = await redirectService(shortId, req);
 
     return res.redirect(targetUrl);
 })

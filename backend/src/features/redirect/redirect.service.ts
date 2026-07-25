@@ -1,7 +1,14 @@
+import { Request } from "express";
 import { prisma } from "../../config"
 import { AppError } from "../../errors/AppError"
+import { extractVisitorInfo } from "./visitor.service";
 
-export const redirect = async(shortId : string) => {
+
+type RedirectParams = {
+    shortId?: string;
+}; 
+
+export const redirect = async(shortId : string, req : Request<RedirectParams>) => {
     const targetUrl = await prisma.link.findUnique({
         where : {
             shortId
@@ -16,7 +23,21 @@ export const redirect = async(shortId : string) => {
         throw new AppError("This link has been disabled by its owner.", 403)
     }
 
+    const { device, browser, os, ipAddress } = await extractVisitorInfo(req);
+
+    try {
+        await prisma.scan.create({
+            data : {
+                device,
+                browser,
+                os,
+                ipAddress,
+                linkId : targetUrl.id
+            }
+        })
+    }catch(err) {
+        console.error(err);
+    }
+
     return targetUrl.targetUrl;
-
-
 }
