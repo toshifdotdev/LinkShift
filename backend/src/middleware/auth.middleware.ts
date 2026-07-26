@@ -28,7 +28,6 @@ export const authMiddleWare = (req : Request, res : Response, next : NextFunctio
         if (err instanceof jwt.JsonWebTokenError) {
             return next(new AppError("Invalid token", 401));
         }
-
         return next(err);
     }
 }

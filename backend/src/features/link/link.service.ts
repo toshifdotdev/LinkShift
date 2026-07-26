@@ -2,11 +2,23 @@ import { nanoid } from 'nanoid';
 import { prisma } from '../../config';
 import { Prisma } from '../../generated/prisma/client';
 import { AppError } from '../../errors/AppError';
+import { getLinkMapper } from './link.mapper';
+import { updateData } from './link.validation';
 
 type CreateLinkData = {
     userId : string,
     targetUrl : string,
     name ?: string
+}
+
+type UpdateLinkData =  updateData & {
+    userId: string;
+    linkId: string;
+};
+
+type DeleteLinkData = {
+    userId: string;
+    linkId: string;
 }
 
 export const createLink = async (data : CreateLinkData) => {
@@ -47,4 +59,93 @@ export const createLink = async (data : CreateLinkData) => {
     }
 
     return createdLink;
+}
+
+export const getLinks = async (id: string) => {
+  const links = await prisma.link.findMany({
+    where: { userId: id },
+    include: {
+      _count: {
+        select: { scans : true } 
+      }
+    }
+  });
+
+  return links.map(getLinkMapper); 
+};
+
+
+export const getLink = async(id : string, linkId : string) => {
+    const link = await prisma.link.findFirst({
+        where : {
+            userId : id,
+            id : linkId
+        },
+        include : {
+            _count : { 
+              select : { scans : true }
+            }
+        }
+    })
+
+    if(!link) {
+        throw new AppError("Link not found",404);
+    }
+
+    return getLinkMapper(link);
+}
+
+
+export const updateLink = async(data : UpdateLinkData) => {
+    const existingLink  = await prisma.link.findFirst({
+        where : {
+            id : data.linkId,
+            userId : data.userId
+        }
+    })
+
+    if(!existingLink) {
+        throw new AppError("Link Not Found", 404);
+    }
+
+    const link = await prisma.link.update({
+        where : {
+            id : existingLink.id,
+        },
+        data : {
+            name : data.name ,
+            targetUrl : data.targetUrl,
+            isActive : data.isActive
+        },
+        include : {
+            _count : {
+                select : {scans : true}
+            }
+        }
+    })
+
+    return getLinkMapper(link);
+
+
+}
+
+
+export const deleteLink = async(data : DeleteLinkData) => {
+    const existingLink = await prisma.link.findFirst({
+        where : {
+            id : data.linkId,
+            userId : data.userId
+        }
+    })
+
+    if(!existingLink) {
+        throw new AppError("Link Not Found", 404);
+    }
+
+    await prisma.link.delete({
+        where : {
+            id : existingLink.id
+        }
+    })
+    return ;
 }

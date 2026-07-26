@@ -1,7 +1,12 @@
 import { NextFunction, Request, Response } from "express";
-import { createLink  as createLinkService} from "./link.service";
+import { createLink  as createLinkService, getLinks as getLinksService, getLink as getLinkService, updateLink as updateLinkService, deleteLink as deleteLinkService} from "./link.service";
 import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
+
+type linkIdParams = {
+    id ?: string
+}
+
 
 export const createLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const { targetUrl, name} = req.body;
@@ -22,5 +27,74 @@ export const createLink = asyncHandler(async(req : Request, res : Response, next
         message : "Link Created",
         data : createdLink
         
+    })
+})
+
+export const getLinks = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+    const user = req.user;
+
+    if (!user) {
+        return next(new AppError("Unauthorized", 401));
+    }
+
+    const links = await getLinksService(user.id);
+   
+
+    res.status(200).json({
+    success: true,
+    data: links
+});
+
+                            
+})
+
+export const getLink = asyncHandler(async(req : Request<linkIdParams>, res : Response, next : NextFunction) => {
+    const user = req.user;
+
+    if (!user) {
+        return next(new AppError("Unauthorized", 401));
+    }
+    const { id } = req.params as {id : string};
+
+    const link = await getLinkService(user.id, id);
+
+    res.status(200).json({
+        success: true,
+        data: link
+});
+
+})
+
+export const updateLink = asyncHandler(async(req : Request<linkIdParams>, res : Response, next : NextFunction) => {
+    const user = req.user;
+
+    if (!user) {
+        return next(new AppError("Unauthorized", 401));
+    }
+    const { name, isActive, targetUrl }= req.body;
+    const { id } = req.params as {id : string};
+
+    const updatedLink = await updateLinkService({userId : user.id, linkId : id ,name, isActive, targetUrl});
+    
+    res.status(200).json({
+        success : true,
+        data : updatedLink
+    })
+})
+
+
+export const deleteLink = asyncHandler(async(req : Request<linkIdParams>, res : Response, next : NextFunction) => {
+    const user = req.user;
+
+    if (!user) {
+        return next(new AppError("Unauthorized", 401));
+    }
+    const {id} = req.params as {id : string};
+
+    await deleteLinkService({userId : user.id, linkId : id});
+
+    res.status(200).json({
+        success : true,
+        "message": "Link deleted successfully."
     })
 })

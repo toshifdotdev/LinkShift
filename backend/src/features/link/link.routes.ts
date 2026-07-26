@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { createLink } from "./link.controller";
-import { createLinkSchema } from "./link.validation";
+import { createLink, getLink, getLinks, updateLink, deleteLink } from "./link.controller";
+import { createLinkSchema, linkIdSchema, updateLinkSchema } from "./link.validation";
 import { authMiddleWare } from "../../middleware/auth.middleware";
 import { validate } from "../../middleware/validate.middleware";
 
@@ -10,13 +10,13 @@ const router = Router();
 // /api/v1/links
 router.post("/", authMiddleWare, validate(createLinkSchema, "body"), createLink);
 
-// router.get("/", authMiddleWare, getLinks);
+router.get("/", authMiddleWare, getLinks);
 
-// router.get("/:id", authMiddleWare,validate(linkIdSchema, "params"), getLink);
+router.get("/:id", authMiddleWare,validate(linkIdSchema, "params"), getLink);
 
-// router.patch("/:id", authMiddleWare, validate(linkIdSchema, "params"), validate(updateLinkSchema, "body"), updateLink);
+router.patch("/:id", authMiddleWare, validate(linkIdSchema, "params"), validate(updateLinkSchema, "body"), updateLink);
 
-// router.delete("/:id", authMiddleWare, validate(linkIdSchema, "params"), deleteLink);
+router.delete("/:id", authMiddleWare, validate(linkIdSchema, "params"), deleteLink);
 
 export default router;
 

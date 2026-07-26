@@ -17,5 +17,21 @@ export const createLinkSchema  = z.object({
     .optional()
 });
 
-
 export type CreateLinkData = z.infer<typeof createLinkSchema>;
+
+export const linkIdSchema = z.object({
+  id : z.cuid2()
+})
+
+export type linkIdData = z.infer<typeof linkIdSchema>
+
+
+export const updateLinkSchema = z.object({
+  name : z.string(),
+  targetUrl : z.string(),
+  isActive : z.boolean()
+}).partial().refine((data) => data.name !== undefined || data.targetUrl !== undefined || data.isActive !== undefined, {
+  message: "At least one field must be provided.",
+});
+
+export type updateData = z.infer<typeof updateLinkSchema>

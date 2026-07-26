@@ -52,7 +52,7 @@ model Qr {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  link Link @relation(fields: [linkId], references: [id])
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
   @@index([linkId])
 }
@@ -68,7 +68,7 @@ model Scan {
   ipAddress  String?
   scannedAt  DateTime @default(now())
 
-  link Link @relation(fields: [linkId], references: [id])
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
   @@index([linkId])
 }
