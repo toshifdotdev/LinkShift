@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import authRouter from './features/auth/auth.routes';
 import qrRouter from './features/qr/qr.routes';
 import redirectRouter from './features/redirect/redirect.routes';
+import dashRouter from './features/dashboard/dashboard.routes'
 import linkRouter from './features/link/link.routes'
 import { errorMiddleware } from './middleware/error.middleware';
 import { AppError } from './errors/AppError';
@@ -21,6 +22,7 @@ app.use("/api/v1/auth",authRouter);
 app.use("/api/v1/qr",qrRouter);
 app.use("/api/v1/links", linkRouter);
 app.use("/r",redirectRouter);
+app.use("/api/v1/dashboard",dashRouter);
 
 
 app.use((req : Request, res : Response, next : NextFunction) => {

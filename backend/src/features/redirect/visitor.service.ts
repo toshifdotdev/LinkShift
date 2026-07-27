@@ -41,8 +41,5 @@ export const extractVisitorInfo = async(req : Request) => {
         browser: clientInfo.browser.name || undefined,    
         os: clientInfo.os.name || undefined,           
         ipAddress: ipAddress || undefined,
-        
     } 
-
-    
 }

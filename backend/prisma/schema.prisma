@@ -38,6 +38,8 @@ model Qr {
 
   linkId           String
 
+  imageUrl         String
+
   foregroundColor  String?  @default("#000000")
   backgroundColor  String?  @default("#FFFFFF")
 
