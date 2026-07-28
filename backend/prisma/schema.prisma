@@ -7,6 +7,12 @@ datasource db {
   provider = "postgresql"
 }
 
+enum PatternStyle {
+  square
+  dots
+  rounded
+}
+
 model User {
   id         String      @id @default(cuid())
   name       String   
@@ -45,7 +51,7 @@ model Qr {
 
   logoUrl          String?
 
-  pattern          String?  @default("square")
+  pattern          PatternStyle  @default(square)
   eyeStyle         String?  @default("square")
   eyeBallStyle     String?  @default("square")
 
