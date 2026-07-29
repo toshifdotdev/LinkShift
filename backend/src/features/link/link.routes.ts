@@ -3,6 +3,7 @@ import { createLink, getLink, getLinks, updateLink, deleteLink } from "./link.co
 import { createLinkSchema, linkIdSchema, updateLinkSchema } from "./link.validation";
 import { authMiddleWare } from "../../middleware/auth.middleware";
 import { validate } from "../../middleware/validate.middleware";
+import { querySchema } from "./link.query.validation";
 
 
 const router = Router();
@@ -10,7 +11,7 @@ const router = Router();
 // /api/v1/links
 router.post("/", authMiddleWare, validate(createLinkSchema, "body"), createLink);
 
-router.get("/", authMiddleWare, getLinks);
+router.get("/", authMiddleWare, validate(querySchema, "query"),getLinks);
 
 router.get("/:id", authMiddleWare,validate(linkIdSchema, "params"), getLink);
 

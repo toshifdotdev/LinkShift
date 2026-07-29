@@ -4,12 +4,17 @@ import { Prisma } from '../../generated/prisma/client';
 import { AppError } from '../../errors/AppError';
 import { getLinkMapper } from './link.mapper';
 import { updateData } from './link.validation';
+import { queryData } from './link.query.validation';
 
 type CreateLinkData = {
     userId : string,
     targetUrl : string,
     name ?: string
 }
+
+type GetLinksData = queryData & {
+    userId : string
+};
 
 type UpdateLinkData =  updateData & {
     userId: string;
@@ -61,17 +66,79 @@ export const createLink = async (data : CreateLinkData) => {
     return createdLink;
 }
 
-export const getLinks = async (id: string) => {
-  const links = await prisma.link.findMany({
-    where: { userId: id },
-    include: {
-      _count: {
-        select: { scans : true } 
-      }
-    }
-  });
 
-  return links.map(getLinkMapper); 
+
+export const getLinks = async (data : GetLinksData) => {
+
+    const where: Prisma.LinkWhereInput = {
+            userId : data.userId,
+    }
+
+    if(data.status) {
+        where.isActive = data.status === "active"
+    }
+
+    if(data.search) {
+        where.OR = [
+            {
+                name : {contains : data.search , mode : 'insensitive'}
+            },
+            {
+                targetUrl : {contains : data.search , mode : 'insensitive'}
+            },
+            {
+                shortId : {contains : data.search , mode : 'insensitive'}
+            }
+                
+        ]
+    }
+
+
+    const orderBy: Prisma.LinkOrderByWithRelationInput =
+        data.sort === "clicks"
+            ? {
+                scans: {
+                    _count: data.order
+                }
+            }
+            : {
+                [data.sort]: data.order
+            };
+
+  const skip = (data.page - 1) * data.limit 
+  const take = data.limit;
+
+  const [links, totalRecords] = await prisma.$transaction([
+    prisma.link.findMany({
+        where,
+        orderBy,
+        skip,
+        take,
+        include: {
+        _count: {
+            select: { scans : true } 
+        }
+        },
+    }),
+    prisma.link.count({
+        where
+    })
+  ])
+    
+const totalPages = Math.ceil(totalRecords/data.limit);
+
+  return { 
+    links : links.map(getLinkMapper),
+    pagination : {
+        page : data.page,
+        limit : data.limit,
+        totalPages,
+        totalRecords,
+        hasNextPage : data.page < totalPages,
+        hasPreviousPage : 1 < data.page
+
+    }
+  }
 };
 
 

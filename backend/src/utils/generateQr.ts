@@ -59,7 +59,9 @@ export const generateQrImage = async (data: qrCodeData) => {
         },
         imageOptions: {
             crossOrigin: "anonymous",
-            margin: 5 
+            margin: 5,
+            hideBackgroundDots: true,
+            imageSize: 0.3
         }
     });
 

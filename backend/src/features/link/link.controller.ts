@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { createLink  as createLinkService, getLinks as getLinksService, getLink as getLinkService, updateLink as updateLinkService, deleteLink as deleteLinkService} from "./link.service";
 import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
+import { queryData } from "./link.query.validation";
 
 type linkIdParams = {
     id ?: string
@@ -37,15 +38,16 @@ export const getLinks = asyncHandler(async(req : Request, res : Response, next :
         return next(new AppError("Unauthorized", 401));
     }
 
-    const links = await getLinksService(user.id);
+    const { links, pagination} = await getLinksService({userId : user.id,
+                                        ...(req.query as unknown as queryData)
+                                        });
    
-
     res.status(200).json({
-    success: true,
-    data: links
-});
-
-                            
+        success: true,
+        data: links,
+        pagination
+    });
+                        
 })
 
 export const getLink = asyncHandler(async(req : Request<linkIdParams>, res : Response, next : NextFunction) => {
