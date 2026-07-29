@@ -13,6 +13,19 @@ enum PatternStyle {
   rounded
 }
 
+enum EyeStyle {
+  square
+  dot
+  extraRounded
+}
+
+enum EyeBallStyle {
+  square
+  dot
+}
+
+
+
 model User {
   id         String      @id @default(cuid())
   name       String   
@@ -52,8 +65,8 @@ model Qr {
   logoUrl          String?
 
   pattern          PatternStyle  @default(square)
-  eyeStyle         String?  @default("square")
-  eyeBallStyle     String?  @default("square")
+  eyeStyle         EyeStyle      @default(square)
+  eyeBallStyle     EyeBallStyle  @default(square)
 
   margin           Int?     @default(2)
 

@@ -19,7 +19,7 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/api/v1/auth",authRouter);
-app.use("/api/v1/links",qrRouter);
+app.use("/api/v1/qr",qrRouter);
 app.use("/api/v1/links", linkRouter);
 app.use("/r",redirectRouter);
 app.use("/api/v1/dashboard",dashRouter);
