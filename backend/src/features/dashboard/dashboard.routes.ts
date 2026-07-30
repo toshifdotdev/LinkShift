@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authMiddleWare } from '../../middleware/auth.middleware';
-import { dashboardController, analyticsController } from './dashboard.controller';
+import { dashboardController, analyticsController, activityController } from './dashboard.controller';
 import { validate } from '../../middleware/validate.middleware';
 import { linkIdSchema } from '../link/link.validation';
 const router = Router();
@@ -8,5 +8,7 @@ const router = Router();
 
 router.get("/stats", authMiddleWare,dashboardController);
 
-router.get(":id/analytics", authMiddleWare, validate(linkIdSchema, "params"), analyticsController)
+router.get("/:id/analytics", authMiddleWare, validate(linkIdSchema, "params"), analyticsController);
+
+router .get("/activity", authMiddleWare, activityController);
 export default router;

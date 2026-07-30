@@ -1,4 +1,5 @@
 import { prisma } from "../../config"
+import { analyticsMapper } from "./dashboard.mapper"
 
 export const dashboardService = async(id : string) => {
     
@@ -141,3 +142,26 @@ export const getAnalytics = async(id : string, linkId : string) => {
 }
 
 
+
+export const getActivity = async(id : string) => {
+    const scans = await prisma.scan.findMany({
+        where : {
+            link : {
+                userId : id
+            }
+        },
+        include : {
+            link : {
+                select : {
+                    name  : true,
+                    shortId : true,
+                }
+            }
+        },
+        orderBy : {
+            scannedAt : 'desc'
+        },
+        take : 10
+    })
+    return scans.map(analyticsMapper);
+}
