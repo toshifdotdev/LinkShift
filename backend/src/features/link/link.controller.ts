@@ -10,7 +10,7 @@ type linkIdParams = {
 
 
 export const createLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const { targetUrl, name} = req.body;
+    const { targetUrl, name, expiresAt} = req.body;
 
     const user = req.user;
 
@@ -21,7 +21,8 @@ export const createLink = asyncHandler(async(req : Request, res : Response, next
     const createdLink = await createLinkService({
                                 userId: user.id,
                                 targetUrl,
-                                name
+                                name,
+                                expiresAt
                             });
 
     res.status(201).json({
@@ -73,10 +74,10 @@ export const updateLink = asyncHandler(async(req : Request<linkIdParams>, res : 
     if (!user) {
         return next(new AppError("Unauthorized", 401));
     }
-    const { name, isActive, targetUrl }= req.body;
+    const { name, isActive, targetUrl, expiresAt }= req.body;
     const { id } = req.params as {id : string};
 
-    const updatedLink = await updateLinkService({userId : user.id, linkId : id ,name, isActive, targetUrl});
+    const updatedLink = await updateLinkService({userId : user.id, linkId : id ,name, isActive, targetUrl, expiresAt});
     
     res.status(200).json({
         success : true,

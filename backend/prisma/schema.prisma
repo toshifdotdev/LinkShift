@@ -35,6 +35,7 @@ model User {
   updatedAt  DateTime @updatedAt
   links      Link[]
 }
+
 model Link {
   id         String   @id @default(cuid())
   userId     String
@@ -44,6 +45,7 @@ model Link {
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  expiresAt  DateTime?
 
   user   User   @relation(fields: [userId], references: [id])
   qr     Qr[]

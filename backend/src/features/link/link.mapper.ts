@@ -16,6 +16,7 @@ type LinkResponse = {
     targetUrl: string;
     shortId: string;
     isActive: boolean;
+    expiresAt : Date | null;
     createdAt: Date;
     updatedAt: Date;
     clicks: number;
@@ -28,6 +29,7 @@ export const getLinkMapper = (link : LinkWithScanCount) : LinkResponse => {
         targetUrl: link.targetUrl,
         shortId: link.shortId,
         isActive: link.isActive,
+        expiresAt : link.expiresAt ,
         createdAt: link.createdAt,
         updatedAt: link.updatedAt,
         clicks: link._count.scans

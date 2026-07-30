@@ -23,6 +23,10 @@ export const redirect = async(shortId : string, req : Request<RedirectParams>) =
         throw new AppError("This link has been disabled by its owner.", 403)
     }
 
+    if (targetUrl.expiresAt && targetUrl.expiresAt < new Date()) {
+        throw new AppError("This link has expired.",410);
+    }
+
     const { device, browser, os, ipAddress } = await extractVisitorInfo(req);
 
     try {

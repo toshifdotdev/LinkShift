@@ -44,7 +44,14 @@ export const qrService = async(data : createLinkQr) => {
         return {
             id : existingQr.id,
             imageUrl : existingQr.imageUrl,
-            shortId: currentLink.shortId
+            shortId: currentLink.shortId,
+            foregroundColor : existingQr.foregroundColor,
+            backgroundColor : existingQr.backgroundColor,
+            margin : existingQr.margin,
+            pattern : existingQr.pattern,
+            eyeBallStyle : existingQr.eyeBallStyle,
+            eyeStyle : existingQr.eyeStyle,
+            logoUrl : existingQr.logoUrl
             
         };
     }
@@ -79,7 +86,14 @@ export const qrService = async(data : createLinkQr) => {
         return {
             id : updatingQr.id,
             imageUrl : updatingQr.imageUrl,
-            shortId: currentLink.shortId
+            shortId: currentLink.shortId,
+            foregroundColor : updatingQr.foregroundColor,
+            backgroundColor : updatingQr.backgroundColor,
+            margin : updatingQr.margin,
+            pattern : updatingQr.pattern,
+            eyeBallStyle: updatingQr.eyeBallStyle,
+            eyeStyle: updatingQr.eyeStyle,
+            logoUrl : updatingQr.logoUrl
         };
 
     } catch(err) {

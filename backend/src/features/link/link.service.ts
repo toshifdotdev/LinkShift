@@ -10,6 +10,7 @@ type CreateLinkData = {
     userId : string,
     targetUrl : string,
     name ?: string
+    expiresAt ?: Date
 }
 
 type GetLinksData = queryData & {
@@ -27,7 +28,9 @@ type DeleteLinkData = {
 }
 
 export const createLink = async (data : CreateLinkData) => {
-    const { userId, targetUrl, name} = data;
+    const { userId, targetUrl, name  } = data;
+    const expiryDate  = data.expiresAt ? new Date(data.expiresAt): null
+
     let createdLink = null;
     let isUnique = false;
     let attempts = 0;
@@ -43,7 +46,8 @@ export const createLink = async (data : CreateLinkData) => {
                     userId,
                     name,
                     targetUrl,
-                    shortId
+                    shortId,
+                    expiresAt : expiryDate
                 }
             });
 
@@ -175,6 +179,10 @@ export const updateLink = async(data : UpdateLinkData) => {
         throw new AppError("Link Not Found", 404);
     }
 
+    const expiryDate  = data.expiresAt
+    ? new Date(data.expiresAt)
+    : null;
+
     const link = await prisma.link.update({
         where : {
             id : existingLink.id,
@@ -182,7 +190,8 @@ export const updateLink = async(data : UpdateLinkData) => {
         data : {
             name : data.name ,
             targetUrl : data.targetUrl,
-            isActive : data.isActive
+            isActive : data.isActive,
+            expiresAt : expiryDate
         },
         include : {
             _count : {

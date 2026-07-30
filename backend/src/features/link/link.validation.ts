@@ -14,7 +14,9 @@ export const createLinkSchema  = z.object({
     .trim()
     .min(2, { message: "Name must be at least 2 characters" })
     .max(50, { message: "Name cannot exceed 50 characters" })
-    .optional()
+    .optional(),
+
+  expiresAt: z.iso.datetime().optional()
 });
 
 export type CreateLinkData = z.infer<typeof createLinkSchema>;
@@ -29,8 +31,9 @@ export type linkIdData = z.infer<typeof linkIdSchema>
 export const updateLinkSchema = z.object({
   name : z.string(),
   targetUrl : z.string(),
-  isActive : z.boolean()
-}).partial().refine((data) => data.name !== undefined || data.targetUrl !== undefined || data.isActive !== undefined, {
+  isActive : z.boolean(),
+  expiresAt: z.iso.datetime().nullable().optional()
+}).partial().refine((data) => data.name !== undefined || data.targetUrl !== undefined || data.isActive !== undefined || data.expiresAt !== undefined , {
   message: "At least one field must be provided.",
 });
 

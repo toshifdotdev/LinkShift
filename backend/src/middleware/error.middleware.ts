@@ -25,13 +25,13 @@ export const errorMiddleware = (err : unknown, req : Request, res : Response, ne
 
         if(err instanceof AppError) {
             return res.status(err.statusCode).send(`
-                        <h1>404</h1>
+                        <h1>${err.statusCode}</h1>
                         <p>${err.message}</p>
                         `);
         }
         else {
            return res.status(500).send(`
-                        <h1>404</h1>
+                        <h1>500</h1>
                         <p>Internal Server Error</p>
                         `);
 
