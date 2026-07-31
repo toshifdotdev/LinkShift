@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
-import { redirect as redirectService } from "./redirect.service";
+import { redirect as redirectService, unlockService } from "./redirect.service";
 
 type RedirectParams = {
     shortId?: string;
@@ -10,7 +10,22 @@ type RedirectParams = {
 export const redirect = asyncHandler(async(req : Request<RedirectParams>, res : Response) => {
     const { shortId } = req.params as {shortId : string};
 
-    const targetUrl = await redirectService(shortId, req);
+    const result = await redirectService(shortId, req);
 
-    return res.redirect(targetUrl);
+    if (typeof result === "string") {
+         res.redirect(result);
+         return;
+    }
+
+     res.status(401).json(result);
+     return;
+})
+
+export const unlockController = asyncHandler(async(req : Request<RedirectParams>, res : Response) => {
+    const { shortId } = req.params as {shortId : string};
+    const { password } = req.body;
+
+    const targetUrl = await unlockService(shortId, password);
+
+    return res.redirect(targetUrl!);
 })

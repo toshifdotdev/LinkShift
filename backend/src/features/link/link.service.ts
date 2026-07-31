@@ -1,16 +1,14 @@
 import { nanoid } from 'nanoid';
+import * as bcrypt from 'bcrypt';
 import { prisma } from '../../config';
 import { Prisma } from '../../generated/prisma/client';
 import { AppError } from '../../errors/AppError';
 import { getLinkMapper } from './link.mapper';
-import { updateData } from './link.validation';
+import { CreateLinkData, updateData } from './link.validation';
 import { queryData } from './link.query.validation';
 
-type CreateLinkData = {
+type CreateData = CreateLinkData&{
     userId : string,
-    targetUrl : string,
-    name ?: string
-    expiresAt ?: Date
 }
 
 type GetLinksData = queryData & {
@@ -27,9 +25,14 @@ type DeleteLinkData = {
     linkId: string;
 }
 
-export const createLink = async (data : CreateLinkData) => {
-    const { userId, targetUrl, name  } = data;
+export const createLink = async (data : CreateData) => {
+    const { userId, targetUrl, name, password  } = data;
     const expiryDate  = data.expiresAt ? new Date(data.expiresAt): null
+
+    let hashedPassword = null;
+    if(password) {
+        hashedPassword = await bcrypt.hash(password,10);
+    }
 
     let createdLink = null;
     let isUnique = false;
@@ -47,7 +50,8 @@ export const createLink = async (data : CreateLinkData) => {
                     name,
                     targetUrl,
                     shortId,
-                    expiresAt : expiryDate
+                    expiresAt : expiryDate,
+                    passwordHash : hashedPassword
                 }
             });
 
@@ -183,6 +187,16 @@ export const updateLink = async(data : UpdateLinkData) => {
     ? new Date(data.expiresAt)
     : null;
 
+    let passwordHash : string | null | undefined = data.password;
+
+    if (data.password !== undefined) {
+        if (data.password === null) {
+             passwordHash = null;
+        } else {
+            passwordHash = await bcrypt.hash(data.password,10);
+        }
+    }
+
     const link = await prisma.link.update({
         where : {
             id : existingLink.id,
@@ -191,7 +205,8 @@ export const updateLink = async(data : UpdateLinkData) => {
             name : data.name ,
             targetUrl : data.targetUrl,
             isActive : data.isActive,
-            expiresAt : expiryDate
+            expiresAt : expiryDate,
+            passwordHash
         },
         include : {
             _count : {

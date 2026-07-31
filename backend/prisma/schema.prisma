@@ -40,6 +40,7 @@ model Link {
   id         String   @id @default(cuid())
   userId     String
   name       String?
+  passwordHash String?
   targetUrl  String
   shortId    String   @unique
   isActive   Boolean  @default(true)

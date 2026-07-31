@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { passwordValidation } from '../auth/auth.validation';
 
 export const createLinkSchema  = z.object({
   targetUrl: z.string()
@@ -16,7 +17,8 @@ export const createLinkSchema  = z.object({
     .max(50, { message: "Name cannot exceed 50 characters" })
     .optional(),
 
-  expiresAt: z.iso.datetime().optional()
+  expiresAt: z.iso.datetime().optional(),
+  password: passwordValidation
 });
 
 export type CreateLinkData = z.infer<typeof createLinkSchema>;
@@ -32,8 +34,11 @@ export const updateLinkSchema = z.object({
   name : z.string(),
   targetUrl : z.string(),
   isActive : z.boolean(),
-  expiresAt: z.iso.datetime().nullable().optional()
-}).partial().refine((data) => data.name !== undefined || data.targetUrl !== undefined || data.isActive !== undefined || data.expiresAt !== undefined , {
+  expiresAt: z.iso.datetime().nullable().optional(),
+  password: passwordValidation.nullable().optional()
+}).partial().refine((data) => data.name !== undefined || data.targetUrl !== undefined || 
+                              data.isActive !== undefined || data.expiresAt !== undefined ||
+                              data.password !== undefined, {
   message: "At least one field must be provided.",
 });
 
