@@ -9,3 +9,4 @@ export const redirectParamSchema = z.object({
 export const unlockSchema = z.object({
     password: z.string().min(1)
 });
+export type unlockData = z.infer<typeof unlockSchema>;

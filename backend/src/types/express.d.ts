@@ -4,6 +4,11 @@ declare global {
     namespace Express {
         interface Request {
             user?: CustomJwtPayload;
+            validated?: Partial<{
+                body: unknown;
+                params: unknown;
+                query: unknown;
+            }>;
         }
     }
 }

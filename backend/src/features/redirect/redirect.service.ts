@@ -3,6 +3,7 @@ import { prisma } from "../../config"
 import * as bcrypt from 'bcrypt';
 import { AppError } from "../../errors/AppError"
 import { extractVisitorInfo } from "./visitor.service";
+import { getLocation } from "../../utils/geoIp";
 
 
 type RedirectParams = {
@@ -34,7 +35,12 @@ export const redirect = async(shortId : string, req : Request<RedirectParams>) =
         }
     }
 
-    const { device, browser, os, ipAddress } = await extractVisitorInfo(req);
+    const { device, browser, os, ipAddress } = extractVisitorInfo(req);
+
+    let location = ipAddress
+    ? await getLocation(ipAddress)
+    : undefined;
+
 
     try {
         await prisma.scan.create({
@@ -42,12 +48,14 @@ export const redirect = async(shortId : string, req : Request<RedirectParams>) =
                 device,
                 browser,
                 os,
-                ipAddress,
+                city : location?.city ?? null,
+                country : location?.country ?? null,
+                ipAddress : ipAddress ?? null,
                 linkId : targetUrl.id
             }
         })
     }catch(err) {
-        console.error(err);
+        console.error("Failed to save analytics:", err);
     }
 
     return targetUrl.targetUrl;

@@ -11,7 +11,10 @@ export const validate = <T extends z.ZodTypeAny>(schema : T, location : "body" |
             const errorMessage = parsed.error.issues[0]?.message ?? "Bad Request";
             return next(new AppError(errorMessage, 400));
         }
-        (req as any)[location] = parsed.data;
+        if (!req.validated) {
+            req.validated = {};
+        }
+        req.validated[location] = parsed.data;
         next();
     }
 }

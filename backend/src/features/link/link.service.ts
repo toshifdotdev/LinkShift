@@ -116,7 +116,7 @@ export const getLinks = async (data : GetLinksData) => {
   const skip = (data.page - 1) * data.limit 
   const take = data.limit;
 
-  const [links, totalRecords] = await prisma.$transaction([
+  const [links, totalRecords] = await Promise.all([
     prisma.link.findMany({
         where,
         orderBy,

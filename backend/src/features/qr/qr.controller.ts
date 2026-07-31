@@ -3,22 +3,27 @@ import { NextFunction, Request, Response } from "express";
 import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { qrService, qrDownloadService} from "./qr.service";
+import { createLinkQr } from "./qr.validation";
 
 type linkIdParams = {
-    id ?: string
+    id : string
 }
 
 type qrIdParams = {
-    id ?: string
+    id : string
 }
 
-export const qrController = asyncHandler(async(req : Request<linkIdParams>, res : Response, next : NextFunction) => {
+export const qrController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const user = req.user;
+    const validated = req.validated!;
+    const body = validated.body as createLinkQr;
+    const params = validated.params as linkIdParams;
+
     if (!user) {
         return next(new AppError("Unauthorized", 401));
     }
 
-    const { id } = req.params as {id : string};
+    const { id } = params;
     const { 
         foregroundColor, 
         backgroundColor, 
@@ -27,7 +32,7 @@ export const qrController = asyncHandler(async(req : Request<linkIdParams>, res 
         eyeStyle, 
         eyeBallStyle, 
         logoUrl
-        } = req.body;
+        } = body;
 
     const qr = await qrService({
         userId : user.id,
@@ -48,13 +53,16 @@ export const qrController = asyncHandler(async(req : Request<linkIdParams>, res 
 })
 
 
-export const qrDownloader = asyncHandler(async(req : Request<qrIdParams>, res : Response, next : NextFunction) => {
+export const qrDownloader = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const user = req.user;
+    const validated = req.validated!;
+    const params = validated.params as linkIdParams;
+
     if (!user) {
         return next(new AppError("Unauthorized", 401));
     }
 
-    const { id } = req.params as {id : string};
+    const { id } = params;
 
     const data = await qrDownloadService(user.id, id);
 

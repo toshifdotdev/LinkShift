@@ -3,14 +3,17 @@ import { createLink  as createLinkService, getLinks as getLinksService, getLink 
 import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { queryData } from "./link.query.validation";
+import { CreateLinkData, updateData } from "./link.validation";
 
 type linkIdParams = {
-    id ?: string
+    id : string
 }
 
 
 export const createLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const { targetUrl, name, expiresAt, password} = req.body;
+    const validated = req.validated!;
+
+    const { targetUrl, name, expiresAt, password} = validated.body as CreateLinkData;
 
     const user = req.user;
 
@@ -35,13 +38,16 @@ export const createLink = asyncHandler(async(req : Request, res : Response, next
 
 export const getLinks = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const user = req.user;
+    const validated = req.validated!;
+
+    const query = validated.query as queryData;
 
     if (!user) {
         return next(new AppError("Unauthorized", 401));
     }
 
     const { links, pagination} = await getLinksService({userId : user.id,
-                                        ...(req.query as unknown as queryData)
+                                        ...query
                                         });
    
     res.status(200).json({
@@ -52,13 +58,15 @@ export const getLinks = asyncHandler(async(req : Request, res : Response, next :
                         
 })
 
-export const getLink = asyncHandler(async(req : Request<linkIdParams>, res : Response, next : NextFunction) => {
+export const getLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const user = req.user;
+    const validated = req.validated!;
+    const params = validated.params as linkIdParams;
 
     if (!user) {
         return next(new AppError("Unauthorized", 401));
     }
-    const { id } = req.params as {id : string};
+    const { id } = params;
 
     const link = await getLinkService(user.id, id);
 
@@ -69,14 +77,17 @@ export const getLink = asyncHandler(async(req : Request<linkIdParams>, res : Res
 
 })
 
-export const updateLink = asyncHandler(async(req : Request<linkIdParams>, res : Response, next : NextFunction) => {
+export const updateLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const user = req.user;
+    const validated = req.validated!;
+    const body = validated.body as updateData;
+    const params = validated.params as linkIdParams;
 
     if (!user) {
         return next(new AppError("Unauthorized", 401));
     }
-    const { name, isActive, targetUrl, expiresAt, password }= req.body;
-    const { id } = req.params as {id : string};
+    const { name, isActive, targetUrl, expiresAt, password } = body;
+    const { id } = params;
 
     const updatedLink = await updateLinkService({userId : user.id, linkId : id ,name, isActive, targetUrl, expiresAt, password});
     
@@ -87,13 +98,15 @@ export const updateLink = asyncHandler(async(req : Request<linkIdParams>, res : 
 })
 
 
-export const deleteLink = asyncHandler(async(req : Request<linkIdParams>, res : Response, next : NextFunction) => {
+export const deleteLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const user = req.user;
+    const validated = req.validated!;
+    const params = validated.params as linkIdParams;
 
     if (!user) {
         return next(new AppError("Unauthorized", 401));
     }
-    const {id} = req.params as {id : string};
+    const {id} = params;
 
     await deleteLinkService({userId : user.id, linkId : id});
 
