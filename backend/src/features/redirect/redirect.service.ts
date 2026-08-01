@@ -4,10 +4,11 @@ import * as bcrypt from 'bcrypt';
 import { AppError } from "../../errors/AppError"
 import { extractVisitorInfo } from "./visitor.service";
 import { getLocation } from "../../utils/geoIp";
-import { redisClient } from "../../config/redis";
+import { getCache, setCache } from "../../utils/cache";
 
 type CachedLink = {
     id: string;
+    userId : string
     targetUrl: string;
     isActive: boolean;
     expiresAt: Date | null;
@@ -18,7 +19,9 @@ type CachedLink = {
 
 export const redirect = async(shortId : string, req : Request) => {
     const cacheKey = `link:${shortId}`;
-    const cachedLink = await redisClient.get(cacheKey);
+
+    const cachedLink = await getCache(cacheKey);
+
     let targetUrl : CachedLink | null = null;
 
     if(cachedLink) {
@@ -46,13 +49,14 @@ export const redirect = async(shortId : string, req : Request) => {
 
         const cacheData = {
             id : targetUrl.id,
+            userId : targetUrl.userId,
             targetUrl: targetUrl.targetUrl,
             isActive: targetUrl.isActive,
             expiresAt: targetUrl.expiresAt,
             passwordHash : targetUrl.passwordHash 
         };
 
-        await redisClient.set(cacheKey, JSON.stringify(cacheData), {EX : 86400});
+        await setCache(cacheKey, JSON.stringify(cacheData), 86400);
     }
 
     if (!targetUrl) {

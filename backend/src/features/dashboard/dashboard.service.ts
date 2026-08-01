@@ -1,9 +1,33 @@
 import { prisma } from "../../config"
+import { getCache, setCache } from "../../utils/cache";
 import { analyticsMapper } from "./dashboard.mapper"
 
+
+type TopLinks = {
+    id: string;
+    name: string | null;
+    shortId: string;
+    clicks: number;
+}
+
+type cacheBoard = {
+    totalLinks : number , 
+    activeLinks : number, 
+    inactiveLinks : number, 
+    totalScans : number, 
+    topLinks : TopLinks[],
+};
+
 export const dashboardService = async(id : string) => {
-    
-    const [ totalLinks , activeLinks, inactiveLinks, totalScans, topLinks] = await prisma.$transaction([
+    const cachedKey = `dashboard:${id}`;
+    let cachedDashboard = await getCache(cachedKey);
+
+    if(cachedDashboard) {
+        return JSON.parse(cachedDashboard);
+    }
+
+
+    const [ totalLinks , activeLinks, inactiveLinks, totalScans, dbtopLinks ] = await Promise.all([
         prisma.link.count({
             where : {
                 userId : id
@@ -56,20 +80,26 @@ export const dashboardService = async(id : string) => {
                 }
             },
         })
-    ])
+    ]);
 
-    return {
-        totalLinks,
-        totalScans,
-        activeLinks,
-        inactiveLinks,
-        topLinks: topLinks.map(link => ({
+    const topLinks = dbtopLinks.map(link => ({
             id: link.id,
             name: link.name,
             shortId: link.shortId,
             clicks: link._count.scans
         }))
+
+    const analytics : cacheBoard = {
+        totalLinks  , 
+        activeLinks , 
+        inactiveLinks, 
+        totalScans, 
+        topLinks
     }
+
+    await setCache(cachedKey, JSON.stringify(analytics), 30);
+
+    return analytics;
 }
 
 export const getAnalytics = async(id : string, linkId : string) => {

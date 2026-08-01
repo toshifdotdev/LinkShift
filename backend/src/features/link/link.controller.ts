@@ -4,6 +4,7 @@ import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { queryData } from "./link.query.validation";
 import { CreateLinkData, updateData } from "./link.validation";
+import { redisClient } from "../../config/redis";
 
 type linkIdParams = {
     id : string
@@ -28,6 +29,8 @@ export const createLink = asyncHandler(async(req : Request, res : Response, next
                                 expiresAt,
                                 password
                             });
+    
+    await redisClient.del(`dashboard:${user.id}`);
 
     res.status(201).json({
         message : "Link Created",
@@ -90,6 +93,8 @@ export const updateLink = asyncHandler(async(req : Request, res : Response, next
     const { id } = params;
 
     const updatedLink = await updateLinkService({userId : user.id, linkId : id ,name, isActive, targetUrl, expiresAt, password});
+
+    await redisClient.del(`dashboard:${user.id}`)
     
     res.status(200).json({
         success : true,

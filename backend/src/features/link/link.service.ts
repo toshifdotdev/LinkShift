@@ -6,6 +6,7 @@ import { AppError } from '../../errors/AppError';
 import { getLinkMapper } from './link.mapper';
 import { CreateLinkData, updateData } from './link.validation';
 import { queryData } from './link.query.validation';
+import { deleteCache } from '../../utils/cache';
 
 type CreateData = CreateLinkData&{
     userId : string,
@@ -70,6 +71,8 @@ export const createLink = async (data : CreateData) => {
     if (!createdLink) {
         throw new AppError("Failed to generate a unique short link. Please try again.", 409);
     }
+
+    await deleteCache(`dashboard:${userId}`)
 
     return createdLink;
 }
@@ -215,11 +218,11 @@ export const updateLink = async(data : UpdateLinkData) => {
         }
     })
 
+    await deleteCache(`link:${link.shortId}`);
+    await deleteCache(`dashboard:${link.userId}`);
+
     return getLinkMapper(link);
-
-
 }
-
 
 export const deleteLink = async(data : DeleteLinkData) => {
     const existingLink = await prisma.link.findFirst({
@@ -232,6 +235,10 @@ export const deleteLink = async(data : DeleteLinkData) => {
     if(!existingLink) {
         throw new AppError("Link Not Found", 404);
     }
+
+    await deleteCache(`link:${existingLink.shortId}`);
+    await deleteCache(`dashboard:${existingLink.userId}`);
+
 
     await prisma.link.delete({
         where : {
