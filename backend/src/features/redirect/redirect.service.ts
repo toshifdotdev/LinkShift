@@ -4,28 +4,66 @@ import * as bcrypt from 'bcrypt';
 import { AppError } from "../../errors/AppError"
 import { extractVisitorInfo } from "./visitor.service";
 import { getLocation } from "../../utils/geoIp";
+import { redisClient } from "../../config/redis";
+
+type CachedLink = {
+    id: string;
+    targetUrl: string;
+    isActive: boolean;
+    expiresAt: Date | null;
+    passwordHash: string | null;
+};
 
 
-type RedirectParams = {
-    shortId?: string;
-}; 
 
-export const redirect = async(shortId : string, req : Request<RedirectParams>) => {
-    const targetUrl = await prisma.link.findUnique({
-        where : {
-            shortId
+export const redirect = async(shortId : string, req : Request) => {
+    const cacheKey = `link:${shortId}`;
+    const cachedLink = await redisClient.get(cacheKey);
+    let targetUrl : CachedLink | null = null;
+
+    if(cachedLink) {
+        const cached = JSON.parse(cachedLink);
+        targetUrl = {
+        ...cached,
+        expiresAt: cached.expiresAt
+            ? new Date(cached.expiresAt)
+            : null,
+        };
+    }
+
+
+    else {
+        targetUrl = await prisma.link.findUnique({
+            where : {
+                shortId
+            }
+        })
+
+
+        if(!targetUrl) {
+            throw new AppError("This short link doesn't exist.", 404);
         }
-    })
 
-    if(!targetUrl) {
-        throw new AppError("This short link doesn't exist.", 404);
+        const cacheData = {
+            id : targetUrl.id,
+            targetUrl: targetUrl.targetUrl,
+            isActive: targetUrl.isActive,
+            expiresAt: targetUrl.expiresAt,
+            passwordHash : targetUrl.passwordHash 
+        };
+
+        await redisClient.set(cacheKey, JSON.stringify(cacheData), {EX : 86400});
     }
-    
+
+    if (!targetUrl) {
+        throw new AppError("Link not found", 404);
+    }
+
     if(!targetUrl.isActive) {
-        throw new AppError("This link has been disabled by its owner.", 403)
-    }
+            throw new AppError("This link has been disabled by its owner.", 403)
+        }
 
-    if (targetUrl.expiresAt && targetUrl.expiresAt < new Date()) {
+    if (targetUrl.expiresAt && new Date(targetUrl.expiresAt) < new Date()) {
         throw new AppError("This link has expired.",410);
     }
 
