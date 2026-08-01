@@ -10,6 +10,11 @@ type TopLinks = {
     clicks: number;
 }
 
+type DailyStats = {
+    day: Date;
+    clicks: bigint;
+};
+
 type cacheBoard = {
     totalLinks : number , 
     activeLinks : number, 
@@ -97,19 +102,19 @@ export const dashboardService = async(id : string) => {
         topLinks
     }
 
-    await setCache(cachedKey, JSON.stringify(analytics), 30);
+    await setCache(cachedKey, analytics, 30);
 
     return analytics;
 }
 
 export const getAnalytics = async(id : string, linkId : string) => {
     const where = {
-    linkId,
-    link: {
-        userId: id
-    }
-};
-    const [ browserStats, deviceStats, countryStats, osStats, totalClicks ] = await prisma.$transaction([
+        linkId,
+        link: {
+            userId: id
+        }
+    };
+    const [ browserStats, deviceStats, countryStats, osStats, totalClicks ] = await Promise.all([
         prisma.scan.groupBy({
             by : ['browser'],
             where,
@@ -157,8 +162,6 @@ export const getAnalytics = async(id : string, linkId : string) => {
         prisma.scan.count({
             where
         })
-
-
     ])
 
     return {
@@ -194,4 +197,77 @@ export const getActivity = async(id : string) => {
         take : 10
     })
     return scans.map(analyticsMapper);
+}
+
+
+export const getChartData = async(id : string, linkId : string) => {
+    const where = {
+        linkId,
+        link: {
+            userId: id
+        }
+    };
+
+    const[browserStats, countryStats, deviceStats, osStats] = await Promise.all([
+        prisma.scan.groupBy({
+            by : ['browser'],
+            where,
+            _count : { browser: true },
+        }),
+
+        prisma.scan.groupBy({
+            by : ['country'],
+            where,
+            _count : { country: true },
+        }),
+
+        prisma.scan.groupBy({
+            by : ['device'],
+            where,
+            _count : { device: true },
+        }),
+
+        prisma.scan.groupBy({
+            by : ['os'],
+            where,
+            _count : { os: true },
+        }),
+    ]);
+
+    const dailyStats = await prisma.$queryRaw<DailyStats[]>`
+            SELECT
+            DATE(s.scannedAt) AS day,
+            COUNT(*) AS clicks
+            FROM Scan s
+            JOIN Link l
+            ON s.linkId = l.id
+            WHERE
+            s.linkId = ${linkId}
+            AND l.userId = ${id}
+            GROUP BY DATE(s.scannedAt)
+            ORDER BY day ASC
+            `;
+
+    return {
+        browserStats : browserStats.map(item => ({
+            browser: item.browser ?? "Unknown",
+            count: item._count.browser
+        })),
+        countryStats : countryStats.map(item => ({
+            country: item.country ?? "Unknown",
+            count: item._count.country
+        })), 
+        deviceStats : deviceStats.map(item => ({
+            device : item.device ?? "Unknown",
+            count : item._count.device
+        })), 
+        osStats : osStats.map(item => ({
+            os : item.os ?? "Unknown",
+            count : item._count.os
+        })), 
+        dailyStats : dailyStats.map(item => ({
+            day: item.day,
+            clicks: Number(item.clicks)
+        }))
+    }
 }

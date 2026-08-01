@@ -56,7 +56,7 @@ export const redirect = async(shortId : string, req : Request) => {
             passwordHash : targetUrl.passwordHash 
         };
 
-        await setCache(cacheKey, JSON.stringify(cacheData), 86400);
+        await setCache(cacheKey, cacheData, 86400);
     }
 
     if (!targetUrl) {
