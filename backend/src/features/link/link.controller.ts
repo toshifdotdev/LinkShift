@@ -16,21 +16,21 @@ export const createLink = asyncHandler(async(req : Request, res : Response, next
 
     const { targetUrl, name, expiresAt, password} = validated.body as CreateLinkData;
 
-    const user = req.user;
+    const auth = req.auth;
 
-    if (!user) {
+    if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
 
     const createdLink = await createLinkService({
-                                userId: user.id,
+                                userId: auth.id,
                                 targetUrl,
                                 name,
                                 expiresAt,
                                 password
                             });
     
-    await redisClient.del(`dashboard:${user.id}`);
+    await redisClient.del(`dashboard:${auth.id}`);
 
     res.status(201).json({
         message : "Link Created",
@@ -40,16 +40,16 @@ export const createLink = asyncHandler(async(req : Request, res : Response, next
 })
 
 export const getLinks = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const user = req.user;
+    const auth = req.auth;
     const validated = req.validated!;
 
     const query = validated.query as queryData;
 
-    if (!user) {
+    if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
 
-    const { links, pagination} = await getLinksService({userId : user.id,
+    const { links, pagination} = await getLinksService({userId : auth.id,
                                         ...query
                                         });
    
@@ -62,16 +62,16 @@ export const getLinks = asyncHandler(async(req : Request, res : Response, next :
 })
 
 export const getLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const user = req.user;
+    const auth = req.auth;
     const validated = req.validated!;
     const params = validated.params as linkIdParams;
 
-    if (!user) {
+    if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
     const { id } = params;
 
-    const link = await getLinkService(user.id, id);
+    const link = await getLinkService(auth.id, id);
 
     res.status(200).json({
         success: true,
@@ -81,20 +81,20 @@ export const getLink = asyncHandler(async(req : Request, res : Response, next : 
 })
 
 export const updateLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const user = req.user;
+    const auth = req.auth;
     const validated = req.validated!;
     const body = validated.body as updateData;
     const params = validated.params as linkIdParams;
 
-    if (!user) {
+    if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
     const { name, isActive, targetUrl, expiresAt, password } = body;
     const { id } = params;
 
-    const updatedLink = await updateLinkService({userId : user.id, linkId : id ,name, isActive, targetUrl, expiresAt, password});
+    const updatedLink = await updateLinkService({userId : auth.id, linkId : id ,name, isActive, targetUrl, expiresAt, password});
 
-    await redisClient.del(`dashboard:${user.id}`)
+    await redisClient.del(`dashboard:${auth.id}`)
     
     res.status(200).json({
         success : true,
@@ -104,16 +104,16 @@ export const updateLink = asyncHandler(async(req : Request, res : Response, next
 
 
 export const deleteLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const user = req.user;
+    const auth = req.auth;
     const validated = req.validated!;
     const params = validated.params as linkIdParams;
 
-    if (!user) {
+    if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
     const {id} = params;
 
-    await deleteLinkService({userId : user.id, linkId : id});
+    await deleteLinkService({userId : auth.id, linkId : id});
 
     res.status(200).json({
         success : true,

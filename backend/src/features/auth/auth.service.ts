@@ -1,7 +1,8 @@
 import { prisma, config } from '../../config';
 import * as bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import { AppError } from '../../errors/AppError';
+import { GoogleProfile } from './auth.types';
+import { buildAuthResponse } from '../../utils/buildAuthResponse';
 
 export const registerUser = async (name : string, email : string, password : string) => {
     const existingUser = await prisma.user.findUnique({
@@ -17,24 +18,12 @@ export const registerUser = async (name : string, email : string, password : str
                         data : {
                             name,
                             email,
-                            password : hashPassword
+                            passwordHash : hashPassword,
+                            provider : 'LOCAL'
                         }
                     })
-    const token = jwt.sign({
-                    id : createdUser.id, 
-                    email : createdUser.email}, 
-                    config.jwtSecret!, {
-                        expiresIn : '2h'
-                    })
-    return {
-        user : {
-            id : createdUser.id,
-            name : createdUser.name,
-            email : createdUser.email,
-            createdAt :createdUser.createdAt
-            },
-        token
-    }
+
+    return buildAuthResponse(createdUser);
 }   
 
 
@@ -49,25 +38,84 @@ export const loginUser = async (email : string, password : string) => {
         throw new AppError("Email not exists", 404);
     }
 
-    const comparePass = await bcrypt.compare(password, existingUser.password);
+    if(!existingUser.passwordHash) {
+        throw new AppError("Please login with Google.", 400);
+    }
+
+
+
+    const comparePass = await bcrypt.compare(password, existingUser.passwordHash);
 
     if(!comparePass) {
         throw new AppError("Incorrect credentials", 401);
     }
 
-    const token = jwt.sign({
-                    id : existingUser.id, 
-                    email : existingUser.email }, 
-                    config.jwtSecret!, {
-                        expiresIn : '2h'
-                    })
-    return ({
-        user : {
-            id : existingUser.id,
-            name : existingUser.name,
-            email : existingUser.email,
-            },
-        token
-    })
+    return buildAuthResponse(existingUser);
     
+}
+
+
+export const googleLogin = async(profile : GoogleProfile) => {
+    const googleId = profile.id;
+    
+    const email = profile.emails?.[0]?.value;
+    if (!email) {
+        throw new AppError("Google account has no email.", 400);
+    }
+    const name = profile.displayName ?? "Google User";
+    const avatarUrl = profile.photos?.[0]?.value  ?? null;
+
+    
+
+    const existingGoogleUser = await prisma.user.findUnique({
+        where: {
+            googleId
+        }
+    })
+
+    if(existingGoogleUser) {
+
+        const updatedUser = await prisma.user.update({
+            where: {
+                googleId
+            },
+            data: {
+                avatarUrl
+            }
+        });
+        return buildAuthResponse(updatedUser);
+    }
+
+    const existingUser = await prisma.user.findUnique({
+        where : {
+            email
+        }
+    })
+
+    if(existingUser) {
+        const linkedUser = await prisma.user.update({
+            where : {
+                email : existingUser.email
+            },
+            data : {
+                googleId,
+                avatarUrl,
+                provider : 'GOOGLE',
+            }
+        })
+
+        return buildAuthResponse(linkedUser);
+    }
+
+    const newUser = await prisma.user.create({
+        data : {
+            googleId,
+            email,
+            name,
+            avatarUrl,
+            provider : 'GOOGLE'
+        }
+    })
+
+    return buildAuthResponse(newUser);
 }

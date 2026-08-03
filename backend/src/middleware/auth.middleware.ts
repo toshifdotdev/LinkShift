@@ -14,7 +14,7 @@ export const authMiddleWare = (req : Request, res : Response, next : NextFunctio
 
     try {
         const decoded = jwt.verify(token, config.jwtSecret as string) as CustomJwtPayload;
-        req.user = {
+        req.auth = {
             id    : decoded.id,
             email : decoded.email
         }

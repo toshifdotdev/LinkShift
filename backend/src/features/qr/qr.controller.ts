@@ -14,12 +14,12 @@ type qrIdParams = {
 }
 
 export const qrController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const user = req.user;
+    const auth = req.auth;
     const validated = req.validated!;
     const body = validated.body as createLinkQr;
     const params = validated.params as linkIdParams;
 
-    if (!user) {
+    if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
 
@@ -35,7 +35,7 @@ export const qrController = asyncHandler(async(req : Request, res : Response, ne
         } = body;
 
     const qr = await qrService({
-        userId : user.id,
+        userId : auth.id,
         linkId : id,
         foregroundColor,
         backgroundColor,
@@ -54,17 +54,17 @@ export const qrController = asyncHandler(async(req : Request, res : Response, ne
 
 
 export const qrDownloader = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const user = req.user;
+    const auth = req.auth;
     const validated = req.validated!;
     const params = validated.params as linkIdParams;
 
-    if (!user) {
+    if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
 
     const { id } = params;
 
-    const data = await qrDownloadService(user.id, id);
+    const data = await qrDownloadService(auth.id, id);
 
     const filePath = path.join(process.cwd(), data.imageUrl);
 

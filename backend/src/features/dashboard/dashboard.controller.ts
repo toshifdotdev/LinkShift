@@ -8,11 +8,11 @@ type linkIdParams = {
 }
 
 export const dashboardController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const user = req.user;
-    if(!user) {
+    const auth = req.auth;
+    if(!auth) {
         return next(new AppError("Unauthorized", 401));
     }
-    const stats = await dashboardService(user.id);
+    const stats = await dashboardService(auth.id);
 
     res.status(200).json({
         success : true,
@@ -21,16 +21,16 @@ export const dashboardController = asyncHandler(async(req : Request, res : Respo
 })
 
 export const analyticsController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const user = req.user;
+    const auth = req.auth;
     const validated = req.validated!;
     const params = validated.params as linkIdParams;
 
-    if(!user) {
+    if(!auth) {
         return next(new AppError("Unauthorized", 401));
     }
     const { id } = params;
 
-    const analytics = await getAnalytics(user.id, id);
+    const analytics = await getAnalytics(auth.id, id);
 
     res.status(200).json({
         success : true,
@@ -39,12 +39,12 @@ export const analyticsController = asyncHandler(async(req : Request, res : Respo
 })
 
 export const activityController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const user = req.user;
-    if(!user) {
+    const auth = req.auth;
+    if(!auth) {
         return next(new AppError("Unauthorized", 401));
     }
 
-    const activity = await getActivity(user.id);
+    const activity = await getActivity(auth.id);
 
     res.status(200).json({
         success : true,
@@ -53,15 +53,15 @@ export const activityController = asyncHandler(async(req : Request, res : Respon
 })
 
 export const chartController = asyncHandler(async(req : Request, res : Response, next : NextFunction) =>  {
-    const user = req.user;
+    const auth = req.auth;
     const validated = req.validated!;
     const params = validated.params as linkIdParams;
-    if(!user) {
+    if(!auth) {
         return next(new AppError("Unauthorized", 401));
     }
     const { id } = params;
 
-    const activity = await getChartData(user.id, id);
+    const activity = await getChartData(auth.id, id);
 
     res.status(200).json({
         success : true,
