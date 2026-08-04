@@ -46,3 +46,28 @@ export const unlockLimiter = rateLimit({
         message: 'Too many incorrect password attempts. Please try again after 15 minutes.',
     }
 })
+
+// forgotPassLimiter 
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, 
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many password reset requests from this device. Please try again after an hour.',
+  },
+});
+
+
+// resetPassLimiter
+export const resetPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, 
+  limit: 10, 
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many password reset attempts. Please try again after an hour.',
+  },
+});

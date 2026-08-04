@@ -1,9 +1,10 @@
 import { Router } from "express";
-import { loginController, registerController, googleCallbackController} from "./auth.controller";
+import { loginController, registerController, googleCallbackController, forgotPasswordController, resetPasswordController} from "./auth.controller";
 import { validate } from "../../middleware/validate.middleware";
-import { loginUserSchema, registerUserSchema } from "./auth.validation";
-import { loginLimiter, registerLimiter } from "../../middleware/rateLimit.middleware";
+import { forgotPasswordSchema, loginUserSchema, registerUserSchema, resetPasswordSchema } from "./auth.validation";
+import { forgotPasswordLimiter, loginLimiter, registerLimiter, resetPasswordLimiter } from "../../middleware/rateLimit.middleware";
 import passport from "passport";
+import { authMiddleWare } from "../../middleware/auth.middleware";
 
 const router = Router();
 
@@ -16,11 +17,13 @@ router.get('/google/callback', passport.authenticate("google", {
                                                                 failureRedirect : "/api/v1/auth/google/failure"
                                                             }),
                                                             googleCallbackController)
-
 router.get("/google/failure", (_, res) => {
     res.status(401).json({
         success: false,
         message: "Google authentication failed."
     });
 });
+
+router.post('/forgot-password', validate(forgotPasswordSchema, "body"), forgotPasswordLimiter,forgotPasswordController);
+router.post('/reset-password', validate(resetPasswordSchema, "body"), resetPasswordLimiter, resetPasswordController)
 export default router;

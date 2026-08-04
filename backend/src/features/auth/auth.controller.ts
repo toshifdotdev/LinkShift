@@ -1,9 +1,7 @@
 import { Request, Response } from "express";
-import { loginUser, registerUser } from "./auth.service";
+import { loginUser, registerUser, forgotPasswordService, resetPasswordService } from "./auth.service";
 import { asyncHandler } from "../../utils/asyncHandler";
-import { prisma } from "../../config";
-import { LoginUserInput, RegisterUserInput } from "./auth.validation";
-import { AuthResponse } from "./auth.types";
+import { forgotPasswordInput, LoginUserInput, RegisterUserInput, resetPasswordInput } from "./auth.validation";
 
 export const registerController = asyncHandler(async(req : Request, res : Response) => {
     const validated = req.validated!;
@@ -45,3 +43,30 @@ export const googleCallbackController = (req : Request, res : Response) => {
     return res.status(200).json(authResponse);
 
 }
+
+export const forgotPasswordController =  asyncHandler(async(req : Request, res : Response)=> {
+    const validated = req.validated!;
+
+    const body = validated.body as forgotPasswordInput;
+    const { email } = body;
+
+    const result = await forgotPasswordService(email);
+
+    res.status(200).json(result);
+});
+
+export const resetPasswordController = asyncHandler(async(req : Request, res : Response) => {
+    const validated = req.validated!
+
+    const body = validated.body as resetPasswordInput;
+
+    const {token, password} = body;
+
+    await resetPasswordService(token, password);
+
+    res.status(200).json({
+        success : true,
+        message : "Password successfully reset."
+    })
+
+})

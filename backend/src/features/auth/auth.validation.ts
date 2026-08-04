@@ -8,6 +8,13 @@ export const passwordValidation = z.string()
   .regex(/[0-9]/, { message: "Password must contain at least one number." })
   .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character." });
 
+const emailValidation = z.string()
+    .trim()
+    .pipe(
+      z.email({ message: "Invalid email format." })
+    )
+
+
 
 export const registerUserSchema = z.object({
   name: z.string()
@@ -15,25 +22,32 @@ export const registerUserSchema = z.object({
     .min(2, { message: "Name must be at least 2 characters." })
     .max(50, { message: "Name cannot exceed 50 characters." }),
     
-  email: z.string()
-    .trim()
-    .pipe(
-      z.email({ message: "Invalid email format." })
-    ),
+  email: emailValidation,
     
   password: passwordValidation,
 });
 
 export const loginUserSchema = z.object({
-  email: z.string()
-    .trim()
-    .pipe(
-      z.email({ message: "Invalid email format." })
-    ),
+  email:emailValidation,
     
   password: z.string()
     .min(1, { message: "Password cannot be empty." }),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: emailValidation
+})
+
+export const resetPasswordSchema = z.object({
+  token : z
+    .string("Token is required")
+    .length(64, "Invalid token format")
+    .regex(/^[a-f0-9]+$/i, "Invalid token format"),
+  password : passwordValidation
+})
+
+
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
 export type LoginUserInput = z.infer<typeof loginUserSchema>;
+export type forgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type resetPasswordInput = z.infer<typeof resetPasswordSchema>;
