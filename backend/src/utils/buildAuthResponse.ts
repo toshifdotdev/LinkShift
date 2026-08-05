@@ -1,15 +1,15 @@
 import { Prisma } from "../generated/prisma/client";
-import { generateToken } from "./jwt";
 
 type userType = Prisma.UserGetPayload<{}>
 
 
-export const buildAuthResponse = (user: userType) => ({
+export const buildAuthResponse = (user: userType, accessToken : string, refreshToken : string) => ({
     user: {
         id: user.id,
         name: user.name,
         email: user.email,
         avatarUrl: user.avatarUrl
     },
-    token: generateToken(user)
+    accessToken,
+    refreshToken
 });

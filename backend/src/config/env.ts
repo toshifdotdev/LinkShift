@@ -10,6 +10,7 @@ export const config = {
     googleClientSecret : process.env.GOOGLE_CLIENT_SECRET,
     googleCallbackUrl : process.env.FRONTEND_URL,
     resendApiKey : process.env.RESEND_API_KEY,
-    frontendUrl : process.env.FRONTEND_URL
+    frontendUrl : process.env.FRONTEND_URL,
+    node_env : process.env.NODE_ENV
 }
 

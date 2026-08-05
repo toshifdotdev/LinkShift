@@ -3,14 +3,13 @@ import { Prisma } from "../generated/prisma/client"
 import jwt from 'jsonwebtoken'
 type userType = Prisma.UserGetPayload<{}>
 
-export const generateToken = (user : userType) => {
-    const token = jwt.sign({
+export const generateAccessToken = (user : userType) => {
+    const accessToken = jwt.sign({
         id : user.id,
         email : user.email
         }, config.jwtSecret!, {
-            expiresIn : '2h'
+            expiresIn : '15m'
         }
     )
-
-    return token;
+    return accessToken;
 }

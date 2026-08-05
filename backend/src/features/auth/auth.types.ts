@@ -26,5 +26,11 @@ export type AuthResponse = {
         email: string;
         avatarUrl: string | null;
     };
-    token: string;
+    accessToken : string,
+    refreshToken : string
+};
+
+export type RefreshedTokens = {
+    accessToken: string;
+    refreshToken: string;
 };

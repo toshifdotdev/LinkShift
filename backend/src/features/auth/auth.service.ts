@@ -1,10 +1,11 @@
-import { prisma, config } from '../../config';
+import { prisma } from '../../config';
 import * as bcrypt from 'bcrypt';
 import { AppError } from '../../errors/AppError';
-import { GoogleProfile } from './auth.types';
+import { GoogleProfile, RefreshedTokens } from './auth.types';
 import { buildAuthResponse } from '../../utils/buildAuthResponse';
 import { generateRandomToken, hashToken } from '../../utils/token';
 import { sendPasswordResetEmail } from '../../utils/email';
+import { issueTokens } from '../../utils/issueToken';
 
 export const registerUser = async (name : string, email : string, password : string) => {
     const existingUser = await prisma.user.findUnique({
@@ -15,17 +16,23 @@ export const registerUser = async (name : string, email : string, password : str
     if(existingUser !== null) {
         throw new AppError("Conflict",409);
     }
+
     const hashPassword = await bcrypt.hash(password , 10); // saltRounds = 10
+
+    
+
     const createdUser = await prisma.user.create({
                         data : {
                             name,
                             email,
                             passwordHash : hashPassword,
-                            provider : 'LOCAL'
+                            provider : 'LOCAL',
                         }
                     })
 
-    return buildAuthResponse(createdUser);
+    const {accessToken, refreshToken} = await issueTokens(createdUser);
+
+    return buildAuthResponse(createdUser, accessToken, refreshToken);
 }   
 
 
@@ -44,7 +51,7 @@ export const loginUser = async (email : string, password : string) => {
         throw new AppError("Please login with Google.", 400);
     }
 
-
+    
 
     const comparePass = await bcrypt.compare(password, existingUser.passwordHash);
 
@@ -52,7 +59,9 @@ export const loginUser = async (email : string, password : string) => {
         throw new AppError("Incorrect credentials", 401);
     }
 
-    return buildAuthResponse(existingUser);
+    const {accessToken, refreshToken} = await issueTokens(existingUser);
+
+    return buildAuthResponse(existingUser, accessToken, refreshToken);
     
 }
 
@@ -75,6 +84,8 @@ export const googleLogin = async(profile : GoogleProfile) => {
         }
     })
 
+    
+
     if(existingGoogleUser) {
 
         const updatedUser = await prisma.user.update({
@@ -82,11 +93,15 @@ export const googleLogin = async(profile : GoogleProfile) => {
                 googleId
             },
             data: {
-                avatarUrl
+                avatarUrl,
             }
         });
-        return buildAuthResponse(updatedUser);
+
+        const {accessToken, refreshToken} = await issueTokens(updatedUser);
+
+        return buildAuthResponse(updatedUser, accessToken, refreshToken);
     }
+
 
     const existingUser = await prisma.user.findUnique({
         where : {
@@ -95,6 +110,9 @@ export const googleLogin = async(profile : GoogleProfile) => {
     })
 
     if(existingUser) {
+        const {accessToken, refreshToken} = await issueTokens(existingUser);
+
+
         const linkedUser = await prisma.user.update({
             where : {
                 email : existingUser.email
@@ -106,7 +124,7 @@ export const googleLogin = async(profile : GoogleProfile) => {
             }
         })
 
-        return buildAuthResponse(linkedUser);
+        return buildAuthResponse(linkedUser, accessToken, refreshToken);
     }
 
     const newUser = await prisma.user.create({
@@ -119,7 +137,10 @@ export const googleLogin = async(profile : GoogleProfile) => {
         }
     })
 
-    return buildAuthResponse(newUser);
+    const {accessToken, refreshToken} = await issueTokens(newUser);
+
+    
+    return buildAuthResponse(newUser, accessToken, refreshToken);
 }
 
 
@@ -153,9 +174,9 @@ export const forgotPasswordService = async(email : string) => {
 
     await sendPasswordResetEmail(email, generatedToken);
     return {
-    success: true,
-    message: "If an account exists, we've sent a reset link."
-}
+        success: true,
+        message: "If an account exists, we've sent a reset link."
+    }
     
 }
 
@@ -184,5 +205,75 @@ export const resetPasswordService = async(token : string, password : string) => 
                         resetPasswordExpires : null
                     }
                 })  
+}
 
+export const refreshService = async(token : string) : Promise<RefreshedTokens> => {
+    const hashedRefreshToken = hashToken(token);
+
+    const user = await prisma.user.findUnique({
+        where : {
+            refreshTokenHash : hashedRefreshToken
         }
+    })
+
+    if (!user) {
+        throw new AppError("Unauthorized", 401);
+    }
+
+    if(user.refreshTokenExpiresAt && user.refreshTokenExpiresAt < new Date()) {
+        throw new AppError("Token Expired", 401);
+    }
+
+    const { accessToken, refreshToken } = await issueTokens(user);
+
+    return {
+        accessToken,
+        refreshToken
+    }
+}
+
+
+export const logoutService = async(refreshToken : string) => {
+    if (!refreshToken) {
+        throw new AppError("Unauthorized", 401);
+    }
+    const hashedRefreshToken = hashToken(refreshToken)
+    const user = await prisma.user.findUnique({
+        where : {
+            refreshTokenHash : hashedRefreshToken,
+        }
+    })
+
+    if(!user) {
+        throw new AppError("Unauthorized", 401);
+    }
+
+    await prisma.user.update({
+        where : {
+            id: user.id
+        },
+        data : {
+            refreshTokenHash : null,
+            refreshTokenExpiresAt : null
+        }
+    })
+}
+
+export const profileService = async(id : string) => {
+    const user = await prisma.user.findUnique({
+        where : {
+            id
+        },
+        select : {
+            id : true,
+            name : true,
+            email : true,
+            avatarUrl : true
+        }
+    })
+    if (!user) {
+        throw new AppError("User not found", 404);
+    }
+
+    return user;
+}

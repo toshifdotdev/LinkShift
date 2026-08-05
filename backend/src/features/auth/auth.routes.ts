@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { loginController, registerController, googleCallbackController, forgotPasswordController, resetPasswordController} from "./auth.controller";
+import { loginController, registerController, googleCallbackController, forgotPasswordController, resetPasswordController, refreshTokenController, logoutController, profileController} from "./auth.controller";
 import { validate } from "../../middleware/validate.middleware";
 import { forgotPasswordSchema, loginUserSchema, registerUserSchema, resetPasswordSchema } from "./auth.validation";
 import { forgotPasswordLimiter, loginLimiter, registerLimiter, resetPasswordLimiter } from "../../middleware/rateLimit.middleware";
@@ -25,5 +25,11 @@ router.get("/google/failure", (_, res) => {
 });
 
 router.post('/forgot-password', validate(forgotPasswordSchema, "body"), forgotPasswordLimiter,forgotPasswordController);
-router.post('/reset-password', validate(resetPasswordSchema, "body"), resetPasswordLimiter, resetPasswordController)
+router.post('/reset-password', validate(resetPasswordSchema, "body"), resetPasswordLimiter, resetPasswordController);
+
+router.post('/refresh', refreshTokenController);
+
+router.post('/logout', logoutController);
+
+router.get('/profile', authMiddleWare, profileController);
 export default router;

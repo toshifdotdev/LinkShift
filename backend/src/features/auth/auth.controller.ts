@@ -1,18 +1,26 @@
-import { Request, Response } from "express";
-import { loginUser, registerUser, forgotPasswordService, resetPasswordService } from "./auth.service";
+import { NextFunction, Request, Response } from "express";
+import { loginUser, registerUser, forgotPasswordService, resetPasswordService, refreshService, logoutService, profileService } from "./auth.service";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { forgotPasswordInput, LoginUserInput, RegisterUserInput, resetPasswordInput } from "./auth.validation";
+import { setRefreshCookie } from "../../utils/refreshCookie";
+import { AuthResponse } from "./auth.types";
+import { AppError } from "../../errors/AppError";
 
 export const registerController = asyncHandler(async(req : Request, res : Response) => {
     const validated = req.validated!;
     const body = validated.body as RegisterUserInput;
     const {name, email, password} = body;
 
-    const { user, token } = await registerUser(name, email, password);
+    const authResponse = await registerUser(name, email, password);
+
+    setRefreshCookie(res, 
+        authResponse.refreshToken
+    )
+
     res.status(201).json({
         message : "User successfully created.",
-        user,
-        token
+        user : authResponse.user,
+        accessToken : authResponse.accessToken
     })
     
 })
@@ -23,24 +31,35 @@ export const loginController = asyncHandler(async(req : Request, res : Response)
     const body = validated.body as LoginUserInput;
     const { email, password } = body;
 
-    const { user, token } = await loginUser(email,password);
+    const authResponse = await loginUser(email,password);
+
+    setRefreshCookie(res,
+        authResponse.refreshToken
+    )
     res.status(200).json({
         message : "Logged in successfully.",
-        user,
-        token
+        user : authResponse.user,
+        accessToken : authResponse.accessToken
     })
     
 })
 
 
 export const googleCallbackController = (req : Request, res : Response) => {
-    const authResponse = req.user;
-
+    const authResponse = req.user as AuthResponse;
+//      later when frontend completes 
 //     return res.redirect(
 //     `${config.frontendUrl}/auth/success?token=${authResponse.token}`
 // );
 
-    return res.status(200).json(authResponse);
+    
+    setRefreshCookie(res,
+        authResponse.refreshToken
+    )
+    return res.status(200).json({
+        user : authResponse.user,
+        accessToken : authResponse.accessToken,
+    });
 
 }
 
@@ -67,6 +86,57 @@ export const resetPasswordController = asyncHandler(async(req : Request, res : R
     res.status(200).json({
         success : true,
         message : "Password successfully reset."
+    })
+
+})
+
+
+export const refreshTokenController = asyncHandler(async(req : Request, res : Response) => {
+    const { refreshToken } = req.cookies;
+
+    
+
+    const tokens = await refreshService(refreshToken);
+
+    setRefreshCookie(res, 
+        tokens.refreshToken
+    )
+
+    res.status(200).json({
+        accessToken : tokens.accessToken,
+    });
+
+})
+
+
+export const logoutController = asyncHandler(async(req : Request, res : Response) => {
+    
+    const { refreshToken } = req.cookies;
+
+    await logoutService(refreshToken);
+
+    res.clearCookie("refreshToken");
+
+    res.status(200).json({ 
+        success : true,
+        message : "Logged out successfully"
+    })
+
+})
+
+
+export const profileController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+    const auth = req.auth;
+
+    if(!auth) {
+        return next(new AppError("Unauthorized", 401));
+    }
+
+    const userDetails = await profileService(auth.id);
+
+    res.status(200).json({ 
+        success : true,
+        data : userDetails
     })
 
 })
