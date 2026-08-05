@@ -41,12 +41,30 @@ model User {
   avatarUrl              String?
   provider               AuthProvider
 
-  refreshTokenHash String? @unique
+  refreshTokenHash String? 
   refreshTokenExpiresAt DateTime?
 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   links      Link[]
+
+  domains    Domain[]
+}
+
+model Domain {
+  id         String   @id @default(cuid())
+
+  host       String   @unique
+  verified   Boolean  @default(false)
+  isDefault  Boolean  @default(false)
+
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id])
+
+  links      Link[]
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model Link {
@@ -55,7 +73,7 @@ model Link {
   name       String?
   passwordHash String?
   targetUrl  String
-  shortId    String   @unique
+  shortId    String   
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -65,7 +83,13 @@ model Link {
   qr     Qr[]
   scans  Scan[]
 
+  domainId String
+
+  domain Domain @relation(fields: [domainId], references: [id])
+
   @@index([userId])
+
+  @@unique([domainId, shortId])
 }
 
 model Qr {
@@ -109,3 +133,4 @@ model Scan {
 
   @@index([linkId])
 }
+

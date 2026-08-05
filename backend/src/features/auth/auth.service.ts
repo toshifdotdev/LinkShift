@@ -210,7 +210,7 @@ export const resetPasswordService = async(token : string, password : string) => 
 export const refreshService = async(token : string) : Promise<RefreshedTokens> => {
     const hashedRefreshToken = hashToken(token);
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
         where : {
             refreshTokenHash : hashedRefreshToken
         }
@@ -238,7 +238,7 @@ export const logoutService = async(refreshToken : string) => {
         throw new AppError("Unauthorized", 401);
     }
     const hashedRefreshToken = hashToken(refreshToken)
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findFirst({
         where : {
             refreshTokenHash : hashedRefreshToken,
         }

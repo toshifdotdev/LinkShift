@@ -18,6 +18,7 @@
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/sharp": "^0.31.1",
     "@types/ua-parser-js": "^0.7.39",
+    "tsx": "^4.23.8",
     "typescript": "^7.0.2"
   },
   "dependencies": {
