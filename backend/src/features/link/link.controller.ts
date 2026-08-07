@@ -4,7 +4,7 @@ import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { queryData } from "./link.query.validation";
 import { CreateLinkData, updateData } from "./link.validation";
-import { redisClient } from "../../config/redis";
+import { deleteCache } from "../../utils/cache";
 
 type linkIdParams = {
     id : string
@@ -14,7 +14,7 @@ type linkIdParams = {
 export const createLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const validated = req.validated!;
 
-    const { targetUrl, name, expiresAt, password} = validated.body as CreateLinkData;
+    const { targetUrl, name, expiresAt, password, slug, domainId} = validated.body as CreateLinkData;
 
     const auth = req.auth;
 
@@ -27,10 +27,12 @@ export const createLink = asyncHandler(async(req : Request, res : Response, next
                                 targetUrl,
                                 name,
                                 expiresAt,
-                                password
+                                password,
+                                slug,
+                                domainId
                             });
     
-    await redisClient.del(`dashboard:${auth.id}`);
+    await deleteCache(`dashboard:${auth.id}`);
 
     res.status(201).json({
         message : "Link Created",
@@ -89,12 +91,12 @@ export const updateLink = asyncHandler(async(req : Request, res : Response, next
     if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
-    const { name, isActive, targetUrl, expiresAt, password } = body;
+    const { name, isActive, targetUrl, expiresAt, password, domainId, slug } = body;
     const { id } = params;
 
-    const updatedLink = await updateLinkService({userId : auth.id, linkId : id ,name, isActive, targetUrl, expiresAt, password});
+    const updatedLink = await updateLinkService({userId : auth.id, linkId : id ,name, isActive, targetUrl, expiresAt, password, domainId, slug});
 
-    await redisClient.del(`dashboard:${auth.id}`)
+    await deleteCache(`dashboard:${auth.id}`)
     
     res.status(200).json({
         success : true,

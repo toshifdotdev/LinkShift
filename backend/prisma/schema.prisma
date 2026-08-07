@@ -56,6 +56,7 @@ model Domain {
 
   host       String   @unique
   verified   Boolean  @default(false)
+  verifiedAt DateTime?
   isDefault  Boolean  @default(false)
 
   userId     String?

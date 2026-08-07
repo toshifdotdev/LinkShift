@@ -11,14 +11,14 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
     await prisma.domain.upsert({
         where : {
-            host : "linkshift.in"
+            host : "go.linkshift.in"
         },
         update : {
             verified: true,
             isDefault: true,
         },
         create : {
-            host : "linkshift.in",
+            host : "go.linkshift.in",
             verified : true,
             isDefault : true
         }

@@ -4,6 +4,7 @@ import qrRouter from './features/qr/qr.routes';
 import redirectRouter from './features/redirect/redirect.routes';
 import dashRouter from './features/dashboard/dashboard.routes'
 import linkRouter from './features/link/link.routes'
+import domainRouter from './features/domains/domain.routes'
 import { errorMiddleware } from './middleware/error.middleware';
 import { AppError } from './errors/AppError';
 
@@ -21,9 +22,17 @@ app.get("/health", (req, res) => {
 app.use("/api/v1/auth",authRouter);
 app.use("/api/v1/qr",qrRouter);
 app.use("/api/v1/links", linkRouter);
+
+app.get("/favicon.ico", (_, res) => {
+    res.sendStatus(204);
+});
+
 app.use("/r",redirectRouter);
 app.use("/api/v1/dashboard",dashRouter);
+app.use("/api/v1/domains", domainRouter);
 app.use("/uploads", express.static("uploads"));
+
+
 
 
 app.use((req : Request, res : Response, next : NextFunction) => {

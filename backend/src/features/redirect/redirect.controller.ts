@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { redirect as redirectService, unlockService } from "./redirect.service";
 import { unlockData } from "./redirect.validation";
+import { getHost } from "../../utils/getHost";
 
 type RedirectParams = {
     shortId : string;
@@ -13,15 +14,17 @@ export const redirect = asyncHandler(async(req : Request, res : Response) => {
     const params = validated.params as RedirectParams;
     const { shortId } = params;
 
-    const result = await redirectService(shortId, req);
+    const host = getHost(req.headers.host ?? "");
 
-    if (typeof result === "string") {
-         res.redirect(result);
-         return;
+    const result = await redirectService(shortId, host, req);
+
+    if(result.requiresPassword) {
+        res.status(401).json(result);
+        return;
     }
+    res.redirect(result.targetUrl);
 
-     res.status(401).json(result);
-     return;
+    
 })
 
 export const unlockController = asyncHandler(async(req : Request, res : Response) => {
@@ -32,7 +35,9 @@ export const unlockController = asyncHandler(async(req : Request, res : Response
 
     const { password } = body;
 
-    const targetUrl = await unlockService(shortId, password);
+    const host = getHost(req.headers.host ?? "");
+
+    const targetUrl = await unlockService(shortId, password, host, req);
 
     return res.redirect(targetUrl!);
 })

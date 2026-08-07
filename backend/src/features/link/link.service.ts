@@ -1,4 +1,3 @@
-import { nanoid } from 'nanoid';
 import * as bcrypt from 'bcrypt';
 import { prisma } from '../../config';
 import { Prisma } from '../../generated/prisma/client';
@@ -7,6 +6,8 @@ import { getLinkMapper } from './link.mapper';
 import { CreateLinkData, updateData } from './link.validation';
 import { queryData } from './link.query.validation';
 import { deleteCache } from '../../utils/cache';
+import { getAvailableShortId } from '../../utils/shortId';
+import { getValidatedDomain } from '../../utils/validate.domain';
 
 type CreateData = CreateLinkData&{
     userId : string,
@@ -27,50 +28,40 @@ type DeleteLinkData = {
 }
 
 export const createLink = async (data : CreateData) => {
-    const { userId, targetUrl, name, password  } = data;
+    const { userId, targetUrl, name, password, domainId, slug  } = data;
     const expiryDate  = data.expiresAt ? new Date(data.expiresAt): null
 
     let hashedPassword = null;
+
     if(password) {
         hashedPassword = await bcrypt.hash(password,10);
     }
 
+    const domain = await getValidatedDomain(domainId, userId);
+
+    const shortId = await getAvailableShortId(slug, domain.id);
+
     let createdLink = null;
-    let isUnique = false;
-    let attempts = 0;
-    const MAX_ATTEMPTS = 5;
 
-    while (!isUnique && attempts < MAX_ATTEMPTS) {
-        const shortId = nanoid(7); 
-        attempts++;
-
-        try {
-            createdLink = await prisma.link.create({
-                data: {
-                    userId,
-                    name,
-                    targetUrl,
-                    shortId,
-                    expiresAt : expiryDate,
-                    passwordHash : hashedPassword
-                }
-            });
-
-            isUnique = true; 
-
-        } catch (error) {
-            if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-                console.warn(`Collision detected for shortId. Retrying... (Attempt ${attempts})`);
-                continue; 
+    try {
+        createdLink = await prisma.link.create({
+            data: {
+                userId,
+                name,
+                targetUrl,
+                shortId,
+                expiresAt : expiryDate,
+                passwordHash : hashedPassword,
+                domainId : domain.id
             }
-            
-            throw new AppError("Database operation failed while creating link", 500);
-        }
-    }
+        });
+    }catch(error){
+        if(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'){
+            throw new AppError("Please try again.", 409);
 
-    if (!createdLink) {
-        throw new AppError("Failed to generate a unique short link. Please try again.", 409);
-    }
+        }
+        throw error;
+    } 
 
     await deleteCache(`dashboard:${userId}`)
 
@@ -200,6 +191,12 @@ export const updateLink = async(data : UpdateLinkData) => {
         }
     }
 
+    const domainId = data.domainId ?? existingLink.domainId;
+    const slug = data.slug ?? existingLink.shortId;
+
+    const domain = await getValidatedDomain(domainId, data.userId)
+    const shortId = await getAvailableShortId(slug, domain.id);
+
     const link = await prisma.link.update({
         where : {
             id : existingLink.id,
@@ -209,6 +206,8 @@ export const updateLink = async(data : UpdateLinkData) => {
             targetUrl : data.targetUrl,
             isActive : data.isActive,
             expiresAt : expiryDate,
+            domainId : domain.id,
+            shortId,
             passwordHash
         },
         include : {

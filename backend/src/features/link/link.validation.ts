@@ -17,6 +17,18 @@ export const createLinkSchema  = z.object({
     .max(50, { message: "Name cannot exceed 50 characters" })
     .optional(),
 
+  slug : z
+    .string()
+    .trim()
+    .min(3, "Slug must be at least 3 characters long")
+    .max(50, "Slug cannot exceed 50 characters")
+    .regex(
+      /^[a-zA-Z0-9_-]+$/, 
+      "Slug can only contain letters, numbers, hyphens (-), and underscores (_)"
+    ).optional(),
+
+  domainId : z.cuid2(),
+
   expiresAt: z.iso.datetime().optional(),
   password: passwordValidation
 });
@@ -35,10 +47,23 @@ export const updateLinkSchema = z.object({
   targetUrl : z.string(),
   isActive : z.boolean(),
   expiresAt: z.iso.datetime().nullable().optional(),
-  password: passwordValidation.nullable().optional()
+  password: passwordValidation.nullable().optional(),
+  slug : z
+    .string()
+    .trim()
+    .min(3, "Slug must be at least 3 characters long")
+    .max(50, "Slug cannot exceed 50 characters")
+    .regex(
+      /^[a-zA-Z0-9_-]+$/, 
+      "Slug can only contain letters, numbers, hyphens (-), and underscores (_)"
+    ).optional(),
+
+  domainId : z.cuid2().optional(),
+
 }).partial().refine((data) => data.name !== undefined || data.targetUrl !== undefined || 
                               data.isActive !== undefined || data.expiresAt !== undefined ||
-                              data.password !== undefined, {
+                              data.password !== undefined || data.slug !== undefined ||
+                              data.domainId !== undefined,{
   message: "At least one field must be provided.",
 });
 

@@ -20,6 +20,7 @@ type activityResponse = {
     country: string;
     scannedAt: Date;
 }
+
 export const analyticsMapper = (scan : ScanWithActivity) : activityResponse => {
          return {  
             linkName: scan.link.name ?? "Untitled Link", 
