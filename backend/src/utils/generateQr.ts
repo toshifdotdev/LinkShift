@@ -1,11 +1,10 @@
 import QRCodeCanvas from '@solana/qr-code-styling';
 import sharp from 'sharp';
-import fs from 'fs/promises';
-import path from 'path';
 import { AppError } from '../errors/AppError';
 import { JSDOM } from 'jsdom';
 import type { CornerSquareType } from "@solana/qr-code-styling";
 import { EyeBallStyle, EyeStyle, PatternStyle } from '../generated/prisma/enums';
+import { uploadBuffer } from './uploadBuffer';
 
 const fakeBrowser = new JSDOM('', { resources: "usable" });
 global.window = fakeBrowser.window as any;
@@ -31,8 +30,8 @@ type qrCodeData = {
     eyeStyle: EyeStyle; 
     eyeBallStyle: EyeBallStyle; 
     logoUrl?: string;
-    qrId: string;
     shortUrl: string;
+    userId : string;
 }
 
 export const generateQrImage = async (data: qrCodeData) => {
@@ -73,17 +72,14 @@ export const generateQrImage = async (data: qrCodeData) => {
     const arrayBuffer = await blob.arrayBuffer();
     const nodeBuffer = Buffer.from(arrayBuffer);
 
-   
-    const fileName = `${data.qrId}.png`;
-    const folderPath = path.join(process.cwd(), "uploads", "qr");
-    const imagePath = path.join(folderPath, fileName);
-    const imageUrl = `/uploads/qr/${fileName}`;
 
-    await fs.mkdir(folderPath, { recursive: true });
-
-    await sharp(Buffer.from(nodeBuffer))
+    const pngBuffer = await sharp(Buffer.from(nodeBuffer))
         .png()
-        .toFile(imagePath);
+        .toBuffer();
 
-    return imageUrl;
+    const uploaded = await uploadBuffer(pngBuffer,`qrs/${data.userId}/generated`)
+
+    return {
+        ...uploaded
+    };
 }

@@ -38,7 +38,9 @@ export type CreateLinkData = z.infer<typeof createLinkSchema>;
 export const linkIdSchema = z.object({
   id : z.cuid2()
 })
-
+export const qrIdSchema = z.object({
+  id : z.cuid2()
+})
 export type linkIdData = z.infer<typeof linkIdSchema>
 
 

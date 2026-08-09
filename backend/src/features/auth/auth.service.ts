@@ -6,6 +6,8 @@ import { buildAuthResponse } from '../../utils/buildAuthResponse';
 import { generateRandomToken, hashToken } from '../../utils/token';
 import { sendPasswordResetEmail } from '../../utils/email';
 import { issueTokens } from '../../utils/issueToken';
+import { uploadImage } from '../../utils/uploadImage';
+import { deleteImage } from '../../utils/deleteImage';
 
 export const registerUser = async (name : string, email : string, password : string) => {
     const existingUser = await prisma.user.findUnique({
@@ -93,7 +95,9 @@ export const googleLogin = async(profile : GoogleProfile) => {
                 googleId
             },
             data: {
-                avatarUrl,
+                avatarUrl : existingGoogleUser.avatarPublicId
+                ? existingGoogleUser.avatarUrl
+                : avatarUrl,
             }
         });
 
@@ -119,7 +123,9 @@ export const googleLogin = async(profile : GoogleProfile) => {
             },
             data : {
                 googleId,
-                avatarUrl,
+                avatarUrl : existingUser.avatarPublicId
+                ? existingUser.avatarUrl
+                : avatarUrl,
                 provider : 'GOOGLE',
             }
         })
@@ -277,3 +283,68 @@ export const profileService = async(id : string) => {
 
     return user;
 }
+
+export const uploadAvatarService = async(userId : string, file : Express.Multer.File) => {
+    const user = await prisma.user.findUnique({
+        where : {
+            id : userId
+        },
+        select : {
+            avatarPublicId : true
+        }
+    })
+
+    if(!user) {
+        throw new AppError("User not found", 404);
+    }
+
+    if(user.avatarPublicId) {
+        await deleteImage(user.avatarPublicId);
+    }
+
+    const uploaded = await uploadImage(file, "avatars");
+
+    const updatedAvatar = await prisma.user.update({
+                            where : {
+                                id : userId
+                            },
+                            data : {
+                                avatarUrl : uploaded.url,
+                                avatarPublicId : uploaded.publicId
+                            }
+                        })
+
+    return updatedAvatar.avatarUrl;
+}
+
+export const deleteAvatarService = async(userId : string) => {
+    const user = await prisma.user.findUnique({
+        where : {
+            id : userId
+        },
+        select: {
+            id: true,
+            avatarPublicId: true
+        }
+    })
+
+    if(!user) {
+        throw new AppError("User not found", 404);
+    }
+
+    if(user.avatarPublicId) {
+        await deleteImage(user.avatarPublicId);
+    }
+
+    await prisma.user.update({
+        where : {
+            id  : user.id
+        },
+        data : {
+            avatarUrl : null,
+            avatarPublicId : null
+        }
+    })
+    return ;
+}
+

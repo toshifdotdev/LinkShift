@@ -19,8 +19,19 @@ export const createQrSchema = z.object({
                     protocol: /^https?$/ 
                 })
                 .max(2048, { message: "URL must be 2048 characters or less" })
+            ).optional(),
+
+    logoPublicId: z
+            .string()
+            .trim()
+            .min(1, "Public ID cannot be empty")
+            .max(255, "Public ID is too long")
+            .regex(
+            /^[a-zA-Z0-9_/-]+$/, 
+            "Public ID can only contain letters, numbers, underscores, hyphens, and forward slashes"
             ).optional()
     })
+
 
 export type createLinkQr = {
     userId: string;

@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { loginUser, registerUser, forgotPasswordService, resetPasswordService, refreshService, logoutService, profileService } from "./auth.service";
+import { loginUser, registerUser, forgotPasswordService, resetPasswordService, refreshService, logoutService, profileService, uploadAvatarService, deleteAvatarService} from "./auth.service";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { forgotPasswordInput, LoginUserInput, RegisterUserInput, resetPasswordInput } from "./auth.validation";
 import { setRefreshCookie } from "../../utils/refreshCookie";
@@ -94,8 +94,6 @@ export const resetPasswordController = asyncHandler(async(req : Request, res : R
 export const refreshTokenController = asyncHandler(async(req : Request, res : Response) => {
     const { refreshToken } = req.cookies;
 
-    
-
     const tokens = await refreshService(refreshToken);
 
     setRefreshCookie(res, 
@@ -139,4 +137,39 @@ export const profileController = asyncHandler(async(req : Request, res : Respons
         data : userDetails
     })
 
+})
+
+
+export const uploadAvatarConntroller = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+    const auth = req.auth;
+
+    if(!auth) {
+        return next(new AppError("Unauthorized", 401));
+    }
+
+    if (!req.file) {
+        throw new AppError("Image is required.", 400);
+    }
+
+    const avatarUrl = await uploadAvatarService(auth.id, req.file);
+
+    res.status(200).json({ 
+        success : true,
+        avatarUrl
+    })
+})
+
+export const deleteAvatarController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+    const auth = req.auth;
+
+    if(!auth) {
+        return next(new AppError("Unauthorized", 401));
+    }
+
+    await deleteAvatarService(auth.id);
+
+    res.status(200).json({
+        success : true,
+        message : "Avatar removed successfully"
+    })
 })

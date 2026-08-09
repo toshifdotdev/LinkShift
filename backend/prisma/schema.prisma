@@ -39,6 +39,7 @@ model User {
 
   googleId               String?     @unique
   avatarUrl              String?
+  avatarPublicId         String?
   provider               AuthProvider
 
   refreshTokenHash String? 
@@ -99,11 +100,14 @@ model Qr {
   linkId           String
 
   imageUrl         String
+  imagePublicId    String
 
   foregroundColor  String?  @default("#000000")
   backgroundColor  String?  @default("#FFFFFF")
 
   logoUrl          String?
+  logoPublicId     String?
+  
 
   pattern          PatternStyle  @default(square)
   eyeStyle         EyeStyle      @default(square)

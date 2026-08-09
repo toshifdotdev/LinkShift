@@ -1,10 +1,12 @@
 import { Router } from "express";
-import { loginController, registerController, googleCallbackController, forgotPasswordController, resetPasswordController, refreshTokenController, logoutController, profileController} from "./auth.controller";
+import { loginController, registerController, googleCallbackController, forgotPasswordController, resetPasswordController, 
+         refreshTokenController, logoutController, profileController, uploadAvatarConntroller, deleteAvatarController} from "./auth.controller";
 import { validate } from "../../middleware/validate.middleware";
 import { forgotPasswordSchema, loginUserSchema, registerUserSchema, resetPasswordSchema } from "./auth.validation";
 import { forgotPasswordLimiter, loginLimiter, registerLimiter, resetPasswordLimiter } from "../../middleware/rateLimit.middleware";
 import passport from "passport";
 import { authMiddleWare } from "../../middleware/auth.middleware";
+import { imageUpload } from "../../middleware/upload.middleware";
 
 const router = Router();
 
@@ -32,4 +34,8 @@ router.post('/refresh', refreshTokenController);
 router.post('/logout', logoutController);
 
 router.get('/profile', authMiddleWare, profileController);
+
+router.patch('/avatar', authMiddleWare, imageUpload.single("image"), uploadAvatarConntroller);
+
+router.delete('/avatar', authMiddleWare, deleteAvatarController);
 export default router;

@@ -2,8 +2,9 @@ import { config, prisma } from "../../config"
 import { AppError } from "../../errors/AppError";
 import { createLinkQr } from './qr.validation';
 import { generateQrImage } from '../../utils/generateQr';
-
-
+import { uploadImage } from "../../utils/uploadImage";
+import { buildQrResponse } from "../../utils/buildQrResponse";
+import { deleteImage } from "../../utils/deleteImage";
 
 export const qrService = async(data : createLinkQr) => {
     const currentLink =  await prisma.link.findFirst({
@@ -26,6 +27,7 @@ export const qrService = async(data : createLinkQr) => {
     const eyeStyle = data.eyeStyle ?? "square";
     const eyeBallStyle = data.eyeBallStyle ?? "square";
     const logoUrl = data.logoUrl;
+    const logoPublicId = data.logoPublicId ?? null;
 
     const existingQr = await prisma.qr.findFirst({
         where : {
@@ -36,74 +38,39 @@ export const qrService = async(data : createLinkQr) => {
             pattern,
             eyeBallStyle,
             eyeStyle,
-            logoUrl 
+            logoUrl,
+            logoPublicId
         }
     })
 
     if(existingQr) {
-        return {
-            id : existingQr.id,
-            imageUrl : existingQr.imageUrl,
-            shortId: currentLink.shortId,
-            foregroundColor : existingQr.foregroundColor,
-            backgroundColor : existingQr.backgroundColor,
-            margin : existingQr.margin,
-            pattern : existingQr.pattern,
-            eyeBallStyle : existingQr.eyeBallStyle,
-            eyeStyle : existingQr.eyeStyle,
-            logoUrl : existingQr.logoUrl
-            
-        };
+        return buildQrResponse(existingQr, currentLink.shortId)
     }
-
-    const qr = await prisma.qr.create({
-        data : {
-            linkId : currentLink.id,
-            imageUrl : "PENDING"
-        }
-    })
 
     
     try {
-        const imageUrl = await generateQrImage({ margin, foregroundColor, backgroundColor, qrId: qr.id, shortUrl, logoUrl , pattern, eyeStyle, eyeBallStyle});
+        const qrImageData = await generateQrImage({ margin, foregroundColor, backgroundColor, userId : currentLink.userId,shortUrl, logoUrl , pattern, eyeStyle, eyeBallStyle});
         
-        const updatingQr = await prisma.qr.update({
-            where : {
-                id : qr.id
-            },
+        const qr = await prisma.qr.create({
             data: {
-                imageUrl,
+                imageUrl : qrImageData.url,
+                imagePublicId : qrImageData.publicId,
                 margin,
                 foregroundColor,
                 backgroundColor,
                 pattern,
                 eyeBallStyle,
                 eyeStyle,
-                logoUrl
+                logoUrl,
+                logoPublicId,
+                linkId : currentLink.id
             }
         })
 
-        return {
-            id : updatingQr.id,
-            imageUrl : updatingQr.imageUrl,
-            shortId: currentLink.shortId,
-            foregroundColor : updatingQr.foregroundColor,
-            backgroundColor : updatingQr.backgroundColor,
-            margin : updatingQr.margin,
-            pattern : updatingQr.pattern,
-            eyeBallStyle: updatingQr.eyeBallStyle,
-            eyeStyle: updatingQr.eyeStyle,
-            logoUrl : updatingQr.logoUrl
-        };
+        return buildQrResponse(qr, currentLink.shortId)
 
     } catch(err) {
-        await prisma.qr.delete({
-            where: {
-                id: qr.id
-            }
-        });
-
-        console.log(err);
+        console.error(err);
 
         throw new AppError(
             "Failed to generate QR",
@@ -129,10 +96,50 @@ export const qrDownloadService = async(userId : string, qrId : string) => {
     }
 
     return {
-        id : existingQr.id,
         imageUrl : existingQr.imageUrl,
-        foregroundColor : existingQr.foregroundColor,
-        backgroundColor : existingQr.backgroundColor,
-        margin : existingQr.margin
     }
+}
+
+export const uploadQrLogoService = async(userId : string, file : Express.Multer.File) => {
+    const user = await prisma.user.findUnique({
+        where : {
+            id : userId
+        },
+
+    })
+
+    if(!user) {
+        throw new AppError("User not found", 404);
+    }
+
+    const uploaded = await uploadImage(file, `qrs/${user.id}/logos`);
+
+    return {
+        logUrl : uploaded.url,
+        logoPublicId : uploaded.publicId
+    }
+}
+
+export const deleteQrService = async(userId : string, qrId : string) => {
+    const qr = await prisma.qr.findFirst({
+        where: {
+            id: qrId,
+            link: {
+                userId
+            }
+        }
+    });
+
+    if(!qr) {
+        throw new AppError("Qr not found", 404);
+    }
+
+    await deleteImage(qr.imagePublicId);
+
+    await prisma.qr.delete({
+        where : {
+            id : qr.id
+        }
+    })
+    return;
 }

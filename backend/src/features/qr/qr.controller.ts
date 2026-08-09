@@ -2,7 +2,7 @@ import path from "path";
 import { NextFunction, Request, Response } from "express";
 import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
-import { qrService, qrDownloadService} from "./qr.service";
+import { qrService, qrDownloadService, uploadQrLogoService, deleteQrService} from "./qr.service";
 import { createLinkQr } from "./qr.validation";
 
 type linkIdParams = {
@@ -12,6 +12,7 @@ type linkIdParams = {
 type qrIdParams = {
     id : string
 }
+
 
 export const qrController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const auth = req.auth;
@@ -31,7 +32,8 @@ export const qrController = asyncHandler(async(req : Request, res : Response, ne
         pattern, 
         eyeStyle, 
         eyeBallStyle, 
-        logoUrl
+        logoUrl,
+        logoPublicId
         } = body;
 
     const qr = await qrService({
@@ -43,7 +45,8 @@ export const qrController = asyncHandler(async(req : Request, res : Response, ne
         pattern,
         eyeStyle,
         eyeBallStyle,
-        logoUrl
+        logoUrl,
+        logoPublicId
     });
 
     res.status(200).json({
@@ -66,15 +69,47 @@ export const qrDownloader = asyncHandler(async(req : Request, res : Response, ne
 
     const data = await qrDownloadService(auth.id, id);
 
-    const filePath = path.join(process.cwd(), data.imageUrl);
+    const downloadUrl = data.imageUrl.replace("/upload/", "/upload/fl_attachment:LinkShift_QR/");
+    
+    return res.redirect(downloadUrl);
 
-    return res.download(filePath, `${id}.png`, (err) => {
-                    if (err && !res.headersSent) {
-                        return next(
-                            new AppError("QR image not found",404)
-                        );
-                    }
-            }) 
+})
 
-            // return things coming from data
+export const uploadQrLogoController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+    const auth = req.auth;
+
+     if(!auth) {
+        return next(new AppError("Unauthorized", 401));
+    }
+
+    if (!req.file) {
+        throw new AppError("Image is required.", 400);
+    }
+
+
+    const result = await uploadQrLogoService(auth.id, req.file);
+
+    res.status(200).json({
+        success : true,
+        ...result
+    })
+
+})
+
+export const deleteQrController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+    const auth = req.auth;
+    const validated = req.validated!;
+
+    if (!auth) {
+        return next(new AppError("Unauthorized", 401));
+    }
+
+    const { id } = validated.params as qrIdParams;;
+
+    await deleteQrService(auth.id, id);
+
+    res.status(200).json({
+        success: true,
+        message: "QR deleted successfully."
+    });
 })

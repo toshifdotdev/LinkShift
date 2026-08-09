@@ -11,6 +11,9 @@ export const config = {
     googleCallbackUrl : process.env.FRONTEND_URL,
     resendApiKey : process.env.RESEND_API_KEY,
     frontendUrl : process.env.FRONTEND_URL,
-    node_env : process.env.NODE_ENV
+    node_env : process.env.NODE_ENV,
+    cloudinaryCloudName : process.env.CLOUDINARY_CLOUD_NAME ,
+    cloudinaryApiKey : process.env.CLOUDINARY_API_KEY,
+    cloudinaryApiSecret : process.env.CLOUDINARY_API_SECRET
 }
 
