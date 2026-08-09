@@ -33,6 +33,8 @@ model User {
   id                     String      @id @default(cuid())
   name                   String?   
   email                  String      @unique
+  verified               Boolean     @default(false)
+
   passwordHash           String?
   resetPasswordToken     String?
   resetPasswordExpires   DateTime?
@@ -42,14 +44,29 @@ model User {
   avatarPublicId         String?
   provider               AuthProvider
 
-  refreshTokenHash String? 
-  refreshTokenExpiresAt DateTime?
+  refreshTokenHash       String? 
+  refreshTokenExpiresAt  DateTime?
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
   links      Link[]
 
   domains    Domain[]
+
+  emailVerification     EmailVerification?
+}
+
+model EmailVerification {
+  id            String   @id @default(cuid())
+
+  tokenHash     String   @unique
+
+  expiresAt     DateTime
+
+  userId        String @unique
+  user   User   @relation(fields:[userId], references:[id], onDelete:Cascade)
+
+  createdAt DateTime @default(now())
 }
 
 model Domain {

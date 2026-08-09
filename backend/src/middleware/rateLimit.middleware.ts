@@ -71,3 +71,17 @@ export const resetPasswordLimiter = rateLimit({
     message: 'Too many password reset attempts. Please try again after an hour.',
   },
 });
+
+// resendVerificationLimiter
+
+export const resendVerificationLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, 
+    limit: 3,
+    standardHeaders: true, 
+    legacyHeaders: false, 
+    message: {
+        success: false,
+        message: "Too many verification emails sent from this IP. Please try again after 15 minutes."
+    },
+});
+

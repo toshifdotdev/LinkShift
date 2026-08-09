@@ -72,7 +72,6 @@ export const generateQrImage = async (data: qrCodeData) => {
     const arrayBuffer = await blob.arrayBuffer();
     const nodeBuffer = Buffer.from(arrayBuffer);
 
-
     const pngBuffer = await sharp(Buffer.from(nodeBuffer))
         .png()
         .toBuffer();

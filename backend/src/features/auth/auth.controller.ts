@@ -1,27 +1,24 @@
 import { NextFunction, Request, Response } from "express";
-import { loginUser, registerUser, forgotPasswordService, resetPasswordService, refreshService, logoutService, profileService, uploadAvatarService, deleteAvatarService} from "./auth.service";
+import { loginUser, registerUser, forgotPasswordService, resetPasswordService, refreshService, logoutService, profileService, uploadAvatarService, deleteAvatarService, verifyEmailService, resendVerificationService} from "./auth.service";
 import { asyncHandler } from "../../utils/asyncHandler";
-import { forgotPasswordInput, LoginUserInput, RegisterUserInput, resetPasswordInput } from "./auth.validation";
+import { forgotPasswordInput, LoginUserInput, RegisterUserInput, resendVerificationInput, resetPasswordInput, verifyEmailInput } from "./auth.validation";
 import { setRefreshCookie } from "../../utils/refreshCookie";
 import { AuthResponse } from "./auth.types";
 import { AppError } from "../../errors/AppError";
+import { config } from "../../config";
 
 export const registerController = asyncHandler(async(req : Request, res : Response) => {
     const validated = req.validated!;
     const body = validated.body as RegisterUserInput;
     const {name, email, password} = body;
 
-    const authResponse = await registerUser(name, email, password);
+    const result = await registerUser(name, email, password);
 
-    setRefreshCookie(res, 
-        authResponse.refreshToken
-    )
 
     res.status(201).json({
-        message : "User successfully created.",
-        user : authResponse.user,
-        accessToken : authResponse.accessToken
-    })
+        success: true,
+        ...result
+    });
     
 })
 
@@ -30,6 +27,7 @@ export const loginController = asyncHandler(async(req : Request, res : Response)
     const validated = req.validated!;
     const body = validated.body as LoginUserInput;
     const { email, password } = body;
+    
 
     const authResponse = await loginUser(email,password);
 
@@ -172,4 +170,37 @@ export const deleteAvatarController = asyncHandler(async(req : Request, res : Re
         success : true,
         message : "Avatar removed successfully"
     })
+})
+
+export const verifyEmailController =  asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+
+    const validated = req.validated!;
+    
+    const { token } = validated.query as verifyEmailInput;
+
+    try {
+        await verifyEmailService(token);
+        return res.redirect(
+            `${config.frontendUrl}/login?verified=true`
+        );
+    } catch (err) {
+        return res.redirect(
+            `${config.frontendUrl}/verify-email?error=expired`
+        );
+    }
+})
+
+
+export const resendVerificationController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+    const validated = req.validated!;
+
+    const body = validated.body as resendVerificationInput;
+    const { email } = body;
+
+    await resendVerificationService(email);
+
+    res.status(200).json({
+        success: true,
+        message: "Verification email sent."
+    });
 })

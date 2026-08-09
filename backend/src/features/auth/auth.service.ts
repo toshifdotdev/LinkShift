@@ -4,7 +4,7 @@ import { AppError } from '../../errors/AppError';
 import { GoogleProfile, RefreshedTokens } from './auth.types';
 import { buildAuthResponse } from '../../utils/buildAuthResponse';
 import { generateRandomToken, hashToken } from '../../utils/token';
-import { sendPasswordResetEmail } from '../../utils/email';
+import { sendPasswordResetEmail, sendVerificationEmail } from '../../utils/email';
 import { issueTokens } from '../../utils/issueToken';
 import { uploadImage } from '../../utils/uploadImage';
 import { deleteImage } from '../../utils/deleteImage';
@@ -16,7 +16,7 @@ export const registerUser = async (name : string, email : string, password : str
         }
     })
     if(existingUser !== null) {
-        throw new AppError("Conflict",409);
+        throw new AppError("An account with this email already exists.", 409);
     }
 
     const hashPassword = await bcrypt.hash(password , 10); // saltRounds = 10
@@ -31,10 +31,15 @@ export const registerUser = async (name : string, email : string, password : str
                             provider : 'LOCAL',
                         }
                     })
+    
+    await sendVerificationEmail(createdUser.id,createdUser.email, createdUser.name);
 
-    const {accessToken, refreshToken} = await issueTokens(createdUser);
 
-    return buildAuthResponse(createdUser, accessToken, refreshToken);
+    return {
+        email: createdUser.email,
+        message:
+            "We've sent a verification email."
+    };
 }   
 
 
@@ -49,11 +54,16 @@ export const loginUser = async (email : string, password : string) => {
         throw new AppError("Email not exists", 404);
     }
 
+    if (!existingUser.verified) {
+        throw new AppError(
+            "Please verify your email before logging in.",
+            403
+        );
+    }
+
     if(!existingUser.passwordHash) {
         throw new AppError("Please login with Google.", 400);
     }
-
-    
 
     const comparePass = await bcrypt.compare(password, existingUser.passwordHash);
 
@@ -348,3 +358,77 @@ export const deleteAvatarService = async(userId : string) => {
     return ;
 }
 
+
+export const verifyEmailService = async(token : string) => {
+    
+    const hashedToken = hashToken(token);
+    const verification  = await prisma.emailVerification.findFirst({
+        where : {
+            tokenHash :  hashedToken
+        },
+        include :{
+            user : true
+        }
+    })
+
+    if(!verification) {
+        throw new AppError("Invalid Token", 400);
+    }
+
+    if(verification.expiresAt < new Date()) {
+        await prisma.emailVerification.delete({
+            where : {
+                tokenHash : hashedToken
+            }
+        })
+        throw new AppError("Verification link has expired. Please request a new verification email.", 410);
+    }
+
+
+    if(verification.user.verified) {
+        await prisma.emailVerification.delete({
+            where : {
+                userId : verification.user.id
+            }
+        })
+        return;
+    }
+
+    await prisma.user.update({
+        where :{
+            id : verification.user.id
+        }, 
+        data : {
+            verified : true
+        }
+    })
+
+    await prisma.emailVerification.delete({
+            where : {
+                userId : verification.user.id
+            }
+    })
+
+    return;
+}
+
+export const resendVerificationService = async(email : string) => {
+    const user = await prisma.user.findUnique({
+        where : {
+            email
+        }
+    })
+
+    if(!user) {
+        throw new AppError("User not found", 404)
+    }
+
+    if(user.verified) {
+        throw new AppError("Your email is already verified.", 409);
+    }
+
+    await sendVerificationEmail(user.id, user.email, user.name);
+
+    return;
+
+}

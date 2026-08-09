@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { loginController, registerController, googleCallbackController, forgotPasswordController, resetPasswordController, 
-         refreshTokenController, logoutController, profileController, uploadAvatarConntroller, deleteAvatarController} from "./auth.controller";
+         refreshTokenController, logoutController, profileController, uploadAvatarConntroller, deleteAvatarController,
+         verifyEmailController,
+         resendVerificationController} from "./auth.controller";
 import { validate } from "../../middleware/validate.middleware";
-import { forgotPasswordSchema, loginUserSchema, registerUserSchema, resetPasswordSchema } from "./auth.validation";
-import { forgotPasswordLimiter, loginLimiter, registerLimiter, resetPasswordLimiter } from "../../middleware/rateLimit.middleware";
+import { forgotPasswordSchema, loginUserSchema, registerUserSchema, resendVerificationSchema, resetPasswordSchema, verifyEmailSchema } from "./auth.validation";
+import { forgotPasswordLimiter, loginLimiter, registerLimiter, resendVerificationLimiter, resetPasswordLimiter } from "../../middleware/rateLimit.middleware";
 import passport from "passport";
 import { authMiddleWare } from "../../middleware/auth.middleware";
 import { imageUpload } from "../../middleware/upload.middleware";
@@ -38,4 +40,8 @@ router.get('/profile', authMiddleWare, profileController);
 router.patch('/avatar', authMiddleWare, imageUpload.single("image"), uploadAvatarConntroller);
 
 router.delete('/avatar', authMiddleWare, deleteAvatarController);
+
+router.get('/verify-email', validate(verifyEmailSchema, "query"), verifyEmailController);
+
+router.post('/resend-verification', validate(resendVerificationSchema, "body"), resendVerificationLimiter, resendVerificationController)
 export default router;
