@@ -29,6 +29,33 @@ enum AuthProvider {
     GOOGLE
 }
 
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentProvider {
+  STRIPE
+  RAZORPAY
+}
+
+enum PlanName {
+  FREE
+  STARTER
+  CREATOR
+  PRO
+  ENTERPRISE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
 model User {
   id                     String      @id @default(cuid())
   name                   String?   
@@ -54,6 +81,9 @@ model User {
   domains    Domain[]
 
   emailVerification     EmailVerification?
+
+  subscriptions  Subscription?
+  payments       Payment[]
 }
 
 model EmailVerification {
@@ -154,5 +184,85 @@ model Scan {
   link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
   @@index([linkId])
+}
+
+
+model Plan {
+  id            String   @id @default(cuid())
+
+  name          PlanName @unique
+
+  monthlyPrice  Int
+  yearlyPrice   Int?
+
+  maxLinks      Int?
+  maxQrPerMonth Int?
+  maxDomains    Int?
+  maxRedirectsPerMonth Int?
+
+  analyticsDays Int
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions Subscription[]
+}
+
+
+model Subscription {
+  id     String @id @default(cuid())
+
+  userId String @unique
+  user   User   @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+  planId String 
+  plan   Plan   @relation(fields: [planId],references: [id])
+
+  status SubscriptionStatus @default(ACTIVE)
+
+  provider PaymentProvider
+
+  providerSubscriptionId String?
+
+  providerCustomerId String?
+
+  startedAt DateTime @default(now())
+
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+
+  cancelAtPeriodEnd Boolean   @default(false)
+  cancelledAt       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments Payment[]
+}
+
+
+model Payment {
+  id String @id @default(cuid())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subscriptionId String?
+  subscription   Subscription? @relation(fields: [subscriptionId],references: [id],onDelete: SetNull)
+
+  provider PaymentProvider
+
+  providerPaymentId String
+
+  amount   Int
+  currency String
+
+  status PaymentStatus
+
+  createdAt DateTime @default(now())
+
+  @@unique([provider, providerPaymentId])
+  @@index([userId])
+  @@index([subscriptionId])
 }
 

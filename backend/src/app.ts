@@ -5,6 +5,7 @@ import redirectRouter from './features/redirect/redirect.routes';
 import dashRouter from './features/dashboard/dashboard.routes'
 import linkRouter from './features/link/link.routes'
 import domainRouter from './features/domains/domain.routes'
+import billingRouter from './features/billing/billing.routes';
 import { errorMiddleware } from './middleware/error.middleware';
 import { AppError } from './errors/AppError';
 
@@ -30,6 +31,7 @@ app.get("/favicon.ico", (_, res) => {
 app.use("/r",redirectRouter);
 app.use("/api/v1/dashboard",dashRouter);
 app.use("/api/v1/domains", domainRouter);
+app.use("/api/v1/billing", billingRouter)
 app.use("/uploads", express.static("uploads"));
 
 
