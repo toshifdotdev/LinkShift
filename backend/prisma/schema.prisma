@@ -30,10 +30,13 @@ enum AuthProvider {
 }
 
 enum SubscriptionStatus {
-  ACTIVE
-  PAST_DUE
-  CANCELLED
-  EXPIRED
+    ACTIVE
+    PENDING
+    HALTED
+    PAUSED
+    CANCELLED
+    COMPLETED
+    EXPIRED
 }
 
 enum PaymentProvider {
@@ -54,6 +57,11 @@ enum PaymentStatus {
   SUCCESS
   FAILED
   REFUNDED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
 }
 
 model User {
@@ -82,7 +90,7 @@ model User {
 
   emailVerification     EmailVerification?
 
-  subscriptions  Subscription?
+  subscriptions  Subscription[]
   payments       Payment[]
 }
 
@@ -195,6 +203,9 @@ model Plan {
   monthlyPrice  Int
   yearlyPrice   Int?
 
+  razorpayMonthlyPlanId String?
+  razorpayYearlyPlanId  String?
+  
   maxLinks      Int?
   maxQrPerMonth Int?
   maxDomains    Int?
@@ -204,15 +215,17 @@ model Plan {
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  payments      Payment[]
 
   subscriptions Subscription[]
+  pendingSubscriptions Subscription[] @relation("PendingSubscriptionPlan")
 }
 
 
 model Subscription {
   id     String @id @default(cuid())
 
-  userId String @unique
+  userId String 
   user   User   @relation(fields: [userId],references: [id],onDelete: Cascade)
 
   planId String 
@@ -222,9 +235,15 @@ model Subscription {
 
   provider PaymentProvider
 
-  providerSubscriptionId String?
+  billingCycle BillingCycle
 
+  providerSubscriptionId String?
   providerCustomerId String?
+
+  pendingPlanId String?
+  pendingPlan   Plan? @relation("PendingSubscriptionPlan", fields: [pendingPlanId], references: [id])
+
+  changeScheduledAt DateTime?
 
   startedAt DateTime @default(now())
 
@@ -238,11 +257,17 @@ model Subscription {
   updatedAt DateTime @updatedAt
 
   payments Payment[]
+
+  @@unique([provider, providerSubscriptionId])
+  @@index([userId])
 }
 
 
 model Payment {
   id String @id @default(cuid())
+  
+  planId String
+  plan   Plan  @relation(fields: [planId], references: [id])
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -252,7 +277,10 @@ model Payment {
 
   provider PaymentProvider
 
-  providerPaymentId String
+  providerOrderId     String
+  providerPaymentId   String?
+  providerSignature   String?
+  billingCycle        BillingCycle
 
   amount   Int
   currency String
@@ -261,6 +289,7 @@ model Payment {
 
   createdAt DateTime @default(now())
 
+  @@unique([provider, providerOrderId])
   @@unique([provider, providerPaymentId])
   @@index([userId])
   @@index([subscriptionId])

@@ -1,10 +1,17 @@
 import { Router } from 'express';
 import { validate } from '../../middleware/validate.middleware';
 import { authMiddleWare } from '../../middleware/auth.middleware';
-import { checkoutSchema } from './billing.validation';
-import { checkoutController } from './billing.controller';
+import { cancelSubscriptionSchema, changePlanSchema, checkoutSchema, paymentVerificationSchema, subscriptionSchema, subscriptionVerificationSchema} from './billing.validation';
+import { cancelSubscriptionController, changePlanController, checkoutController, getPlansController, subscriptionController, verifyPaymentController, verifySubscriptionController } from './billing.controller';
 const router = Router();
 
 router.post('/checkout', authMiddleWare, validate(checkoutSchema, "body"), checkoutController);
+router.get('/plans', getPlansController);
+router.post('/verify', authMiddleWare, validate(paymentVerificationSchema, "body"), verifyPaymentController);
+router.post('/subscribe', authMiddleWare, validate(subscriptionSchema, "body"), subscriptionController);
+router.post('/subscribe/verify', authMiddleWare, validate(subscriptionVerificationSchema, "body"), verifySubscriptionController);
 
-export default router;
+router.post('/cancel', authMiddleWare, validate(cancelSubscriptionSchema, "body"), cancelSubscriptionController);
+
+router.post('/change-plan', authMiddleWare, validate(changePlanSchema, "body"), changePlanController)
+export default router; 

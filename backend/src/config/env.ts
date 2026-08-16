@@ -16,5 +16,6 @@ export const config = {
     cloudinaryApiKey : process.env.CLOUDINARY_API_KEY,
     cloudinaryApiSecret : process.env.CLOUDINARY_API_SECRET,
     razorpayKeyId : process.env.RAZORPAY_KEY_ID,
-    razorpayKeySecret : process.env.RAZORPAY_KEY_SECRET
+    razorpayKeySecret : process.env.RAZORPAY_KEY_SECRET,
+    razorpayWebhookSecret : process.env.RAZORPAY_WEBHOOK_SECRET
 }
