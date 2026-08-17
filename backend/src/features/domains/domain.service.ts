@@ -1,6 +1,7 @@
 import { prisma } from "../../config";
 import { AppError } from "../../errors/AppError";
 import { verifyCname } from "../../utils/dns";
+import { checkDomainLimit } from "../billing/billing.service";
 
 type DomainResponse = {
     id: string;
@@ -32,6 +33,8 @@ export const getDomains = async(userId : string) : Promise<DomainResponse[]> => 
 
 
 export const addDomain = async(userId : string, hostName : string) => {
+    await checkDomainLimit(userId);
+
     const domain = await prisma.domain.findUnique({
         where :{ 
             host : hostName,

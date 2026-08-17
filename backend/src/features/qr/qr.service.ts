@@ -5,14 +5,19 @@ import { generateQrImage } from '../../utils/generateQr';
 import { uploadImage } from "../../utils/uploadImage";
 import { buildQrResponse } from "../../utils/buildQrResponse";
 import { deleteImage } from "../../utils/deleteImage";
+import { checkQrLimit } from "../billing/billing.service";
 
 export const qrService = async(data : createLinkQr) => {
+
+    await checkQrLimit(data.userId);
+    
     const currentLink =  await prisma.link.findFirst({
         where : {
             id : data.linkId,
             userId : data.userId
         }
     })
+    
 
     if(!currentLink) {
         throw new AppError("Link not found",404);

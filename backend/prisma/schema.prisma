@@ -40,6 +40,7 @@ enum SubscriptionStatus {
 }
 
 enum PaymentProvider {
+  NONE
   STRIPE
   RAZORPAY
 }
@@ -92,6 +93,7 @@ model User {
 
   subscriptions  Subscription[]
   payments       Payment[]
+  linkChanges    LinkChange[]
 }
 
 model EmailVerification {
@@ -139,6 +141,7 @@ model Link {
   user   User   @relation(fields: [userId], references: [id])
   qr     Qr[]
   scans  Scan[]
+  linkChanges    LinkChange[]
 
   domainId String
 
@@ -210,6 +213,11 @@ model Plan {
   maxQrPerMonth Int?
   maxDomains    Int?
   maxRedirectsPerMonth Int?
+  maxRedirectsWithGracePerMonth Int?
+
+  maxCustomSlugsPerMonth Int?
+
+  maxDestinationChangesPerMonth Int?
 
   analyticsDays Int
 
@@ -233,7 +241,7 @@ model Subscription {
 
   status SubscriptionStatus @default(ACTIVE)
 
-  provider PaymentProvider
+  provider PaymentProvider  @default(NONE)
 
   billingCycle BillingCycle
 
@@ -293,5 +301,28 @@ model Payment {
   @@unique([provider, providerPaymentId])
   @@index([userId])
   @@index([subscriptionId])
+}
+
+
+enum LinkChangeType {
+    DESTINATION
+    CUSTOM_SLUG
+}
+
+model LinkChange {
+    id        String         @id @default(cuid())
+
+    userId    String
+    linkId    String
+
+    type      LinkChangeType
+
+    createdAt DateTime       @default(now())
+
+    user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    link       Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+
+    @@index([userId, type, createdAt])
+    @@index([linkId])
 }
 

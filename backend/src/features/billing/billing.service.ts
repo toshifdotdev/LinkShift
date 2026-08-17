@@ -486,7 +486,10 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
                 },
                 data: {
                     status: "CANCELLED",
-                    cancelledAt: new Date(),
+                    cancelAtPeriodEnd: false,
+                    cancelledAt: subscription.ended_at
+                                ? new Date(subscription.ended_at * 1000)
+                                : new Date(),
 
                     currentPeriodEnd:
                         subscription.current_end
@@ -1003,3 +1006,408 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         status: razorpaySubscription.status,
     };
 }
+
+
+export const getSubscriptionService = async (userId: string) => {
+    const subscription = await prisma.subscription.findFirst({
+        where: {
+            userId,
+            status: {
+                in: [
+                    "ACTIVE",
+                    "PENDING",
+                    "HALTED",
+                    "PAUSED",
+                ],
+            },
+        },
+        include: {
+            plan: true,
+            pendingPlan: true,
+        },
+    });
+
+    if (!subscription) {
+        return null;
+    }
+
+    return subscription;
+};
+
+export const getActiveSubscription = async (userId: string) => {
+    const subscription = await prisma.subscription.findFirst({
+        where: {
+            userId,
+            status: "ACTIVE",
+        },
+        include: {
+            plan: true,
+            pendingPlan: true,
+        },
+    });
+
+    return subscription;
+};
+
+export const getUserPlan = async (userId: string) => {
+    const subscription = await getActiveSubscription(userId);
+
+    if (subscription) {
+        return subscription.plan;
+    }
+
+    const freePlan = await prisma.plan.findUnique({
+        where: {
+            name: "FREE",
+        },
+    });
+
+    if (!freePlan) {
+        throw new AppError("Free plan is not configured", 500);
+    }
+
+    return freePlan;
+};
+
+type PlanLimitType =
+    | "LINKS"
+    | "QR_CODES"
+    | "DOMAINS"
+    | "REDIRECTS"
+    | "DESTINATION_CHANGES"
+    | "CUSTOM_SLUGS";
+
+
+export const checkPlanLimit = async (userId: string,type: PlanLimitType) => {
+    const plan = await getUserPlan(userId);
+
+    if (!plan) {
+        throw new AppError("Active subscription required", 403);
+    }
+
+    switch (type) {
+
+        case "LINKS":
+            return {
+                allowed: true,
+                limit: plan.maxLinks,
+            };
+
+        case "QR_CODES":
+            return {
+                allowed: true,
+                limit: plan.maxQrPerMonth,
+            };
+
+        case "DOMAINS":
+            return {
+                allowed: true,
+                limit: plan.maxDomains,
+            };
+
+        case "REDIRECTS":
+            return {
+                allowed: true,
+                limit: plan.maxRedirectsPerMonth,
+            };
+
+        case "CUSTOM_SLUGS":
+            return {
+                allowed: true,
+                limit: plan.maxCustomSlugsPerMonth,
+            };
+
+        case "DESTINATION_CHANGES":
+            return {
+                allowed: true,
+                limit: plan.maxDestinationChangesPerMonth,
+            };
+
+        default:
+            throw new AppError("Unknown plan limit type", 500);
+    }
+};
+
+export const checkLinkLimit = async (userId: string) => {
+    const plan = await getUserPlan(userId);
+
+    if (!plan) {
+        throw new AppError("Active subscription required", 403);
+    }
+
+    const linkCount = await prisma.link.count({
+        where: {
+            userId,
+        },
+    });
+
+    if (plan.maxLinks !== null && linkCount >= plan.maxLinks) {
+        throw new AppError("You have reached the maximum number of links allowed by your plan", 403);
+    }
+
+    return {
+        allowed: true,
+        used: linkCount,
+        limit: plan.maxLinks,
+    };
+};
+
+export const checkQrLimit = async (userId: string) => {
+    const plan = await getUserPlan(userId);
+
+    if (!plan) {
+        throw new AppError("Active subscription required", 403);
+    }
+
+    const now = new Date();
+
+    const startOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+    );
+
+    const startOfNextMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        1
+    );
+
+    const qrCount = await prisma.qr.count({
+        where: {
+            link: {
+                userId,
+            },
+            createdAt: {
+                gte: startOfMonth,
+                lt: startOfNextMonth,
+            },
+        },
+    });
+
+    if (plan.maxQrPerMonth !== null && qrCount >= plan.maxQrPerMonth) {
+        throw new AppError("You have reached the maximum number of QR codes allowed for this month", 403);
+    }
+
+    return {
+        allowed: true,
+        used: qrCount,
+        limit: plan.maxQrPerMonth,
+    };
+};
+
+export const checkDomainLimit = async (userId: string) => {
+    const plan = await getUserPlan(userId);
+
+    if (!plan) {
+        throw new AppError("Active subscription required", 403);
+    }
+
+    const domainCount = await prisma.domain.count({
+        where: {
+            userId,
+        },
+    });
+
+    if (plan.maxDomains !== null && domainCount >= plan.maxDomains) {
+        throw new AppError("You have reached the maximum number of custom domains allowed by your plan", 403);
+    }
+
+    return {
+        allowed: true,
+        used: domainCount,
+        limit: plan.maxDomains,
+    };
+};
+
+
+export const checkRedirectLimit = async (userId: string) => {
+    const plan = await getUserPlan(userId);
+
+    if (!plan) {
+        throw new AppError("No active plan found", 403);
+    }
+
+    if (plan.maxRedirectsPerMonth === null) {
+        return {
+            allowed: true,
+            warning: false,
+            used: 0,
+            limit: null,
+            graceLimit: null,
+        };
+    }
+
+    const now = new Date();
+
+    const startOfMonth = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+    );
+
+    const startOfNextMonth = new Date(
+        now.getFullYear(),
+        now.getMonth() + 1,
+        1
+    );
+
+    const redirectCount = await prisma.scan.count({
+        where: {
+            link: {
+                userId,
+            },
+            scannedAt: {
+                gte: startOfMonth,
+                lt: startOfNextMonth,
+            },
+        },
+    });
+
+    const normalLimit = plan.maxRedirectsPerMonth;
+    const graceLimit = plan.maxRedirectsWithGracePerMonth;
+
+    if (redirectCount < normalLimit) {
+        return {
+            allowed: true,
+            warning: false,
+            used: redirectCount,
+            limit: normalLimit,
+            graceLimit,
+        };
+    }
+    
+    if (graceLimit !== null && redirectCount < graceLimit) {
+        return {
+            allowed: true,
+            warning: true,
+            used: redirectCount,
+            limit: normalLimit,
+            graceLimit,
+        };
+    }
+
+    throw new AppError(
+        "You have exceeded your monthly redirect allowance. Please upgrade your plan.",
+        429
+    );
+};
+
+const getMonthStart = () => {
+    const now = new Date();
+
+    return new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        1
+    );
+};
+
+const PRO_DESTINATION_CHANGE_ABUSE_LIMIT = 5000;
+
+export const checkDestinationLimit = async (userId: string) => {
+    const subscription = await prisma.subscription.findFirst({
+        where: {
+            userId,
+            status: "ACTIVE",
+        },
+        include: {
+            plan: true,
+        },
+    });
+
+    if (!subscription) {
+        throw new AppError("No active subscription found", 403);
+    }
+
+    const limit = subscription.plan.maxDestinationChangesPerMonth;
+
+    // Pro / unlimited
+    if (limit === null) {
+        if (subscription.plan.name !== "PRO") {
+            return;
+        }
+
+        const monthStart = getMonthStart();
+
+        const used = await prisma.linkChange.count({
+            where: {
+                userId,
+                type: "DESTINATION",
+                createdAt: {
+                    gte: monthStart,
+                },
+            },
+        });
+
+        if (used >= PRO_DESTINATION_CHANGE_ABUSE_LIMIT) {
+            throw new AppError(
+                "You have exceeded the monthly destination change limit. Please contact support if you need a higher limit.",
+                403
+            );
+        }
+
+        return;
+}
+
+    const monthStart = getMonthStart();
+
+    const used = await prisma.linkChange.count({
+        where: {
+            userId,
+            type: "DESTINATION",
+            createdAt: {
+                gte: monthStart,
+            },
+        },
+    });
+
+    if (used >= limit) {
+        throw new AppError(
+            `You have reached your monthly destination change limit of ${limit}.`,
+            403
+        );
+    }
+};
+
+export const checkCustomSlugLimit = async (userId: string) => {
+    const subscription = await prisma.subscription.findFirst({
+        where: {
+            userId,
+            status: "ACTIVE",
+        },
+        include: {
+            plan: true,
+        },
+    });
+
+    if (!subscription) {
+        throw new AppError("No active subscription found", 403);
+    }
+
+    const limit = subscription.plan.maxCustomSlugsPerMonth;
+
+    // Unlimited
+    if (limit === null) {
+        return;
+    }
+
+    const monthStart = getMonthStart();
+
+    const used = await prisma.linkChange.count({
+        where: {
+            userId,
+            type: "CUSTOM_SLUG",
+            createdAt: {
+                gte: monthStart,
+            },
+        },
+    });
+
+    if (used >= limit) {
+        throw new AppError(
+            `You have reached your monthly custom slug limit of ${limit}.`,
+            403
+        );
+    }
+};

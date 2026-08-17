@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { AppError } from "../../errors/AppError"
 import { getCache, setCache } from "../../utils/cache";
 import { completeTargetUrl } from "../../utils/completeRedirect";
+import { checkRedirectLimit } from "../billing/billing.service";
 
 export type CachedLink = {
     id: string;
@@ -30,6 +31,7 @@ type RedirectResult =
 export const redirect = async(shortId : string, host : string, req : Request) : Promise<RedirectResult> => {
     const cacheKey = `link:${host}:${shortId}`;
 
+
     const cachedLink = await getCache(cacheKey);
 
     const domain = await prisma.domain.findUnique({
@@ -37,7 +39,6 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
                 host
             }
         })
-
 
     if(!domain) {
         throw new AppError("Domain Not Found", 400);
@@ -92,6 +93,10 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
     if (!targetUrl) {
         throw new AppError("Link not found", 404);
     }
+    
+
+    // to implemetnt link-unavailable frontend page if quota exceeds 
+    await checkRedirectLimit(targetUrl.userId);
 
     if(targetUrl.passwordHash) {
         return {

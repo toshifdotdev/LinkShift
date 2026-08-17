@@ -8,6 +8,7 @@ import { queryData } from './link.query.validation';
 import { deleteCache } from '../../utils/cache';
 import { getAvailableShortId } from '../../utils/shortId';
 import { getValidatedDomain } from '../../utils/validate.domain';
+import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit } from '../billing/billing.service';
 
 type CreateData = CreateLinkData&{
     userId : string,
@@ -29,6 +30,12 @@ type DeleteLinkData = {
 
 export const createLink = async (data : CreateData) => {
     const { userId, targetUrl, name, password, domainId, slug  } = data;
+
+    await checkLinkLimit(userId);
+    if (slug) {
+        await checkCustomSlugLimit(userId);
+    }
+
     const expiryDate  = data.expiresAt ? new Date(data.expiresAt): null
 
     let hashedPassword = null;
@@ -55,10 +62,19 @@ export const createLink = async (data : CreateData) => {
                 domainId : domain.id
             }
         });
+
+        if (slug) {
+            await prisma.linkChange.create({
+                data: {
+                    userId,
+                    linkId: createdLink.id,
+                    type: "CUSTOM_SLUG",
+                },
+            });
+        }
     }catch(error){
         if(error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002'){
             throw new AppError("Please try again.", 409);
-
         }
         throw error;
     } 
@@ -177,6 +193,23 @@ export const updateLink = async(data : UpdateLinkData) => {
         throw new AppError("Link Not Found", 404);
     }
 
+    const destinationChanged =
+        data.targetUrl !== undefined &&
+        data.targetUrl !== existingLink.targetUrl;
+
+    const slugChanged =
+        data.slug !== undefined &&
+        data.slug !== existingLink.shortId;
+    
+    if (destinationChanged) {
+        await checkDestinationLimit(data.userId);
+    }
+
+    if (slugChanged) {
+        await checkCustomSlugLimit(data.userId);
+    }
+
+    
     const expiryDate  = data.expiresAt
     ? new Date(data.expiresAt)
     : null;
@@ -216,6 +249,28 @@ export const updateLink = async(data : UpdateLinkData) => {
             }
         }
     })
+
+    if (destinationChanged || slugChanged) {
+        await prisma.linkChange.createMany({
+            data: [
+                ...(destinationChanged
+                    ? [{
+                        userId: data.userId,
+                        linkId: existingLink.id,
+                        type: "DESTINATION" as const,
+                    }]
+                    : []),
+
+                ...(slugChanged
+                    ? [{
+                        userId: data.userId,
+                        linkId: existingLink.id,
+                        type: "CUSTOM_SLUG" as const,
+                    }]
+                    : []),
+            ],
+        });
+    }
 
     await deleteCache(`link:${link.shortId}`);
     await deleteCache(`dashboard:${link.userId}`);
