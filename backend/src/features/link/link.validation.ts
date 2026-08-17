@@ -30,8 +30,49 @@ export const createLinkSchema  = z.object({
   domainId : z.cuid2(),
 
   expiresAt: z.iso.datetime().optional(),
-  password: passwordValidation
+  password: passwordValidation.optional(),
+
+  utmSource: z.string().trim().max(100).optional(),
+  utmMedium: z.string().trim().max(100).optional(),
+  utmCampaign: z.string().trim().max(150).optional(),
+  utmTerm: z.string().trim().max(100).optional(),
+  utmContent: z.string().trim().max(150).optional(),
+  }).superRefine((data, ctx) => {
+
+      const hasAnyUtm =
+          data.utmSource !== undefined ||
+          data.utmMedium !== undefined ||
+          data.utmCampaign !== undefined ||
+          data.utmTerm !== undefined ||
+          data.utmContent !== undefined;
+
+      if (hasAnyUtm) {
+          if (!data.utmSource) {
+              ctx.addIssue({
+                  code: "custom",
+                  path: ["utmSource"],
+                  message: "UTM source is required when using UTM parameters",
+              });
+          }
+
+          if (!data.utmMedium) {
+              ctx.addIssue({
+                  code: "custom",
+                  path: ["utmMedium"],
+                  message: "UTM medium is required when using UTM parameters",
+              });
+          }
+
+          if (!data.utmCampaign) {
+              ctx.addIssue({
+                  code: "custom",
+                  path: ["utmCampaign"],
+                  message: "UTM campaign is required when using UTM parameters",
+              });
+          }
+      }
 });
+
 
 export type CreateLinkData = z.infer<typeof createLinkSchema>;
 
@@ -62,10 +103,18 @@ export const updateLinkSchema = z.object({
 
   domainId : z.cuid2().optional(),
 
+  utmSource: z.string().trim().max(100).nullable().optional(),
+  utmMedium: z.string().trim().max(100).nullable().optional(),
+  utmCampaign: z.string().trim().max(150).nullable().optional(),
+  utmTerm: z.string().trim().max(100).nullable().optional(),
+  utmContent: z.string().trim().max(150).nullable().optional(),
+
 }).partial().refine((data) => data.name !== undefined || data.targetUrl !== undefined || 
                               data.isActive !== undefined || data.expiresAt !== undefined ||
                               data.password !== undefined || data.slug !== undefined ||
-                              data.domainId !== undefined,{
+                              data.domainId !== undefined ||  data.utmSource !== undefined ||
+                              data.utmMedium !== undefined || data.utmCampaign !== undefined ||
+                              data.utmTerm !== undefined || data.utmContent !== undefined,{
   message: "At least one field must be provided.",
 });
 

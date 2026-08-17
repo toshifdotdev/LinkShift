@@ -14,7 +14,7 @@ type linkIdParams = {
 export const createLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const validated = req.validated!;
 
-    const { targetUrl, name, expiresAt, password, slug, domainId} = validated.body as CreateLinkData;
+    const { targetUrl, name, expiresAt, password, slug, domainId, utmSource, utmMedium, utmCampaign, utmTerm, utmContent} = validated.body as CreateLinkData;
 
     const auth = req.auth;
 
@@ -29,7 +29,12 @@ export const createLink = asyncHandler(async(req : Request, res : Response, next
                                 expiresAt,
                                 password,
                                 slug,
-                                domainId
+                                domainId,
+                                utmSource,
+                                utmMedium, 
+                                utmCampaign, 
+                                utmTerm, 
+                                utmContent
                             });
     
     await deleteCache(`dashboard:${auth.id}`);
@@ -91,10 +96,26 @@ export const updateLink = asyncHandler(async(req : Request, res : Response, next
     if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
-    const { name, isActive, targetUrl, expiresAt, password, domainId, slug } = body;
+    const { name, isActive, targetUrl, expiresAt, password, domainId, slug, utmSource, utmMedium, utmCampaign, utmTerm, utmContent } = body;
     const { id } = params;
 
-    const updatedLink = await updateLinkService({userId : auth.id, linkId : id ,name, isActive, targetUrl, expiresAt, password, domainId, slug});
+    const updatedLink = await updateLinkService(
+        {
+        userId : auth.id, 
+        linkId : id ,
+        name, 
+        isActive, 
+        targetUrl, 
+        expiresAt, 
+        password, 
+        domainId, 
+        slug, 
+        utmSource, 
+        utmMedium, 
+        utmCampaign, 
+        utmTerm, 
+        utmContent
+        });
 
     await deleteCache(`dashboard:${auth.id}`)
     

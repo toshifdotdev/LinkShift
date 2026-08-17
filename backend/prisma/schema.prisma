@@ -138,6 +138,12 @@ model Link {
   updatedAt  DateTime @updatedAt
   expiresAt  DateTime?
 
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+
   user   User   @relation(fields: [userId], references: [id])
   qr     Qr[]
   scans  Scan[]

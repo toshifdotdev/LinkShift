@@ -1411,3 +1411,18 @@ export const checkCustomSlugLimit = async (userId: string) => {
         );
     }
 };
+
+export const checkUtmAccess = async (userId: string) => {
+    const plan = await getUserPlan(userId);
+
+    if (!plan) {
+        throw new AppError("Active subscription required", 403);
+    }
+
+    if (plan.name !== "CREATOR" && plan.name !== "PRO") {
+        throw new AppError(
+            "UTM Campaign Builder is available on Creator and Pro plans",
+            403
+        );
+    }
+};
