@@ -14,6 +14,11 @@ export type CachedLink = {
     domainId: string;
     expiresAt: Date | null;
     passwordHash: string | null;
+    utmSource: string | null,
+    utmMedium: string | null,
+    utmCampaign: string | null,
+    utmTerm: string | null,
+    utmContent: string | null
 };
 
 type RedirectResult =
@@ -84,7 +89,12 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
             targetUrl: targetUrl.targetUrl,
             isActive: targetUrl.isActive,
             expiresAt: targetUrl.expiresAt,
-            passwordHash : targetUrl.passwordHash 
+            passwordHash : targetUrl.passwordHash,
+            utmSource: targetUrl.utmSource,
+            utmMedium: targetUrl.utmMedium,
+            utmCampaign: targetUrl.utmCampaign,
+            utmTerm: targetUrl.utmTerm,
+            utmContent: targetUrl.utmContent
         };
 
         await setCache(cacheKey, cacheData, 86400);

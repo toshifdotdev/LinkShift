@@ -1426,3 +1426,56 @@ export const checkUtmAccess = async (userId: string) => {
         );
     }
 };
+
+
+const ANALYTICS_PERIODS = [
+    7,
+    30,
+    60,
+    90,
+    180,
+    365,
+    730,
+    1095,
+];
+
+export const getAnalyticsCutoff = async (userId: string, requestedDays ?: number) => {
+    const plan = await getUserPlan(userId);
+
+    if (!plan) {
+        throw new AppError("Active subscription required", 403);
+    }
+
+     if (requestedDays !== undefined && !ANALYTICS_PERIODS.includes(requestedDays)) {
+        throw new AppError("Invalid analytics period.", 400);
+    }
+
+    const days = requestedDays ?? plan.analyticsDays;
+
+     if (days > plan.analyticsDays) {
+        throw new AppError(
+            `Your plan allows analytics for the last ${plan.analyticsDays} days.`,
+            403
+        );
+    }
+
+    const cutoff = new Date();
+
+    cutoff.setDate(
+        cutoff.getDate() - days
+    );
+
+    return cutoff;
+};
+
+export const checkCsvExportAccess = async (userId: string) => {
+    const plan = await getUserPlan(userId);
+
+    if (!plan) {
+        throw new AppError("Active subscription required", 403);
+    }
+
+    if (plan.name !== "CREATOR" && plan.name !== "PRO") {
+        throw new AppError("CSV Analytics Export is available on Creator and Pro plans", 403);
+    }
+};

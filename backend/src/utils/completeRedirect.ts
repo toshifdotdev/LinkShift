@@ -28,7 +28,13 @@ export const completeTargetUrl = async(targetUrl : CachedLink, req : Request) =>
                 city : location?.city ?? null,
                 country : location?.country ?? null,
                 ipAddress : ipAddress ?? null,
-                linkId : targetUrl.id
+                linkId : targetUrl.id,
+                utmSource: targetUrl.utmSource,
+                utmMedium: targetUrl.utmMedium,
+                utmCampaign: targetUrl.utmCampaign,
+                utmTerm: targetUrl.utmTerm,
+                utmContent: targetUrl.utmContent
+
             }
         })
     }catch(err) {

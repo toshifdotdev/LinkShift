@@ -196,11 +196,19 @@ model Scan {
   country    String?
   city       String?
   ipAddress  String?
+ 
+  utmSource   String?
+  utmMedium   String?
+  utmCampaign String?
+  utmTerm     String?
+  utmContent  String?
+
   scannedAt  DateTime @default(now())
 
   link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
   @@index([linkId])
+  @@index([linkId, scannedAt])
 }
 
 

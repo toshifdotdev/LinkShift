@@ -119,3 +119,18 @@ export const updateLinkSchema = z.object({
 });
 
 export type updateData = z.infer<typeof updateLinkSchema>
+
+
+ 
+const ANALYTICS_DAYS = [7, 30, 60, 90, 180, 365, 730, 1095] as const;
+
+export const queryDaysSchema = z.object({
+    days: z.coerce
+        .number()
+        .refine(
+            (val) => ANALYTICS_DAYS.includes(val as any), 
+            { message: `Period must be one of: ${ANALYTICS_DAYS.join(', ')}` }
+        ).optional()
+});
+
+export type queryDaysInput = z.infer<typeof queryDaysSchema>
