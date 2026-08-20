@@ -1,4 +1,3 @@
-import path from "path";
 import { NextFunction, Request, Response } from "express";
 import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";

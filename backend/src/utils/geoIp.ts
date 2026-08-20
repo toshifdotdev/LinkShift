@@ -13,9 +13,6 @@ export const getLocation = async (ip: string) => {
         const reader = await readerPromise;
         const city = reader.city(ip);
     
-
-        console.log("city" , city)
-
         return {
             country: city.country?.names?.en,
             city: city.city?.names?.en

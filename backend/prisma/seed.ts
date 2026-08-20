@@ -16,6 +16,9 @@ const plans = [
         yearlyPrice: 0,
         maxCustomSlugsPerMonth : 0,
         maxDestinationChangesPerMonth : 3,
+
+        usdMonthlyPrice: 0,
+        usdYearlyPrice: 0,
         
 
         maxLinks: 50,
@@ -30,6 +33,10 @@ const plans = [
         name: PlanName.STARTER,
         monthlyPrice: 499,
         yearlyPrice: 4990,
+
+        usdMonthlyPrice: 12,
+        usdYearlyPrice: 120,
+
         maxCustomSlugsPerMonth: 5,
         maxDestinationChangesPerMonth: 25,
 
@@ -45,6 +52,10 @@ const plans = [
         name: PlanName.CREATOR,
         monthlyPrice: 999,
         yearlyPrice: 9990,
+
+        usdMonthlyPrice: 29,
+        usdYearlyPrice: 290,
+
         maxCustomSlugsPerMonth: 25,
         maxDestinationChangesPerMonth: 150,
 
@@ -54,13 +65,16 @@ const plans = [
         maxRedirectsPerMonth: 500000,
         maxRedirectsWithGracePerMonth: 600000,
 
-
         analyticsDays: 365,
     },
     {
         name: PlanName.PRO,
         monthlyPrice: 4999,
         yearlyPrice: 49990,
+
+        usdMonthlyPrice: 99,
+        usdYearlyPrice: 990,
+
         maxCustomSlugsPerMonth : null,
         maxDestinationChangesPerMonth : null,
 

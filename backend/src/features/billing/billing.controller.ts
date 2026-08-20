@@ -1,57 +1,57 @@
 import { NextFunction, Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { AppError } from "../../errors/AppError";
-import { CancelSubscriptionInput, ChangePlanInput, CheckoutInput, PaymentVerificationInput, SubscriptionInput, SubscriptionVerificationInput } from "./billing.validation";
-import { cancelSubscriptionService, changePlanService, checkoutService, getPlansService, getSubscriptionService, razorpayWebhookService, subscriptionService, verifyPaymentService, verifySubscriptionService } from "./billing.service";
+import { CancelSubscriptionInput, ChangePlanInput, SubscriptionInput, SubscriptionVerificationInput } from "./billing.validation";
+import { cancelSubscriptionService, changePlanService, getPlansService, getSubscriptionService, razorpayWebhookService, subscriptionService, verifySubscriptionService } from "./billing.service";
+import { getCurrencyFromRequest } from "./billing.utils";
 
-export const checkoutController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const auth = req.auth;
+// export const checkoutController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+//     const auth = req.auth;
 
-    const validated = req.validated!;
+//     const validated = req.validated!;
 
-    const body = validated.body as CheckoutInput;
+//     const body = validated.body as CheckoutInput;
 
-    const { plan, billingCycle } = body;
+//     const { plan, billingCycle } = body;
 
+//     if(!auth) {
+//         return next(new AppError("Unauthorized", 401));
+//     }
 
-    if(!auth) {
-        return next(new AppError("Unauthorized", 401));
-    }
+//     const result = await checkoutService(auth.id, plan, billingCycle);
 
-    const result = await checkoutService(auth.id, plan, billingCycle);
+//     res.status(200).json({
+//         success : true,
+//         ...result
+//     })
+// })
 
-    res.status(200).json({
-        success : true,
-        ...result
-    })
-})
+// export const verifyPaymentController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+//     const validated = req.validated!;
+//     const body  = validated.body as PaymentVerificationInput;
+//     const auth = req.auth;
+//     if (!auth) {
+//         return next(new AppError("Unauthorized", 401));
+//     }
 
+//     const result = await verifyPaymentService(auth.id, body);
+
+//     res.status(200).json({
+//         success : true,
+//         result
+//     })
+
+// })
 
 export const getPlansController = asyncHandler(async(req : Request, res : Response) => {
+    const currency = await getCurrencyFromRequest(req);
 
-    const plans = await getPlansService();
+    const plans = await getPlansService(currency);
 
     res.status(200).json({
         success : true,
+        currency,
         plans
-    })
-
-})
-
-
-export const verifyPaymentController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-    const validated = req.validated!;
-    const body  = validated.body as PaymentVerificationInput;
-    const auth = req.auth;
-    if (!auth) {
-        return next(new AppError("Unauthorized", 401));
-    }
-
-    const result = await verifyPaymentService(auth.id, body);
-
-    res.status(200).json({
-        success : true,
-        result
     })
 
 })
@@ -80,12 +80,15 @@ export const subscriptionController = asyncHandler(async(req : Request, res : Re
     const validated = req.validated!;
     const body = validated.body as SubscriptionInput;
     const { plan, billingCycle} = body;
+
+    const currency = await getCurrencyFromRequest(req);
+    
     const auth = req.auth;
     if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
 
-    const result = await subscriptionService(auth.id, plan, billingCycle);
+    const result = await subscriptionService(auth.id, plan, billingCycle, currency);
 
     res.status(200).json({
         success : true,
@@ -133,6 +136,7 @@ export const cancelSubscriptionController = asyncHandler(async(req : Request, re
 export const changePlanController =  asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const validated = req.validated!;
     const body = validated.body as ChangePlanInput;
+    const currency = await getCurrencyFromRequest(req);
 
     const auth = req.auth;
 
@@ -140,7 +144,7 @@ export const changePlanController =  asyncHandler(async(req : Request, res : Res
         return next(new AppError("Unauthorized", 401));
     }
 
-    const result = await changePlanService(auth.id, body.plan, body.billingCycle);
+    const result = await changePlanService(auth.id, body.plan, body.billingCycle, currency);
 
         res.status(200).json({
             success: true,
@@ -162,3 +166,4 @@ export const getSubscriptionController = asyncHandler(async(req : Request, res :
             subscription,
         });
 })
+

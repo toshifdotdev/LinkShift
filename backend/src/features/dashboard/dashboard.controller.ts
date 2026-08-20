@@ -101,7 +101,7 @@ export const csvExportController = asyncHandler(async(req : Request, res : Respo
     );
 
     res.setHeader(
-        "Content-Dispostion",
+        "Content-Disposition",
         `attachment; filename="link-${id}-analytics.csv"`
     );
 

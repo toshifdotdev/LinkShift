@@ -8,5 +8,5 @@ export const escapeCsvValue = (value : unknown) => {
 }
 
 export const createCsvRow = (values : unknown[]) => {
-    return values.map(m => escapeCsvValue(m)).join(",");
+    return values.map(escapeCsvValue).join(",");
 }

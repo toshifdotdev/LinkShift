@@ -3,144 +3,45 @@ import { AppError } from "../../errors/AppError";
 import razorpay from "../../config/razorpay";
 import crypto from 'crypto';
 import { config } from "../../config/env";
-import { ChangePlanInput, CheckoutInput, PaymentVerificationInput, SubscriptionInput, SubscriptionVerificationInput } from "./billing.validation";
+import { ChangePlanInput, SubscriptionInput, SubscriptionVerificationInput } from "./billing.validation";
 
 
-export const checkoutService = async(userId : string, plan : CheckoutInput["plan"], billingCycle : CheckoutInput["billingCycle"]) => {
-    const selectedPlan = await prisma.plan.findUnique({
-        where : {
-            name : plan
-        }
-    })
-
-    if (!selectedPlan) {
-        throw new AppError("Plan not found.", 404);
-    }
-
-
-    const amount = billingCycle === "MONTHLY" ? selectedPlan.monthlyPrice : selectedPlan.yearlyPrice;
-
-    if (amount === null || amount === undefined) {
-        throw new AppError("This plan does not support the selected billing cycle.", 400);
-    }
-
-    const amountInPaise = amount * 100;
-
-    const order = await razorpay.orders.create({
-        amount : amountInPaise,
-        currency : "INR",
-        receipt : `rcpt_${Date.now()}`,
-        notes : {
-            userId,
-            planId: selectedPlan.id,
-            plan: selectedPlan.name,
-            billingCycle
-        }
-    })
-
-    await prisma.payment.create({
-        data : {
-            userId : userId,
-            providerOrderId : order.id, 
-            amount : Number(order.amount),
-            currency : order.currency,
-            provider : "RAZORPAY",
-            status : "PENDING",
-            planId : selectedPlan.id,
-            billingCycle
-
-        }
-    })
-
-    return {
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency,
-        plan: selectedPlan.name,
-        billingCycle,
-        keyId: config.razorpayKeyId
-    };
-}
-
-
-export const getPlansService = async() => {
+export const getPlansService = async(currency : "INR" | "USD") => {
     const result = await prisma.plan.findMany({
+        where : {
+            name : {
+                in : [
+                    "STARTER",
+                    "CREATOR",
+                    "PRO"
+                ]
+            }
+        },
         orderBy: {
             monthlyPrice: "asc"
         }
     })
 
-    return result;
+    return result.map(plan => ({
+        name : plan.name,
+        monthlyPrice : 
+            currency === "INR"
+                ? plan.monthlyPrice 
+                : plan.usdMonthlyPrice,
+        yearlyPrice : currency === "INR"
+                ? plan.yearlyPrice
+                : plan.usdYearlyPrice,
 
-}
+        currency,
+        maxLinks: plan.maxLinks,
+        maxQrPerMonth: plan.maxQrPerMonth,
+        maxDomains: plan.maxDomains,
+        maxRedirectsPerMonth: plan.maxRedirectsPerMonth,
+        analyticsDays: plan.analyticsDays,
+        maxCustomSlugsPerMonth : plan.maxCustomSlugsPerMonth,
+        maxDestinationChangesPerMonth: plan.maxDestinationChangesPerMonth
+    }));
 
-export const verifyPaymentService = async(userId : string, data : PaymentVerificationInput) => {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = data;
-
-    const payment = await prisma.payment.findFirst({
-        where : {
-            userId,
-            providerOrderId : razorpay_order_id
-        }
-    })
-
-    if (!payment) {
-        throw new AppError("Payment order not found", 404);
-    }
-
-    if(payment.status === "SUCCESS") {
-        return {
-            paymentId: payment.id,
-            status: payment.status,
-            message: "Payment already verified"
-        };
-    }
-
-    if (payment.status !== "PENDING") {
-        throw new AppError("Payment cannot be verified", 400);
-    }
-
-    const generatedSignature = crypto.createHmac("sha256", config.razorpayKeySecret!)
-                               .update(`${payment.providerOrderId}|${razorpay_payment_id}`)
-                               .digest("hex");
-    
-
-    const isValid = crypto.timingSafeEqual(
-        Buffer.from(generatedSignature,"hex"),
-        Buffer.from(razorpay_signature, "hex")
-    );
-
-    if (!isValid) {
-        throw new AppError("Invalid payment signature", 400);
-    }
-
-    const razorpayPayment = await razorpay.payments.fetch(razorpay_payment_id);
-
-    if (razorpayPayment.order_id !== payment.providerOrderId) {
-        throw new AppError("Payment does not belong to this order", 400);
-    }
-
-    if (razorpayPayment.status !== "captured") {
-        throw new AppError(`Payment is not captured. Current status: ${razorpayPayment.status}`, 400);
-    }
-
-
-    const updatedPayment = await prisma.payment.update({
-        where : {
-            id : payment.id
-        },
-        data : {
-            providerPaymentId : razorpay_payment_id,
-            providerSignature : razorpay_signature,
-            status : "SUCCESS"
-        }
-    })
-
-    return {
-        paymentId: updatedPayment.id,
-        razorpayPaymentId: razorpay_payment_id,
-        status: updatedPayment.status
-    };
 }
 
 
@@ -239,7 +140,7 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
             break;
         }
 
-        case "subscription.authenticated": {
+        case "subscription.authenticated": { // 1st
             const subscription = payload.payload.subscription.entity;
 
             await prisma.subscription.updateMany({
@@ -255,7 +156,7 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
             break;
         }
 
-        case "subscription.activated": {
+        case "subscription.activated": { 
             const subscription = payload.payload.subscription.entity;
 
             await prisma.subscription.updateMany({
@@ -393,44 +294,6 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
             break;
         }
 
-        case "subscription.activated": {
-            const subscription = payload.payload.subscription.entity;
-
-            const existingSubscription = await prisma.subscription.findUnique({
-                where: {
-                    provider_providerSubscriptionId: {
-                        provider: "RAZORPAY",
-                        providerSubscriptionId: subscription.id,
-                    },
-                },
-            });
-
-            if (!existingSubscription) {
-                throw new AppError(
-                    "Subscription record not found",
-                    404
-                );
-            }
-
-            await prisma.subscription.update({
-                where: {
-                    id: existingSubscription.id,
-                },
-                data: {
-                    status: "ACTIVE",
-
-                    currentPeriodStart: subscription.current_start
-                        ? new Date(subscription.current_start * 1000)
-                        : undefined,
-
-                    currentPeriodEnd: subscription.current_end
-                        ? new Date(subscription.current_end * 1000)
-                        : undefined,
-                },
-            });
-
-            break;
-        }
 
         case "subscription.halted": {
             const subscription = payload.payload.subscription.entity;
@@ -639,6 +502,12 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
                     {
                         razorpayYearlyPlanId: subscription.plan_id,
                     },
+                    {
+                        razorpayUsdMonthlyPlanId : subscription.plan_id
+                    },
+                    {
+                        razorpayUsdYearlyPlanId : subscription.plan_id
+                    }
                 ],
             },
         });
@@ -646,6 +515,11 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
         if (!updatedPlan) {
             throw new AppError("Plan corresponding to Razorpay plan not found", 404);
         }
+        const billingCycle =
+            subscription.plan_id === updatedPlan.razorpayMonthlyPlanId ||
+            subscription.plan_id === updatedPlan.razorpayUsdMonthlyPlanId
+                ? "MONTHLY"
+                : "YEARLY";
 
         await prisma.$transaction(async (tx) => {
 
@@ -670,6 +544,8 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
                     ? null
                     : existingSubscription.changeScheduledAt,
 
+                billingCycle,
+
                 currentPeriodStart:
                     subscription.current_start
                         ? new Date(subscription.current_start * 1000)
@@ -686,32 +562,6 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
         break;
     }
 
-        case "subscription.authenticated": {
-            const subscription = payload.payload.subscription.entity;
-
-            const existingSubscription =
-                await prisma.subscription.findUnique({
-                    where: {
-                        provider_providerSubscriptionId: {
-                            provider: "RAZORPAY",
-                            providerSubscriptionId: subscription.id,
-                        },
-                    },
-                });
-
-            if (!existingSubscription) {
-                throw new AppError("Subscription record not found", 404);
-            }
-
-            console.log(
-                "Razorpay subscription authenticated:",
-                subscription.id
-            );
-
-            break;
-        }
-
-
         default: 
             console.log("Unhandled Razorpay webhook event:", payload.event);
     }
@@ -723,7 +573,7 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
 
 }
 
-export const subscriptionService = async(userId : string, plan : SubscriptionInput["plan"], billingCycle : SubscriptionInput["billingCycle"]) => {
+export const subscriptionService = async(userId : string, plan : SubscriptionInput["plan"], billingCycle : SubscriptionInput["billingCycle"], currency : "INR" | "USD") => {
     const activeSubscription = await prisma.subscription.findFirst({
         where: {
             userId,
@@ -737,7 +587,7 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
     }
 
 
-    const selectedPlan = await prisma.plan.findFirst({
+    const selectedPlan = await prisma.plan.findUnique({
         where : {
             name : plan,
         },
@@ -747,10 +597,20 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         throw new AppError("Plan not found", 404);
     }
 
-    const razorpayPlanId = billingCycle === "MONTHLY" ? selectedPlan.razorpayMonthlyPlanId : selectedPlan.razorpayYearlyPlanId;
+    let razorpayPlanId : string | null = null;
+    if(currency === "INR") {
+        razorpayPlanId = billingCycle === "MONTHLY" 
+                        ? selectedPlan.razorpayMonthlyPlanId 
+                        : selectedPlan.razorpayYearlyPlanId
+    } else if(currency == "USD") {
+        razorpayPlanId = billingCycle === "MONTHLY"
+                         ? selectedPlan.razorpayUsdMonthlyPlanId 
+                         : selectedPlan.razorpayUsdYearlyPlanId
+    }
+
 
     if (!razorpayPlanId) {
-        throw new AppError("Razorpay plan is not configured", 500);
+        throw new AppError(`${currency}Razorpay plan is not configured`, 500);
     }
 
     const totalCount =
@@ -774,9 +634,8 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
 
             provider: "RAZORPAY",
             providerSubscriptionId: subscription.id,
-
             billingCycle,
-
+            currency
         },
     });
 
@@ -784,6 +643,7 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         subscriptionId: subscription.id,
         planId: selectedPlan.id,
         billingCycle,
+        currency,
         shortUrl: subscription.short_url,
         keyId: config.razorpayKeyId
     };
@@ -817,8 +677,6 @@ export const verifySubscriptionService = async(userId : string, data : Subscript
         Buffer.from(generatedSignature, "hex"),
         Buffer.from(razorpay_signature, "hex")
     )
-
-     
 
     if (!isValid) {
         throw new AppError("Invalid subscription signature", 400);
@@ -875,7 +733,7 @@ export const cancelSubscriptionService = async(userId : string, cancelAtPeriodEn
 
 }
 
-export const changePlanService = async(userId : string, plan : ChangePlanInput["plan"], billingCycle : ChangePlanInput["billingCycle"]) => {
+export const changePlanService = async(userId : string, plan : ChangePlanInput["plan"], billingCycle : ChangePlanInput["billingCycle"], currency : "INR" | "USD") => {
     const subscription = await prisma.subscription.findFirst({
         where : {
             userId,
@@ -909,6 +767,10 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         throw new AppError("Changing billing cycle is currently not supported. Please wait until your current billing cycle ends.", 400);
     }
 
+    if(subscription.currency !== currency) {
+        throw new AppError("Changing subscription currency is cuurrently not supported", 400);
+    }
+
     if (subscription.pendingPlanId) {
         throw new AppError("A plan change is already scheduled for this subscription", 400);
     }
@@ -920,16 +782,34 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
     let currentPrice: number;
     let newPrice: number;
 
-    if (billingCycle === "MONTHLY") {
-        currentPrice = subscription.plan.monthlyPrice;
-        newPrice = selectedPlan.monthlyPrice;
-    } else {
-        if (subscription.plan.yearlyPrice === null || selectedPlan.yearlyPrice === null) {
-            throw new AppError("Yearly billing is not configured for this plan", 400);
-        }
+    if (currency === "INR") {
+        if (billingCycle === "MONTHLY") {
+            currentPrice = subscription.plan.monthlyPrice;
+            newPrice = selectedPlan.monthlyPrice;
+        } else {
+            if (subscription.plan.yearlyPrice === null || selectedPlan.yearlyPrice === null) {
+                throw new AppError("Yearly billing is not configured for this plan", 400);
+            }
 
-        currentPrice = subscription.plan.yearlyPrice;
-        newPrice = selectedPlan.yearlyPrice;
+            currentPrice = subscription.plan.yearlyPrice;
+            newPrice = selectedPlan.yearlyPrice;
+        }
+    } else {
+        if (billingCycle === "MONTHLY") {
+            if (subscription.plan.usdMonthlyPrice === null || selectedPlan.usdMonthlyPrice === null) {
+                throw new AppError("USD monthly billing is not configured for this plan", 400);
+            }
+
+            currentPrice = subscription.plan.usdMonthlyPrice;
+            newPrice = selectedPlan.usdMonthlyPrice;
+        } else {
+            if (subscription.plan.usdYearlyPrice === null || selectedPlan.usdYearlyPrice === null) {
+                throw new AppError("USD yearly billing is not configured for this plan", 400);
+            }
+
+            currentPrice = subscription.plan.usdYearlyPrice;
+            newPrice = selectedPlan.usdYearlyPrice;
+        }
     }   
 
     const isUpgrade = newPrice > currentPrice;
@@ -937,11 +817,19 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
     const scheduleChangeAt = isUpgrade
         ? "now"
         : "cycle_end";
+    
+    let razorpayPlanId : string | null = null;
 
-    const razorpayPlanId =
-        billingCycle === "MONTHLY"
-            ? selectedPlan.razorpayMonthlyPlanId
-            : selectedPlan.razorpayYearlyPlanId;
+    if(currency === "INR") {
+        razorpayPlanId = billingCycle === "MONTHLY" 
+                        ? selectedPlan.razorpayMonthlyPlanId 
+                        : selectedPlan.razorpayYearlyPlanId
+    } else if(currency == "USD") {
+        razorpayPlanId = billingCycle === "MONTHLY"
+                         ? selectedPlan.razorpayUsdMonthlyPlanId 
+                         : selectedPlan.razorpayUsdYearlyPlanId
+    }
+    
 
     if (!razorpayPlanId) {
         throw new AppError("Razorpay plan is not configured", 500);
@@ -982,18 +870,6 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         });
     }
     
-
-    await prisma.subscription.update({
-        where: {
-            id: subscription.id,
-        },
-        data: {
-            pendingPlanId: selectedPlan.id,
-            changeScheduledAt: isUpgrade
-                ? new Date()
-                : subscription.currentPeriodEnd,
-        },
-    });
 
     return {
         subscriptionId: subscription.id,
@@ -1067,6 +943,34 @@ export const getUserPlan = async (userId: string) => {
     }
 
     return freePlan;
+};
+
+const getBillingPeriod = (subscription: Awaited<ReturnType<typeof getActiveSubscription>>) => {
+    if (subscription) {
+        if (!subscription.currentPeriodStart || !subscription.currentPeriodEnd) {
+            throw new AppError("Billing period information unavailable", 500);
+        }
+
+        return {
+            periodStart: subscription.currentPeriodStart,
+            periodEnd: subscription.currentPeriodEnd,
+        };
+    }
+
+    const now = new Date();
+
+    return {
+        periodStart: new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            1
+        ),
+        periodEnd: new Date(
+            now.getFullYear(),
+            now.getMonth() + 1,
+            1
+        ),
+    };
 };
 
 type PlanLimitType =
@@ -1153,25 +1057,14 @@ export const checkLinkLimit = async (userId: string) => {
 };
 
 export const checkQrLimit = async (userId: string) => {
-    const plan = await getUserPlan(userId);
+    const subscription = await getActiveSubscription(userId);
 
-    if (!plan) {
-        throw new AppError("Active subscription required", 403);
-    }
+    const plan = subscription
+        ? subscription.plan
+        : await getUserPlan(userId);
 
-    const now = new Date();
+    const { periodStart, periodEnd } = getBillingPeriod(subscription);
 
-    const startOfMonth = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        1
-    );
-
-    const startOfNextMonth = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        1
-    );
 
     const qrCount = await prisma.qr.count({
         where: {
@@ -1179,14 +1072,14 @@ export const checkQrLimit = async (userId: string) => {
                 userId,
             },
             createdAt: {
-                gte: startOfMonth,
-                lt: startOfNextMonth,
+                gte: periodStart,
+                lt: periodEnd,
             },
         },
     });
 
     if (plan.maxQrPerMonth !== null && qrCount >= plan.maxQrPerMonth) {
-        throw new AppError("You have reached the maximum number of QR codes allowed for this month", 403);
+        throw new AppError("You have reached the maximum number of QR codes allowed for this billing period", 403);
     }
 
     return {
@@ -1222,11 +1115,13 @@ export const checkDomainLimit = async (userId: string) => {
 
 
 export const checkRedirectLimit = async (userId: string) => {
-    const plan = await getUserPlan(userId);
+    const subscription = await getActiveSubscription(userId);
 
-    if (!plan) {
-        throw new AppError("No active plan found", 403);
-    }
+    const plan = subscription
+        ? subscription.plan
+        : await getUserPlan(userId);
+
+    const { periodStart, periodEnd } = getBillingPeriod(subscription);
 
     if (plan.maxRedirectsPerMonth === null) {
         return {
@@ -1238,19 +1133,6 @@ export const checkRedirectLimit = async (userId: string) => {
         };
     }
 
-    const now = new Date();
-
-    const startOfMonth = new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        1
-    );
-
-    const startOfNextMonth = new Date(
-        now.getFullYear(),
-        now.getMonth() + 1,
-        1
-    );
 
     const redirectCount = await prisma.scan.count({
         where: {
@@ -1258,8 +1140,8 @@ export const checkRedirectLimit = async (userId: string) => {
                 userId,
             },
             scannedAt: {
-                gte: startOfMonth,
-                lt: startOfNextMonth,
+                gte: periodStart,
+                lt: periodEnd,
             },
         },
     });
@@ -1288,54 +1170,41 @@ export const checkRedirectLimit = async (userId: string) => {
     }
 
     throw new AppError(
-        "You have exceeded your monthly redirect allowance. Please upgrade your plan.",
+        "You have exceeded your redirect allowance for this billing period. Please upgrade your plan.",
         429
-    );
-};
-
-const getMonthStart = () => {
-    const now = new Date();
-
-    return new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        1
     );
 };
 
 const PRO_DESTINATION_CHANGE_ABUSE_LIMIT = 5000;
 
 export const checkDestinationLimit = async (userId: string) => {
-    const subscription = await prisma.subscription.findFirst({
-        where: {
-            userId,
-            status: "ACTIVE",
-        },
-        include: {
-            plan: true,
-        },
-    });
+    const subscription = await getActiveSubscription(userId);
 
     if (!subscription) {
         throw new AppError("No active subscription found", 403);
     }
 
-    const limit = subscription.plan.maxDestinationChangesPerMonth;
+    const plan = subscription.plan;
+
+    const { periodStart, periodEnd } = getBillingPeriod(subscription);
+
+    const limit = plan.maxDestinationChangesPerMonth;
+
 
     // Pro / unlimited
     if (limit === null) {
-        if (subscription.plan.name !== "PRO") {
+        if (plan.name !== "PRO") {
             return;
         }
 
-        const monthStart = getMonthStart();
 
         const used = await prisma.linkChange.count({
             where: {
                 userId,
                 type: "DESTINATION",
                 createdAt: {
-                    gte: monthStart,
+                    gte: periodStart,
+                    lt :periodEnd
                 },
             },
         });
@@ -1348,58 +1217,54 @@ export const checkDestinationLimit = async (userId: string) => {
         }
 
         return;
-}
-
-    const monthStart = getMonthStart();
+    }
 
     const used = await prisma.linkChange.count({
         where: {
             userId,
             type: "DESTINATION",
             createdAt: {
-                gte: monthStart,
+                gte: periodStart,
+                lt : periodEnd
             },
         },
     });
 
     if (used >= limit) {
         throw new AppError(
-            `You have reached your monthly destination change limit of ${limit}.`,
+            `You have reached your destination change limit for this billing period.`,
             403
         );
     }
 };
 
-export const checkCustomSlugLimit = async (userId: string) => {
-    const subscription = await prisma.subscription.findFirst({
-        where: {
-            userId,
-            status: "ACTIVE",
-        },
-        include: {
-            plan: true,
-        },
-    });
 
-    if (!subscription) {
+export const checkCustomSlugLimit = async (userId: string) => {
+    const subscription = await getActiveSubscription(userId);
+
+     if (!subscription) {
         throw new AppError("No active subscription found", 403);
     }
 
-    const limit = subscription.plan.maxCustomSlugsPerMonth;
+    const plan = subscription.plan;
+
+    const { periodStart, periodEnd } = getBillingPeriod(subscription);
+
+    const limit = plan.maxCustomSlugsPerMonth;
 
     // Unlimited
     if (limit === null) {
         return;
     }
 
-    const monthStart = getMonthStart();
 
     const used = await prisma.linkChange.count({
         where: {
             userId,
             type: "CUSTOM_SLUG",
             createdAt: {
-                gte: monthStart,
+                gte: periodStart,
+                lt : periodEnd
             },
         },
     });

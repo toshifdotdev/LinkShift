@@ -65,6 +65,11 @@ enum BillingCycle {
   YEARLY
 }
 
+enum Currency {
+    INR
+    USD
+}
+
 model User {
   id                     String      @id @default(cuid())
   name                   String?   
@@ -222,6 +227,12 @@ model Plan {
 
   razorpayMonthlyPlanId String?
   razorpayYearlyPlanId  String?
+
+  usdMonthlyPrice Int?
+  usdYearlyPrice  Int?
+
+  razorpayUsdMonthlyPlanId String?
+  razorpayUsdYearlyPlanId  String?
   
   maxLinks      Int?
   maxQrPerMonth Int?
@@ -252,6 +263,8 @@ model Subscription {
 
   planId String 
   plan   Plan   @relation(fields: [planId],references: [id])
+
+  currency Currency @default(INR)
 
   status SubscriptionStatus @default(ACTIVE)
 
@@ -305,7 +318,7 @@ model Payment {
   billingCycle        BillingCycle
 
   amount   Int
-  currency String
+  currency Currency @default(INR)
 
   status PaymentStatus
 
