@@ -5,43 +5,6 @@ import { CancelSubscriptionInput, ChangePlanInput, SubscriptionInput, Subscripti
 import { cancelSubscriptionService, changePlanService, getPlansService, getSubscriptionService, razorpayWebhookService, subscriptionService, verifySubscriptionService } from "./billing.service";
 import { getCurrencyFromRequest } from "./billing.utils";
 
-// export const checkoutController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-//     const auth = req.auth;
-
-//     const validated = req.validated!;
-
-//     const body = validated.body as CheckoutInput;
-
-//     const { plan, billingCycle } = body;
-
-//     if(!auth) {
-//         return next(new AppError("Unauthorized", 401));
-//     }
-
-//     const result = await checkoutService(auth.id, plan, billingCycle);
-
-//     res.status(200).json({
-//         success : true,
-//         ...result
-//     })
-// })
-
-// export const verifyPaymentController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
-//     const validated = req.validated!;
-//     const body  = validated.body as PaymentVerificationInput;
-//     const auth = req.auth;
-//     if (!auth) {
-//         return next(new AppError("Unauthorized", 401));
-//     }
-
-//     const result = await verifyPaymentService(auth.id, body);
-
-//     res.status(200).json({
-//         success : true,
-//         result
-//     })
-
-// })
 
 export const getPlansController = asyncHandler(async(req : Request, res : Response) => {
     const currency = await getCurrencyFromRequest(req);
@@ -58,6 +21,7 @@ export const getPlansController = asyncHandler(async(req : Request, res : Respon
 
 export const razorpayWebhookController = asyncHandler(async(req : Request, res : Response) => {
      const signature = req.headers["x-razorpay-signature"];
+     const eventId = req.headers["x-razorpay-event-id"];
 
      if (typeof signature !== "string") {
        res.status(400).json({
@@ -67,7 +31,15 @@ export const razorpayWebhookController = asyncHandler(async(req : Request, res :
       return;
     }
 
-    const result = await razorpayWebhookService(signature, req.body);
+    if (typeof eventId !== "string") {
+       res.status(400).json({
+        success: false,
+        message: "Missing Razorpay event ID"
+      });
+      return;
+    }
+
+    const result = await razorpayWebhookService(signature, req.body, eventId);
 
    res.status(200).json({
       status: true,

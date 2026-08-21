@@ -70,6 +70,23 @@ enum Currency {
     USD
 }
 
+enum WebhookEventStatus {
+    PENDING
+    PROCESSING
+    PROCESSED
+    FAILED
+}
+
+model WebhookEvent {
+    id          String   @id @default(cuid())
+    eventId     String   @unique
+    eventType   String
+    status      WebhookEventStatus @default(PENDING)
+    claimedAt   DateTime?
+    processedAt DateTime?
+    createdAt   DateTime @default(now())
+}
+
 model User {
   id                     String      @id @default(cuid())
   name                   String?   

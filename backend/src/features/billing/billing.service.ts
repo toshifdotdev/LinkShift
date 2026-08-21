@@ -4,6 +4,7 @@ import razorpay from "../../config/razorpay";
 import crypto from 'crypto';
 import { config } from "../../config/env";
 import { ChangePlanInput, SubscriptionInput, SubscriptionVerificationInput } from "./billing.validation";
+import { Prisma } from "../../generated/prisma/client";
 
 
 export const getPlansService = async(currency : "INR" | "USD") => {
@@ -46,7 +47,7 @@ export const getPlansService = async(currency : "INR" | "USD") => {
 
 
 
-export const razorpayWebhookService = async(signature : string, data : Buffer) => {
+export const razorpayWebhookService = async(signature : string, data : Buffer, eventId: string) => {
     const expectedSignature = crypto.createHmac("sha256", config.razorpayWebhookSecret!)
                               .update(data).digest("hex");
 
@@ -62,6 +63,61 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
 
     const payload = JSON.parse(data.toString("utf8"));
 
+    // Idempotency: ensure WebhookEvent row exists
+    try {
+        await prisma.webhookEvent.create({
+            data: { eventId, eventType: payload.event, status: "PENDING" }
+        });
+    } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+            // Row exists, continue to claim
+        } else {
+            throw e;
+        }
+    }
+
+    // Atomic claim: only one process can claim PENDING/FAILED/stale PROCESSING
+    const STALE_MINUTES = 5;
+    const claimed = await prisma.$executeRaw`
+        UPDATE "WebhookEvent" 
+        SET status = 'PROCESSING', "claimedAt" = NOW()
+        WHERE "eventId" = ${eventId} 
+          AND (
+            status IN ('PENDING', 'FAILED') 
+            OR (status = 'PROCESSING' AND "claimedAt" < NOW() - (${STALE_MINUTES} * INTERVAL '1 minute'))
+          )
+    `;
+
+    if (claimed === 0) {
+        const existing = await prisma.webhookEvent.findUnique({ where: { eventId } });
+        if (existing?.status === "PROCESSED") {
+            return { event: payload.event, processed: true, alreadyProcessed: true };
+        }
+        // Another process is actively handling it (fresh PROCESSING)
+        throw new AppError("Webhook event already being processed", 409);
+    }
+
+    // We own the claim - run business logic
+    try {
+        await processWebhookEvent(payload);
+        
+        // Success - mark PROCESSED
+        await prisma.webhookEvent.update({
+            where: { eventId },
+            data: { status: "PROCESSED", processedAt: new Date(), claimedAt: null }
+        });
+        return { event: payload.event, processed: true };
+    } catch (err) {
+        // Failure - mark FAILED (retryable)
+        await prisma.webhookEvent.update({
+            where: { eventId },
+            data: { status: "FAILED", claimedAt: null }
+        });
+        throw err;
+    }
+};
+
+const processWebhookEvent = async (payload: any) => {
     switch (payload.event) {
         case "payment.captured": {
             const payment = payload.payload.payment.entity;
@@ -565,12 +621,6 @@ export const razorpayWebhookService = async(signature : string, data : Buffer) =
         default: 
             console.log("Unhandled Razorpay webhook event:", payload.event);
     }
-
-    return {
-        event: payload.event,
-        processed: true,
-    };
-
 }
 
 export const subscriptionService = async(userId : string, plan : SubscriptionInput["plan"], billingCycle : SubscriptionInput["billingCycle"], currency : "INR" | "USD") => {
@@ -768,7 +818,7 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
     }
 
     if(subscription.currency !== currency) {
-        throw new AppError("Changing subscription currency is cuurrently not supported", 400);
+        throw new AppError("Changing subscription currency is currently not supported", 400);
     }
 
     if (subscription.pendingPlanId) {
