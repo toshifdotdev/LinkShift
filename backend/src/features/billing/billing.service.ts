@@ -624,16 +624,18 @@ const processWebhookEvent = async (payload: any) => {
 }
 
 export const subscriptionService = async(userId : string, plan : SubscriptionInput["plan"], billingCycle : SubscriptionInput["billingCycle"], currency : "INR" | "USD") => {
-    const activeSubscription = await prisma.subscription.findFirst({
+    const existingSubscription = await prisma.subscription.findFirst({
         where: {
             userId,
-            status: "ACTIVE",
+            status: {
+                in: ["ACTIVE", "PENDING"],
+            },
         },
     });
 
 
-    if (activeSubscription) {
-        throw new AppError("You already have an active subscription. Please manage your current subscription before purchasing another plan.", 409);
+    if (existingSubscription) {
+        throw new AppError("You already have an active or pending subscription. Please manage your current subscription before purchasing another plan.", 409);
     }
 
 
@@ -668,36 +670,45 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         ? 1200   // 100 years × 12 months
         : 100; 
 
-    const subscription = await razorpay.subscriptions.create({
+    const razorpaySubscription = await razorpay.subscriptions.create({
         plan_id: razorpayPlanId,
         total_count: totalCount,
         quantity : 1,
         customer_notify : true
     })
 
-    const dbSubscription = await prisma.subscription.create({
-        data: {
-            userId,
+    try {
+        const dbSubscription = await prisma.subscription.create({
+            data: {
+                userId,
+                planId: selectedPlan.id,
+
+                status : "PENDING",
+
+                provider: "RAZORPAY",
+                providerSubscriptionId: razorpaySubscription.id,
+                billingCycle,
+                currency
+            },
+        });
+
+        return {
+            subscriptionId: dbSubscription.id,
             planId: selectedPlan.id,
-
-            status : "PENDING",
-
-            provider: "RAZORPAY",
-            providerSubscriptionId: subscription.id,
             billingCycle,
-            currency
-        },
-    });
-
-    return {
-        subscriptionId: subscription.id,
-        planId: selectedPlan.id,
-        billingCycle,
-        currency,
-        shortUrl: subscription.short_url,
-        keyId: config.razorpayKeyId
-    };
-
+            currency,
+            shortUrl: razorpaySubscription.short_url,
+            keyId: config.razorpayKeyId
+        };
+    } catch (e) {
+        if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+            await razorpay.subscriptions.cancel(razorpaySubscription.id).catch(() => {
+                console.error("Failed to cancel orphaned Razorpay subscription:", razorpaySubscription.id);
+            });
+            throw new AppError("A subscription was created concurrently. Please try again.", 409);
+        }
+        throw e;
+    }
 }
 
 
