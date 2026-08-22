@@ -182,20 +182,6 @@ const processWebhookEvent = async (payload: any) => {
             break;
         }
 
-        case "order.paid": {
-            const order = payload.payload.order.entity;
-
-            await prisma.payment.updateMany({
-                where : {
-                    providerOrderId : order.id
-                },
-                data : {
-                    status : "SUCCESS"
-                }
-            })
-            break;
-        }
-
         case "subscription.authenticated": { // 1st
             const subscription = payload.payload.subscription.entity;
 

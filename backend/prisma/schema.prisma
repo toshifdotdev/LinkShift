@@ -31,7 +31,16 @@ enum AuthProvider {
 
 enum SubscriptionStatus {
     ACTIVE
+
+    // DEPRECATED - transitional only.
+    // Replaced by AUTHORIZATION_PENDING / PAYMENT_RETRY (Wave 0).
+    // Kept so legacy code compiles until billing waves 1-3 stop writing it.
+    // Postgres cannot drop enum labels; do NOT write this value from new code.
     PENDING
+
+    AUTHORIZATION_PENDING
+    PAYMENT_RETRY
+
     HALTED
     PAUSED
     CANCELLED
@@ -85,6 +94,8 @@ model WebhookEvent {
     claimedAt   DateTime?
     processedAt DateTime?
     createdAt   DateTime @default(now())
+
+    @@index([status])
 }
 
 model User {
@@ -332,6 +343,7 @@ model Payment {
   providerOrderId     String
   providerPaymentId   String?
   providerSignature   String?
+  providerRefundId    String?
   billingCycle        BillingCycle
 
   amount   Int
