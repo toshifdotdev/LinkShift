@@ -130,14 +130,14 @@ type WebhookProcessResult = {
 
 // Terminal rows are sinks: stale/out-of-order events must never resurrect them
 // into live states.
-const TERMINAL_SUBSCRIPTION_STATUSES = ["CANCELLED", "COMPLETED", "EXPIRED"] as const;
+export const TERMINAL_SUBSCRIPTION_STATUSES = ["CANCELLED", "COMPLETED", "EXPIRED"] as const;
 
-const isTerminalSubscriptionStatus = (status: string) =>
+export const isTerminalSubscriptionStatus = (status: string) =>
     (TERMINAL_SUBSCRIPTION_STATUSES as readonly string[]).includes(status);
 
 // Maps a Razorpay plan id to our local Plan via the four provider plan-id columns.
 // Returns null for unmapped ids (dashboard-created / foreign plans).
-const mapProviderPlan = async (planId: string | undefined | null) => {
+export const mapProviderPlan = async (planId: string | undefined | null) => {
     if (!planId) {
         return null;
     }
@@ -156,7 +156,7 @@ const mapProviderPlan = async (planId: string | undefined | null) => {
 
 // Billing cycle derives ONLY from which provider column matched - never from
 // payload names or unrelated fields.
-const cycleFromPlanMatch = (
+export const cycleFromPlanMatch = (
     plan: NonNullable<Awaited<ReturnType<typeof mapProviderPlan>>>,
     planId: string
 ): "MONTHLY" | "YEARLY" =>
@@ -164,7 +164,7 @@ const cycleFromPlanMatch = (
         ? "MONTHLY"
         : "YEARLY";
 
-const findLocalSubscription = async (providerSubscriptionId: string) =>
+export const findLocalSubscription = async (providerSubscriptionId: string) =>
     prisma.subscription.findUnique({
         where: {
             provider_providerSubscriptionId: {
@@ -174,7 +174,7 @@ const findLocalSubscription = async (providerSubscriptionId: string) =>
         },
     });
 
-const epochToDate = (seconds: number | undefined | null) =>
+export const epochToDate = (seconds: number | undefined | null) =>
     seconds ? new Date(seconds * 1000) : undefined;
 
 const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult | void> => {
@@ -984,7 +984,10 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         plan_id: razorpayPlanId,
         total_count: totalCount,
         quantity : 1,
-        customer_notify : true
+        customer_notify : true,
+
+        // Provider-side authorization deadline (see AUTHORIZATION_EXPIRY_HOURS).
+        expire_by: Math.floor(Date.now() / 1000) + AUTHORIZATION_EXPIRY_HOURS * 3600,
     })
 
     try {
@@ -1336,7 +1339,7 @@ export const getSubscriptionService = async (userId: string) => {
     return subscription;
 };
 
-const LIVE_SUBSCRIPTION_STATUSES = [
+export const LIVE_SUBSCRIPTION_STATUSES = [
     "AUTHORIZATION_PENDING",
     "PAYMENT_RETRY",
     "ACTIVE",
@@ -1348,6 +1351,12 @@ const LIVE_SUBSCRIPTION_STATUSES = [
 // documented 30-year span formula; do NOT finalize these until test-mode verification.
 const TOTAL_COUNT_MONTHLY = 1200;
 const TOTAL_COUNT_YEARLY = 100;
+
+// D-A (verified contract, subscriptions.d.ts L46-50): expire_by is a Unix-seconds
+// deadline for the authorization payment. Provider self-expires unauthenticated
+// checkouts; reconciliation's stale-AUTHORIZATION_PENDING sweep (24h default) is
+// the backstop. Residual 🔬T2: which webhook (if any) fires on auto-expiry.
+export const AUTHORIZATION_EXPIRY_HOURS = 24;
 
 // Paid access survives PAYMENT_RETRY/HALTED/PAUSED until the paid period ends (+24h slack).
 const ENTITLEMENT_GRACE_MS = 24 * 60 * 60 * 1000;

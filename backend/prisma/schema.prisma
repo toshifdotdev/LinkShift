@@ -316,15 +316,15 @@ model Subscription {
 
   changeScheduledAt DateTime?
 
-  startedAt DateTime @default(now())
+  startedAt DateTime @default(now()) @db.Timestamptz(3)
 
-  currentPeriodStart DateTime?
-  currentPeriodEnd   DateTime?
+  currentPeriodStart DateTime? @db.Timestamptz(3)
+  currentPeriodEnd   DateTime? @db.Timestamptz(3)
 
   cancelAtPeriodEnd Boolean   @default(false)
-  cancelledAt       DateTime?
+  cancelledAt       DateTime? @db.Timestamptz(3)
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
   updatedAt DateTime @updatedAt
 
   payments Payment[]
@@ -362,7 +362,7 @@ model Payment {
 
   refunds Refund[]
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
 
   @@unique([provider, providerOrderId])
   @@unique([provider, providerPaymentId])
@@ -381,9 +381,22 @@ model Refund {
   providerRefundId String          @unique
   amount           Int
   currency         Currency
-  createdAt        DateTime        @default(now())
+  createdAt        DateTime        @default(now()) @db.Timestamptz(3)
 
   @@index([paymentId])
+}
+
+// Wave 4 reconciliation: one row per pass. The partial unique index on the
+// constant (1) WHERE status='running' is a STRUCTURAL single-runner lock across
+// all machines; stale 'running' rows older than the lease TTL are reclaimed by
+// the next trigger (crash recovery). Doubles as run audit/stats.
+model ReconciliationRun {
+  id          String    @id @default(cuid())
+  status      String    // 'running' | 'completed' | 'failed'
+  triggeredBy String    @default("external")
+  stats       Json?
+  startedAt   DateTime  @default(now()) @db.Timestamptz(3)
+  finishedAt  DateTime? @db.Timestamptz(3)
 }
 
 
