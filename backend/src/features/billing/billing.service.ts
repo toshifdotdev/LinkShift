@@ -370,9 +370,11 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
         case "refund.processed": {
+            // Cumulative refund ledger (supersedes single-refund comparison).
             // Refunds NEVER modify Subscription state: returning money is an
             // independent business action from cancelling service.
-            // Policy (Option A): full refund -> REFUNDED; partial -> warn, no mutation.
+            // Idempotency anchor: Refund.providerRefundId UNIQUE - duplicate
+            // deliveries and stale-claim re-entry cannot double-count amounts.
             const refund = payload.payload.refund.entity;
 
             const existingPayment = refund.payment_id
@@ -390,32 +392,75 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                 console.error(`[webhook] refund.processed: no local payment for '${refund.payment_id ?? "unknown"}'; acknowledged without mutation`);
                 return { matched: false, ignored: "unknown" };
             }
-            if (existingPayment.status === "REFUNDED") {
-                return { matched: true, ignored: "duplicate" };
-            }
 
             const refundAmount =
                 typeof refund.amount === "number"
                     ? refund.amount
                     : Number.parseInt(String(refund.amount ?? ""), 10);
 
-            if (!Number.isFinite(refundAmount)) {
-                console.warn(`[webhook] refund.processed: unusable amount on refund ${refund.id}; acknowledged`);
+            if (!Number.isFinite(refundAmount) || !refund.id) {
+                console.warn(`[webhook] refund.processed: unusable payload on refund ${refund.id}; acknowledged`);
                 return { matched: true, warning: "unusable_refund_payload" };
             }
 
-            if (refundAmount >= existingPayment.amount) {
-                await prisma.payment.update({
-                    where: { id: existingPayment.id },
-                    data: {
-                        status: "REFUNDED",
-                        providerRefundId: refund.id,
-                    },
-                });
-                break;
+            if (refund.currency && refund.currency !== existingPayment.currency) {
+                // Wave-3 convention: soft-warn, record actual values, never convert.
+                console.warn(`[webhook] refund.processed: refund currency ${refund.currency} differs from payment currency ${existingPayment.currency} on ${existingPayment.id}`);
             }
 
-            console.warn(`[webhook] refund.processed: PARTIAL refund ${refund.id} (${refundAmount}/${existingPayment.amount}) on payment ${existingPayment.id}; no mutation (Option A policy)`);
+            let duplicate = false;
+
+            await prisma.$transaction(async (tx) => {
+                try {
+                    await tx.refund.create({
+                        data: {
+                            paymentId: existingPayment.id,
+                            provider: "RAZORPAY",
+                            providerRefundId: refund.id,
+                            amount: refundAmount,
+                            currency: refund.currency,
+                        },
+                    });
+                } catch (err) {
+                    if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) {
+                        throw err;
+                    }
+                    // Same Razorpay refund already ledgered: duplicate delivery or
+                    // stale-claim re-entry. The amount must NOT be counted again.
+                    duplicate = true;
+                }
+
+                // Recompute + apply terminal state on every pass (absolute-set,
+                // idempotent). Skipped on duplicates so providerRefundId keeps
+                // pointing at the LATEST threshold-crossing refund.
+                const totals = await tx.refund.aggregate({
+                    _sum: { amount: true },
+                    where: { paymentId: existingPayment.id },
+                });
+                const cumulativeRefundedAmount = totals._sum.amount ?? 0;
+
+                if (cumulativeRefundedAmount >= existingPayment.amount) {
+                    if (cumulativeRefundedAmount > existingPayment.amount) {
+                        console.warn(`[webhook] refund.processed: OVER-REFUND anomaly on payment ${existingPayment.id} (refunded ${cumulativeRefundedAmount}/${existingPayment.amount}); marking REFUNDED`);
+                    }
+
+                    if (!duplicate) {
+                        await tx.payment.update({
+                            where: { id: existingPayment.id },
+                            data: {
+                                status: "REFUNDED",
+                                providerRefundId: refund.id,
+                            },
+                        });
+                    }
+                }
+                // else: cumulative < amount => Payment intentionally stays SUCCESS.
+            });
+
+            if (duplicate) {
+                console.warn(`[webhook] refund.processed: refund ${refund.id} already ledgered; acknowledged without double-count`);
+                return { matched: true, ignored: "duplicate" };
+            }
 
             break;
         }
@@ -959,6 +1004,10 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
 
         return {
             subscriptionId: dbSubscription.id,
+
+            // Razorpay Checkout needs THIS id (sub_...) as its subscription_id option.
+            providerSubscriptionId: razorpaySubscription.id,
+
             planId: selectedPlan.id,
             billingCycle,
             currency,

@@ -81,65 +81,65 @@ async function createPlans() {
         }
 
         // USD BILLING
-        if(!plan.razorpayUsdMonthlyPlanId) {
-            const razorpayPlan = await razorpay.plans.create({
-                period : "monthly",
-                interval : 1,
-                item : {
-                    name : `LinkShift ${plan.name} Monthly USD`,
-                    amount : plan.usdMonthlyPrice! *  100,
-                    currency: "USD",
-                    description: `LinkShift ${plan.name} plan billed monthly`
-                }
-            })
+    //     if(!plan.razorpayUsdMonthlyPlanId) {
+    //         const razorpayPlan = await razorpay.plans.create({
+    //             period : "monthly",
+    //             interval : 1,
+    //             item : {
+    //                 name : `LinkShift ${plan.name} Monthly USD`,
+    //                 amount : plan.usdMonthlyPrice! *  100,
+    //                 currency: "USD",
+    //                 description: `LinkShift ${plan.name} plan billed monthly`
+    //             }
+    //         })
 
-             await prisma.plan.update({
-                where: {
-                    id: plan.id,
-                },
-                data: {
-                    razorpayUsdMonthlyPlanId: razorpayPlan.id,
-                },
-            });
+    //          await prisma.plan.update({
+    //             where: {
+    //                 id: plan.id,
+    //             },
+    //             data: {
+    //                 razorpayUsdMonthlyPlanId: razorpayPlan.id,
+    //             },
+    //         });
 
-            console.log(
-                `${plan.name} USD monthly → ${razorpayPlan.id}`
-            );
-        } else {
-            console.log(
-                `${plan.name} USD monthly already exists -> ${plan.razorpayUsdMonthlyPlanId}`
-            );
-        }
+    //         console.log(
+    //             `${plan.name} USD monthly → ${razorpayPlan.id}`
+    //         );
+    //     } else {
+    //         console.log(
+    //             `${plan.name} USD monthly already exists -> ${plan.razorpayUsdMonthlyPlanId}`
+    //         );
+    //     }
 
-        if (!plan.razorpayUsdYearlyPlanId) {
-            const razorpayPlan = await razorpay.plans.create({
-                period: "yearly",
-                interval: 1,
-                item: {
-                    name: `LinkShift ${plan.name} Yearly USD`,
-                    amount: plan.usdYearlyPrice! * 100,
-                    currency: "USD",
-                    description: `LinkShift ${plan.name} plan billed yearly`,
-                },
-            });
+    //     if (!plan.razorpayUsdYearlyPlanId) {
+    //         const razorpayPlan = await razorpay.plans.create({
+    //             period: "yearly",
+    //             interval: 1,
+    //             item: {
+    //                 name: `LinkShift ${plan.name} Yearly USD`,
+    //                 amount: plan.usdYearlyPrice! * 100,
+    //                 currency: "USD",
+    //                 description: `LinkShift ${plan.name} plan billed yearly`,
+    //             },
+    //         });
 
-            await prisma.plan.update({
-                where: {
-                    id: plan.id,
-                },
-                data: {
-                    razorpayUsdYearlyPlanId: razorpayPlan.id,
-                },
-            });
+    //         await prisma.plan.update({
+    //             where: {
+    //                 id: plan.id,
+    //             },
+    //             data: {
+    //                 razorpayUsdYearlyPlanId: razorpayPlan.id,
+    //             },
+    //         });
 
-            console.log(
-                `${plan.name} USD yearly → ${razorpayPlan.id}`
-            );
-        } else {
-            console.log(
-                `${plan.name} USD yearly already exists → ${plan.razorpayUsdYearlyPlanId}`
-            );
-        }
+    //         console.log(
+    //             `${plan.name} USD yearly → ${razorpayPlan.id}`
+    //         );
+    //     } else {
+    //         console.log(
+    //             `${plan.name} USD yearly already exists → ${plan.razorpayUsdYearlyPlanId}`
+    //         );
+    //     }
 
     }
 }

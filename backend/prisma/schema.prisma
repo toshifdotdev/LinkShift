@@ -360,12 +360,30 @@ model Payment {
   status PaymentStatus
   category PaymentCategory?
 
+  refunds Refund[]
+
   createdAt DateTime @default(now())
 
   @@unique([provider, providerOrderId])
   @@unique([provider, providerPaymentId])
   @@index([userId])
   @@index([subscriptionId])
+}
+
+// Cumulative refund ledger for a Payment. providerRefundId is the idempotency
+// anchor: duplicate deliveries and stale-claim re-entry can never double-count.
+// Payment.status flips to REFUNDED when SUM(refunds.amount) >= payment.amount.
+model Refund {
+  id               String          @id @default(cuid())
+  paymentId        String
+  payment          Payment         @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  provider         PaymentProvider @default(RAZORPAY)
+  providerRefundId String          @unique
+  amount           Int
+  currency         Currency
+  createdAt        DateTime        @default(now())
+
+  @@index([paymentId])
 }
 
 

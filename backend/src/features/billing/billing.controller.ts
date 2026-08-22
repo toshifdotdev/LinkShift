@@ -60,7 +60,7 @@ export const subscriptionController = asyncHandler(async(req : Request, res : Re
         return next(new AppError("Unauthorized", 401));
     }
 
-    const result = await subscriptionService(auth.id, plan, billingCycle, currency);
+    const result = await subscriptionService(auth.id, plan, billingCycle, "INR");
 
     res.status(200).json({
         success : true,
@@ -116,7 +116,7 @@ export const changePlanController =  asyncHandler(async(req : Request, res : Res
         return next(new AppError("Unauthorized", 401));
     }
 
-    const result = await changePlanService(auth.id, body.plan, body.billingCycle, currency);
+    const result = await changePlanService(auth.id, body.plan, body.billingCycle, "INR");
 
         res.status(200).json({
             success: true,
