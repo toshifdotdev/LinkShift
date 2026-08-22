@@ -329,7 +329,10 @@ const processWebhookEvent = async (payload: any) => {
                     id: existingSubscription.id,
                 },
                 data: {
-                    status: "PENDING",
+                    // Wave 1 compatibility: renewal failures must occupy a LIVE index
+                    // slot; legacy PENDING would bypass the one-live-subscription index.
+                    // Full lifecycle rewrite lands in Wave 2.
+                    status: "PAYMENT_RETRY",
                 },
             });
 
@@ -614,14 +617,20 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         where: {
             userId,
             status: {
-                in: ["ACTIVE", "PENDING"],
+                in: [...LIVE_SUBSCRIPTION_STATUSES, "PENDING"], // legacy PENDING kept defensively until enum removal
             },
         },
     });
 
 
     if (existingSubscription) {
-        throw new AppError("You already have an active or pending subscription. Please manage your current subscription before purchasing another plan.", 409);
+        if (existingSubscription.status === "HALTED") {
+            throw new AppError(
+                "Your existing subscription has a payment issue. Please cancel your current subscription before purchasing another plan.",
+                409
+            );
+        }
+        throw new AppError("You already have an active subscription. Please manage your current subscription before purchasing another plan.", 409);
     }
 
 
@@ -652,9 +661,9 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
     }
 
     const totalCount =
-    billingCycle === "MONTHLY"
-        ? 1200   // 100 years × 12 months
-        : 100; 
+        billingCycle === "MONTHLY"
+            ? TOTAL_COUNT_MONTHLY
+            : TOTAL_COUNT_YEARLY;
 
     const razorpaySubscription = await razorpay.subscriptions.create({
         plan_id: razorpayPlanId,
@@ -669,7 +678,7 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
                 userId,
                 planId: selectedPlan.id,
 
-                status : "PENDING",
+                status: "AUTHORIZATION_PENDING",
 
                 provider: "RAZORPAY",
                 providerSubscriptionId: razorpaySubscription.id,
@@ -688,6 +697,7 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         };
     } catch (e) {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+            console.error("Concurrent subscription insert rejected:", e.meta?.target);
             await razorpay.subscriptions.cancel(razorpaySubscription.id).catch(() => {
                 console.error("Failed to cancel orphaned Razorpay subscription:", razorpaySubscription.id);
             });
@@ -729,55 +739,75 @@ export const verifySubscriptionService = async(userId : string, data : Subscript
         throw new AppError("Invalid subscription signature", 400);
     }
 
+    let providerStatus: string | null = null;
+    try {
+        const remote = await razorpay.subscriptions.fetch(razorpay_subscription_id);
+        providerStatus = remote.status;
+    } catch {
+        providerStatus = null;
+    }
+
     return {
         subscriptionId: subscription.id,
         providerSubscriptionId : subscription.providerSubscriptionId,
         verified : true,
         status: subscription.status,
+        providerStatus,
     };
 }
 
-export const cancelSubscriptionService = async(userId : string, cancelAtPeriodEnd : boolean) => {
+export const cancelSubscriptionService = async (userId: string, cancelAtPeriodEnd: boolean) => {
     const subscription = await prisma.subscription.findFirst({
-        where : {
-            userId,
-            status : "ACTIVE"
-        }
-    })
+        where: { userId, status: { in: [...LIVE_SUBSCRIPTION_STATUSES] } },
+    });
 
-     if (!subscription) {
-        throw new AppError("No active subscription found", 404);
+    if (!subscription) {
+        throw new AppError("No cancellable subscription found", 404);
     }
-
-    if (subscription.cancelAtPeriodEnd) {
-        throw new AppError("Subscription is already scheduled for cancellation", 400);
-    }
-
     if (!subscription.providerSubscriptionId) {
         throw new AppError("Provider subscription ID is missing", 500);
     }
+    if (subscription.cancelAtPeriodEnd) {
+        throw new AppError("This subscription is already scheduled for cancellation.", 400);
+    }
+    if (cancelAtPeriodEnd && subscription.status !== "ACTIVE") {
+        throw new AppError("cancelAtPeriodEnd is only supported for ACTIVE subscriptions.", 400);
+    }
 
-    const razorpaySubscription = await razorpay.subscriptions.cancel(subscription.providerSubscriptionId, cancelAtPeriodEnd);
+    let razorpaySubscription: { id: string; status: string };
+    try {
+        razorpaySubscription = await razorpay.subscriptions.cancel(
+            subscription.providerSubscriptionId,
+            cancelAtPeriodEnd
+        );
+    } catch (err) {
+        console.error("Razorpay cancel failed:", err);
+        throw new AppError("Payment provider failed to cancel the subscription. Please try again.", 502);
+    }
 
-
-    if(cancelAtPeriodEnd) {
+    if (cancelAtPeriodEnd) {
         await prisma.subscription.update({
-            where :{
-                id : subscription.id
+            where: { id: subscription.id },
+            data: { cancelAtPeriodEnd: true },
+        });
+    } else {
+        await prisma.subscription.update({
+            where: { id: subscription.id },
+            data: {
+                status: "CANCELLED",
+                cancelledAt: new Date(),
+                cancelAtPeriodEnd: false,
             },
-            data :{
-                cancelAtPeriodEnd : true
-            }
-        })
+        });
     }
 
     return {
         subscriptionId: subscription.id,
         providerSubscriptionId: razorpaySubscription.id,
-        status: razorpaySubscription.status,
+        providerStatus: razorpaySubscription.status,
+        localStatus: cancelAtPeriodEnd ? subscription.status : "CANCELLED",
         cancelAtPeriodEnd,
     };
-
 }
 
 export const changePlanService = async(userId : string, plan : ChangePlanInput["plan"], billingCycle : ChangePlanInput["billingCycle"], currency : "INR" | "USD") => {
@@ -936,12 +966,7 @@ export const getSubscriptionService = async (userId: string) => {
         where: {
             userId,
             status: {
-                in: [
-                    "ACTIVE",
-                    "PENDING",
-                    "HALTED",
-                    "PAUSED",
-                ],
+                in: [...LIVE_SUBSCRIPTION_STATUSES],
             },
         },
         include: {
@@ -955,6 +980,68 @@ export const getSubscriptionService = async (userId: string) => {
     }
 
     return subscription;
+};
+
+const LIVE_SUBSCRIPTION_STATUSES = [
+    "AUTHORIZATION_PENDING",
+    "PAYMENT_RETRY",
+    "ACTIVE",
+    "HALTED",
+    "PAUSED",
+] as const;
+
+// 🔬 RAZORPAY-TEST-PENDING — checklist T1/T2: the yearly value exceeds Razorpay's
+// documented 30-year span formula; do NOT finalize these until test-mode verification.
+const TOTAL_COUNT_MONTHLY = 1200;
+const TOTAL_COUNT_YEARLY = 100;
+
+// Paid access survives PAYMENT_RETRY/HALTED/PAUSED until the paid period ends (+24h slack).
+const ENTITLEMENT_GRACE_MS = 24 * 60 * 60 * 1000;
+
+type SubscriptionWithPlan = Prisma.SubscriptionGetPayload<{
+    include: { plan: true; pendingPlan: true };
+}>;
+
+export const isEntitled = (subscription: SubscriptionWithPlan | null): boolean => {
+    if (!subscription) {
+        return false;
+    }
+
+    if (subscription.status === "ACTIVE") {
+        return true;
+    }
+
+    if (
+        subscription.status === "PAYMENT_RETRY" ||
+        subscription.status === "HALTED" ||
+        subscription.status === "PAUSED"
+    ) {
+        return (
+            subscription.currentPeriodEnd !== null &&
+            Date.now() <= subscription.currentPeriodEnd.getTime() + ENTITLEMENT_GRACE_MS
+        );
+    }
+
+    // AUTHORIZATION_PENDING is never entitled.
+    return false;
+};
+
+// At most ONE live row per user (DB-enforced since Wave 0), so findFirst is deterministic.
+export const getEntitledSubscription = async (
+    userId: string
+): Promise<SubscriptionWithPlan | null> => {
+    const subscription = await prisma.subscription.findFirst({
+        where: {
+            userId,
+            status: { in: [...LIVE_SUBSCRIPTION_STATUSES] },
+        },
+        include: {
+            plan: true,
+            pendingPlan: true,
+        },
+    });
+
+    return isEntitled(subscription) ? subscription : null;
 };
 
 export const getActiveSubscription = async (userId: string) => {
@@ -973,7 +1060,7 @@ export const getActiveSubscription = async (userId: string) => {
 };
 
 export const getUserPlan = async (userId: string) => {
-    const subscription = await getActiveSubscription(userId);
+    const subscription = await getEntitledSubscription(userId);
 
     if (subscription) {
         return subscription.plan;
@@ -995,7 +1082,13 @@ export const getUserPlan = async (userId: string) => {
 const getBillingPeriod = (subscription: Awaited<ReturnType<typeof getActiveSubscription>>) => {
     if (subscription) {
         if (!subscription.currentPeriodStart || !subscription.currentPeriodEnd) {
-            throw new AppError("Billing period information unavailable", 500);
+            // Defensive fallback: a live row with missing provider periods must not
+            // hard-fail quota checks (degrades to calendar month instead).
+            const now = new Date();
+            return {
+                periodStart: new Date(now.getFullYear(), now.getMonth(), 1),
+                periodEnd: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+            };
         }
 
         return {
@@ -1104,7 +1197,7 @@ export const checkLinkLimit = async (userId: string) => {
 };
 
 export const checkQrLimit = async (userId: string) => {
-    const subscription = await getActiveSubscription(userId);
+    const subscription = await getEntitledSubscription(userId);
 
     const plan = subscription
         ? subscription.plan
@@ -1162,7 +1255,7 @@ export const checkDomainLimit = async (userId: string) => {
 
 
 export const checkRedirectLimit = async (userId: string) => {
-    const subscription = await getActiveSubscription(userId);
+    const subscription = await getEntitledSubscription(userId);
 
     const plan = subscription
         ? subscription.plan
@@ -1225,7 +1318,7 @@ export const checkRedirectLimit = async (userId: string) => {
 const PRO_DESTINATION_CHANGE_ABUSE_LIMIT = 5000;
 
 export const checkDestinationLimit = async (userId: string) => {
-    const subscription = await getActiveSubscription(userId);
+    const subscription = await getEntitledSubscription(userId);
 
     if (!subscription) {
         throw new AppError("No active subscription found", 403);
@@ -1287,7 +1380,7 @@ export const checkDestinationLimit = async (userId: string) => {
 
 
 export const checkCustomSlugLimit = async (userId: string) => {
-    const subscription = await getActiveSubscription(userId);
+    const subscription = await getEntitledSubscription(userId);
 
      if (!subscription) {
         throw new AppError("No active subscription found", 403);
