@@ -51,6 +51,11 @@ export const razorpayWebhookService = async(signature : string, data : Buffer, e
     const expectedSignature = crypto.createHmac("sha256", config.razorpayWebhookSecret!)
                               .update(data).digest("hex");
 
+    // Length pre-check: timingSafeEqual throws RangeError on length mismatch,
+    // which surfaced as 500s (and Razorpay retries) for forged signatures.
+    if (signature.length !== expectedSignature.length) {
+        throw new AppError("Invalid webhook signature", 400);
+    }
 
     const isValid = crypto.timingSafeEqual(
         Buffer.from(signature),
@@ -99,14 +104,14 @@ export const razorpayWebhookService = async(signature : string, data : Buffer, e
 
     // We own the claim - run business logic
     try {
-        await processWebhookEvent(payload);
+        const webhookResult = await processWebhookEvent(payload);
         
         // Success - mark PROCESSED
         await prisma.webhookEvent.update({
             where: { eventId },
             data: { status: "PROCESSED", processedAt: new Date(), claimedAt: null }
         });
-        return { event: payload.event, processed: true };
+        return { event: payload.event, processed: true, ...(webhookResult ?? {}) };
     } catch (err) {
         // Failure - mark FAILED (retryable)
         await prisma.webhookEvent.update({
@@ -117,53 +122,141 @@ export const razorpayWebhookService = async(signature : string, data : Buffer, e
     }
 };
 
-const processWebhookEvent = async (payload: any) => {
+type WebhookProcessResult = {
+    matched: boolean;
+    ignored?: "terminal" | "stale" | "unknown";
+    warning?: string;
+};
+
+// Terminal rows are sinks: stale/out-of-order events must never resurrect them
+// into live states.
+const TERMINAL_SUBSCRIPTION_STATUSES = ["CANCELLED", "COMPLETED", "EXPIRED"] as const;
+
+const isTerminalSubscriptionStatus = (status: string) =>
+    (TERMINAL_SUBSCRIPTION_STATUSES as readonly string[]).includes(status);
+
+// Maps a Razorpay plan id to our local Plan via the four provider plan-id columns.
+// Returns null for unmapped ids (dashboard-created / foreign plans).
+const mapProviderPlan = async (planId: string | undefined | null) => {
+    if (!planId) {
+        return null;
+    }
+
+    return prisma.plan.findFirst({
+        where: {
+            OR: [
+                { razorpayMonthlyPlanId: planId },
+                { razorpayYearlyPlanId: planId },
+                { razorpayUsdMonthlyPlanId: planId },
+                { razorpayUsdYearlyPlanId: planId },
+            ],
+        },
+    });
+};
+
+// Billing cycle derives ONLY from which provider column matched - never from
+// payload names or unrelated fields.
+const cycleFromPlanMatch = (
+    plan: NonNullable<Awaited<ReturnType<typeof mapProviderPlan>>>,
+    planId: string
+): "MONTHLY" | "YEARLY" =>
+    plan.razorpayMonthlyPlanId === planId || plan.razorpayUsdMonthlyPlanId === planId
+        ? "MONTHLY"
+        : "YEARLY";
+
+const findLocalSubscription = async (providerSubscriptionId: string) =>
+    prisma.subscription.findUnique({
+        where: {
+            provider_providerSubscriptionId: {
+                provider: "RAZORPAY",
+                providerSubscriptionId,
+            },
+        },
+    });
+
+const epochToDate = (seconds: number | undefined | null) =>
+    seconds ? new Date(seconds * 1000) : undefined;
+
+const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult | void> => {
     switch (payload.event) {
         case "payment.captured": {
+            // Upsert-by-order: tolerant of legitimate Razorpay ordering where this
+            // arrives before subscription.charged creates the local Payment row.
             const payment = payload.payload.payment.entity;
+
+            // userId can only come from a known local subscription; foreign/unlinked
+            // payments are acknowledged rather than fabricated.
+            const localSubscription = await findLocalSubscription(payment.subscription_id ?? "");
+
+            if (!localSubscription) {
+                console.warn(`[webhook] payment.captured: unresolvable subscription for payment ${payment.id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
+            }
+
             const existingPayment = await prisma.payment.findUnique({
                 where: {
                     provider_providerOrderId: {
-                    provider: "RAZORPAY",
-                    providerOrderId: payment.order_id,
+                        provider: "RAZORPAY",
+                        providerOrderId: payment.order_id,
                     },
                 },
             });
 
-            if (!existingPayment) {
-                throw new AppError("Payment record not found", 404);
-            }
-
-            if (existingPayment.status === "SUCCESS") {
+            if (existingPayment?.status === "SUCCESS") {
                 break;
             }
 
-            await prisma.payment.update({
-                where: {
-                    id: existingPayment.id,
-                },
-                data: {
-                    providerPaymentId: payment.id,
-                    status: "SUCCESS",
-                },
-            });
+            if (!existingPayment) {
+                await prisma.payment.create({
+                    data: {
+                        planId: localSubscription.planId,
+                        userId: localSubscription.userId,
+                        subscriptionId: localSubscription.id,
+
+                        provider: "RAZORPAY",
+
+                        providerOrderId: payment.order_id,
+                        providerPaymentId: payment.id,
+
+                        billingCycle: localSubscription.billingCycle,
+
+                        amount: payment.amount,
+                        currency: payment.currency,
+
+                        status: "SUCCESS",
+                    },
+                });
+            } else {
+                await prisma.payment.update({
+                    where: { id: existingPayment.id },
+                    data: {
+                        providerPaymentId: payment.id,
+                        status: "SUCCESS",
+                    },
+                });
+            }
+
             break;
         }
 
         case "payment.failed": {
+            // No money moved; when no local row exists we cannot fabricate ledger
+            // context - acknowledge instead of failing (prevents auth-transaction
+            // retry storms). A SUCCESS payment is never overwritten by a failure.
             const payment = payload.payload.payment.entity;
 
             const existingPayment = await prisma.payment.findUnique({
                 where: {
                     provider_providerOrderId: {
-                    provider: "RAZORPAY",
-                    providerOrderId: payment.order_id,
+                        provider: "RAZORPAY",
+                        providerOrderId: payment.order_id,
                     },
                 },
             });
 
             if (!existingPayment) {
-                throw new AppError("Payment record not found", 404);
+                console.warn(`[webhook] payment.failed: no local payment for order ${payment.order_id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
             }
 
             if (existingPayment.status === "SUCCESS") {
@@ -171,27 +264,31 @@ const processWebhookEvent = async (payload: any) => {
             }
 
             await prisma.payment.update({
-                where: {
-                    id: existingPayment.id,
-                },
+                where: { id: existingPayment.id },
                 data: {
                     providerPaymentId: payment.id,
                     status: "FAILED",
                 },
             });
+
             break;
         }
 
         case "subscription.authenticated": { // 1st
+            // Mandate authorized != active: status intentionally untouched so
+            // AUTHORIZATION_PENDING stays non-entitled until activated/charged fires.
             const subscription = payload.payload.subscription.entity;
+            const existingSubscription = await findLocalSubscription(subscription.id);
 
-            await prisma.subscription.updateMany({
-                where: {
-                    provider: "RAZORPAY",
-                    providerSubscriptionId: subscription.id,
-                },
+            if (!existingSubscription) {
+                console.warn(`[webhook] subscription.authenticated: unknown subscription ${subscription.id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
+            }
+
+            await prisma.subscription.update({
+                where: { id: existingSubscription.id },
                 data: {
-                    providerCustomerId: subscription.customer_id ?? null,
+                    providerCustomerId: subscription.customer_id ?? existingSubscription.providerCustomerId,
                 },
             });
 
@@ -200,83 +297,160 @@ const processWebhookEvent = async (payload: any) => {
 
         case "subscription.activated": { 
             const subscription = payload.payload.subscription.entity;
+            const existingSubscription = await findLocalSubscription(subscription.id);
 
-            await prisma.subscription.updateMany({
-                where: {
-                    provider: "RAZORPAY",
-                    providerSubscriptionId: subscription.id,
-                },
-                data: {
-                    status: "ACTIVE",
+            if (!existingSubscription) {
+                console.warn(`[webhook] subscription.activated: unknown subscription ${subscription.id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
+            }
+            if (isTerminalSubscriptionStatus(existingSubscription.status)) {
+                console.warn(`[webhook] subscription.activated: ignoring terminal subscription (${existingSubscription.status})`);
+                return { matched: true, ignored: "terminal" };
+            }
 
-                    providerCustomerId: subscription.customer_id ?? null,
-
-                    startedAt: subscription.start_at
-                        ? new Date(subscription.start_at * 1000)
-                        : undefined,
-
-                    currentPeriodStart: subscription.current_start
-                        ? new Date(subscription.current_start * 1000)
-                        : undefined,
-
-                    currentPeriodEnd: subscription.current_end
-                        ? new Date(subscription.current_end * 1000)
-                        : undefined,
-                },
-            });
+            // Authoritative entry into ACTIVE. Only-if-provided field updates so we
+            // never overwrite valid values; pending/cancel fields untouched.
+            try {
+                await prisma.subscription.update({
+                    where: { id: existingSubscription.id },
+                    data: {
+                        status: "ACTIVE",
+                        providerCustomerId: subscription.customer_id ?? existingSubscription.providerCustomerId,
+                        startedAt: epochToDate(subscription.start_at) ?? existingSubscription.startedAt,
+                        currentPeriodStart: epochToDate(subscription.current_start) ?? existingSubscription.currentPeriodStart,
+                        currentPeriodEnd: epochToDate(subscription.current_end) ?? existingSubscription.currentPeriodEnd,
+                    },
+                });
+            } catch (err) {
+                // P2002 here would mean a second live row for this user -
+                // structurally impossible under Wave 0's index + Block-Until-Cancel.
+                console.error(`[webhook] subscription.activated: UNIQUE violation while activating ${existingSubscription.id}`, err);
+                throw err;
+            }
 
             break;
         }
 
             case "subscription.charged": {
+                // Renewal engine: PAYMENT_RETRY->ACTIVE, HALTED->ACTIVE, ACTIVE->ACTIVE.
                 const subscription = payload.payload.subscription.entity;
 
                 const payment = payload.payload.payment.entity;
 
-                const existingSubscription =
-                    await prisma.subscription.findUnique({
-                        where: {
-                            provider_providerSubscriptionId: {
-                                provider: "RAZORPAY",
-                                providerSubscriptionId: subscription.id,
-                            },
-                        },
-                    });
+                const existingSubscription = await findLocalSubscription(subscription.id);
 
                 if (!existingSubscription) {
-                    throw new AppError("Subscription record not found", 404);
+                    console.warn(`[webhook] subscription.charged: unknown subscription ${subscription.id}; acknowledged`);
+                    return { matched: false, ignored: "unknown" };
+                }
+                if (isTerminalSubscriptionStatus(existingSubscription.status)) {
+                    return { matched: true, ignored: "terminal" };
                 }
 
-                const existingPayment =
-                    await prisma.payment.findUnique({
-                        where: {
-                            provider_providerPaymentId: {
-                                provider: "RAZORPAY",
-                                providerPaymentId: payment.id,
-                            },
-                        },
-                    });
+                let warning: string | undefined;
+                const mappedPlan = await mapProviderPlan(subscription.plan_id);
+
+                if (!mappedPlan) {
+                    warning = "unmapped_plan";
+                    console.error(`[webhook] subscription.charged: unmapped Razorpay plan '${subscription.plan_id}' on ${existingSubscription.id}; lifecycle applied without plan change`);
+                }
+
+                // ---- Gated plan-commit decision ----
+                // Considered only when the payload maps to a DIFFERENT local plan and
+                // no schedule window is open. Allowed via:
+                //   (a) pendingPlanId === mapped plan -> authorized change confirmed
+                //   (b) brand-new billing cycle       -> provider truth, but LOUD alert
+                // Otherwise (stale/out-of-order charge): plan frozen, lifecycle only.
+                type PlanCommit = { planId: string; billingCycle: "MONTHLY" | "YEARLY"; alert: boolean };
+                let planCommit: PlanCommit | null = null;
+
+                if (
+                    mappedPlan &&
+                    mappedPlan.id !== existingSubscription.planId &&
+                    subscription.has_scheduled_changes !== true
+                ) {
+                    const incomingStartMs = subscription.current_start ? subscription.current_start * 1000 : 0;
+                    const newerCycle =
+                        existingSubscription.currentPeriodEnd === null ||
+                        incomingStartMs > existingSubscription.currentPeriodEnd.getTime();
+
+                    if (existingSubscription.pendingPlanId === mappedPlan.id) {
+                        planCommit = {
+                            planId: mappedPlan.id,
+                            billingCycle: cycleFromPlanMatch(mappedPlan, subscription.plan_id),
+                            alert: false,
+                        };
+                    } else if (newerCycle) {
+                        planCommit = {
+                            planId: mappedPlan.id,
+                            billingCycle: cycleFromPlanMatch(mappedPlan, subscription.plan_id),
+                            alert: true,
+                        };
+                    } else {
+                        console.info(`[webhook] subscription.charged: stale charge for ${existingSubscription.id} (plan '${subscription.plan_id}' older than local state); lifecycle only`);
+                    }
+                }
+
+                if (planCommit?.alert) {
+                    console.error(`[webhook] subscription.charged: PROVIDER-SIDE PLAN CHANGE without local schedule on ${existingSubscription.id}: '${existingSubscription.planId}' -> '${planCommit.planId}'. Mirrored so entitlement stays consistent with the charged amount.`);
+                }
 
                 await prisma.$transaction(async (tx) => {
 
+                    // Payment dedupe chain: payment-id first, order-id fallback, create last.
+                    let existingPayment =
+                        await tx.payment.findUnique({
+                            where: {
+                                provider_providerPaymentId: {
+                                    provider: "RAZORPAY",
+                                    providerPaymentId: payment.id,
+                                },
+                            },
+                        });
+
                     if (!existingPayment) {
+                        existingPayment =
+                            await tx.payment.findUnique({
+                                where: {
+                                    provider_providerOrderId: {
+                                        provider: "RAZORPAY",
+                                        providerOrderId: payment.order_id,
+                                    },
+                                },
+                            });
+                    }
 
-                        await tx.payment.create({
+                    const paymentRecord = {
+                        planId: planCommit ? planCommit.planId : existingSubscription.planId,
+                        userId: existingSubscription.userId,
+                        subscriptionId: existingSubscription.id,
+
+                        provider: "RAZORPAY" as const,
+
+                        providerOrderId: payment.order_id,
+                        providerPaymentId: payment.id,
+
+                        billingCycle: existingSubscription.billingCycle,
+
+                        amount: payment.amount,
+                        currency: payment.currency,
+
+                        status: "SUCCESS" as const,
+                    };
+
+                    if (!existingPayment) {
+                        await tx.payment.create({ data: paymentRecord });
+                    } else {
+                        if (
+                            existingPayment.amount !== payment.amount ||
+                            existingPayment.currency !== payment.currency
+                        ) {
+                            console.warn(`[webhook] subscription.charged: amount/currency drift on payment ${existingPayment.id}`);
+                        }
+                        await tx.payment.update({
+                            where: { id: existingPayment.id },
                             data: {
-                                planId: existingSubscription.planId,
-                                userId: existingSubscription.userId,
-                                subscriptionId: existingSubscription.id,
-
-                                provider: "RAZORPAY",
-
-                                providerOrderId: payment.order_id,
                                 providerPaymentId: payment.id,
-
-                                billingCycle: existingSubscription.billingCycle,
-
-                                amount: payment.amount,
-                                currency: payment.currency,
-
                                 status: "SUCCESS",
                             },
                         });
@@ -289,120 +463,100 @@ const processWebhookEvent = async (payload: any) => {
 
                         data: {
                             status: "ACTIVE",
-                            currentPeriodStart:
-                                new Date(
-                                    subscription.current_start * 1000
-                                ),
 
-                            currentPeriodEnd:
-                                new Date(
-                                    subscription.current_end * 1000
-                                ),
+                            currentPeriodStart: epochToDate(subscription.current_start) ?? existingSubscription.currentPeriodStart,
+
+                            currentPeriodEnd: epochToDate(subscription.current_end) ?? existingSubscription.currentPeriodEnd,
+
+                            ...(planCommit
+                                ? {
+                                      planId: planCommit.planId,
+                                      billingCycle: planCommit.billingCycle,
+                                      pendingPlanId: null,
+                                      changeScheduledAt: null,
+                                  }
+                                : {}),
                         },
                     });
                 });
+
+                if (payment.currency !== existingSubscription.currency) {
+                    console.warn(`[webhook] subscription.charged: charged currency ${payment.currency} differs from subscription currency ${existingSubscription.currency} on ${existingSubscription.id}`);
+                }
 
                 break;
             }
 
         case "subscription.pending": {
+            // Renewal charge failed; retry scheduled. Entitlement continues via the
+            // isEntitled() grace rule until currentPeriodEnd - no ad-hoc access logic.
             const subscription = payload.payload.subscription.entity;
-
-            const existingSubscription = await prisma.subscription.findUnique({
-                where: {
-                    provider_providerSubscriptionId: {
-                        provider: "RAZORPAY",
-                        providerSubscriptionId: subscription.id,
-                    },
-                },
-            });
+            const existingSubscription = await findLocalSubscription(subscription.id);
 
             if (!existingSubscription) {
-                throw new AppError(
-                    "Subscription record not found",
-                    404
-                );
+                console.warn(`[webhook] subscription.pending: unknown subscription ${subscription.id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
+            }
+            if (isTerminalSubscriptionStatus(existingSubscription.status)) {
+                return { matched: true, ignored: "terminal" };
             }
 
             await prisma.subscription.update({
-                where: {
-                    id: existingSubscription.id,
-                },
+                where: { id: existingSubscription.id },
                 data: {
-                    // Wave 1 compatibility: renewal failures must occupy a LIVE index
-                    // slot; legacy PENDING would bypass the one-live-subscription index.
-                    // Full lifecycle rewrite lands in Wave 2.
                     status: "PAYMENT_RETRY",
+                    currentPeriodStart: epochToDate(subscription.current_start) ?? existingSubscription.currentPeriodStart,
+                    currentPeriodEnd: epochToDate(subscription.current_end) ?? existingSubscription.currentPeriodEnd,
                 },
             });
 
             break;
         }
 
-
         case "subscription.halted": {
+            // Retries exhausted at Razorpay - NOT a cancellation. Entitlement still
+            // governed by isEntitled() until periodEnd+grace. Pending plan schedule
+            // intentionally kept (🔬T7b verifies provider behavior across halt/resume).
             const subscription = payload.payload.subscription.entity;
-
-            const existingSubscription = await prisma.subscription.findUnique({
-                where: {
-                    provider_providerSubscriptionId: {
-                        provider: "RAZORPAY",
-                        providerSubscriptionId: subscription.id,
-                    },
-                },
-            });
+            const existingSubscription = await findLocalSubscription(subscription.id);
 
             if (!existingSubscription) {
-                throw new AppError(
-                    "Subscription record not found",
-                    404
-                );
+                console.warn(`[webhook] subscription.halted: unknown subscription ${subscription.id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
+            }
+            if (isTerminalSubscriptionStatus(existingSubscription.status)) {
+                return { matched: true, ignored: "terminal" };
             }
 
             await prisma.subscription.update({
-                where: {
-                    id: existingSubscription.id,
-                },
-                data: {
-                    status: "HALTED",
-                },
+                where: { id: existingSubscription.id },
+                data: { status: "HALTED" },
             });
 
             break;
         }
 
         case "subscription.cancelled": {
+            // Terminal sink. Deliberately NOT terminal-guarded: re-confirming an
+            // already-CANCELLED row must stay possible (heals the Wave-1 transient
+            // where the provider cancel succeeded but our local write failed).
             const subscription = payload.payload.subscription.entity;
-
-            const existingSubscription =
-                await prisma.subscription.findUnique({
-                    where: {
-                        provider_providerSubscriptionId: {
-                            provider: "RAZORPAY",
-                            providerSubscriptionId: subscription.id,
-                        },
-                    },
-                });
+            const existingSubscription = await findLocalSubscription(subscription.id);
 
             if (!existingSubscription) {
-                throw new AppError("Subscription record not found", 404);
+                console.warn(`[webhook] subscription.cancelled: unknown subscription ${subscription.id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
             }
 
             await prisma.subscription.update({
-                where: {
-                    id: existingSubscription.id,
-                },
+                where: { id: existingSubscription.id },
                 data: {
                     status: "CANCELLED",
                     cancelAtPeriodEnd: false,
-                    cancelledAt: subscription.ended_at
-                                ? new Date(subscription.ended_at * 1000)
-                                : new Date(),
-
-                    currentPeriodEnd:
-                        subscription.current_end
-                            ? new Date(subscription.current_end * 1000)
-                            : existingSubscription.currentPeriodEnd,
+                    cancelledAt: epochToDate(subscription.ended_at) ?? new Date(),
+                    currentPeriodEnd: epochToDate(subscription.current_end) ?? existingSubscription.currentPeriodEnd,
+                    pendingPlanId: null,
+                    changeScheduledAt: null,
                 },
             });
 
@@ -410,71 +564,47 @@ const processWebhookEvent = async (payload: any) => {
         }
 
         case "subscription.paused": {
-            const subscription =
-                payload.payload.subscription.entity;
-
-            const existingSubscription =
-                await prisma.subscription.findUnique({
-                    where: {
-                        provider_providerSubscriptionId: {
-                            provider: "RAZORPAY",
-                            providerSubscriptionId: subscription.id,
-                        },
-                    },
-                });
+            // Billing paused at provider; entitlement follows the same grace rule as
+            // HALTED via isEntitled(). Pending schedule kept across pause 🔬T7b.
+            const subscription = payload.payload.subscription.entity;
+            const existingSubscription = await findLocalSubscription(subscription.id);
 
             if (!existingSubscription) {
-                throw new AppError(
-                    "Subscription record not found",
-                    404
-                );
+                console.warn(`[webhook] subscription.paused: unknown subscription ${subscription.id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
+            }
+            if (isTerminalSubscriptionStatus(existingSubscription.status)) {
+                return { matched: true, ignored: "terminal" };
             }
 
             await prisma.subscription.update({
-                where: {
-                    id: existingSubscription.id,
-                },
-                data: {
-                    status: "PAUSED",
-                },
+                where: { id: existingSubscription.id },
+                data: { status: "PAUSED" },
             });
 
             break;
         }
 
         case "subscription.resumed": {
+            // Charge flow restored. Pendings kept - scheduled changes survive pause
+            // at the provider (🔬T7b); periods refresh only-if-provided.
             const subscription = payload.payload.subscription.entity;
-
-            const existingSubscription =
-                await prisma.subscription.findUnique({
-                    where: {
-                        provider_providerSubscriptionId: {
-                            provider: "RAZORPAY",
-                            providerSubscriptionId: subscription.id,
-                        },
-                    },
-                });
+            const existingSubscription = await findLocalSubscription(subscription.id);
 
             if (!existingSubscription) {
-                throw new AppError("Subscription record not found", 404);
+                console.warn(`[webhook] subscription.resumed: unknown subscription ${subscription.id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
+            }
+            if (isTerminalSubscriptionStatus(existingSubscription.status)) {
+                return { matched: true, ignored: "terminal" };
             }
 
             await prisma.subscription.update({
-                where: {
-                    id: existingSubscription.id,
-                },
+                where: { id: existingSubscription.id },
                 data: {
                     status: "ACTIVE",
-
-                    currentPeriodStart:
-                        subscription.current_start
-                            ? new Date(subscription.current_start * 1000)
-                            : existingSubscription.currentPeriodStart,
-
-                    currentPeriodEnd:
-                        subscription.current_end
-                            ? new Date(subscription.current_end * 1000)
-                            : existingSubscription.currentPeriodEnd,
+                    currentPeriodStart: epochToDate(subscription.current_start) ?? existingSubscription.currentPeriodStart,
+                    currentPeriodEnd: epochToDate(subscription.current_end) ?? existingSubscription.currentPeriodEnd,
                 },
             });
 
@@ -482,38 +612,24 @@ const processWebhookEvent = async (payload: any) => {
         }
 
         case "subscription.completed": {
+            // Natural end (total_count exhausted). Distinct from CANCELLED: no user
+            // intent, never re-enterable, entitled only until periodEnd by wall clock.
             const subscription = payload.payload.subscription.entity;
-
-            const existingSubscription =
-                await prisma.subscription.findUnique({
-                    where: {
-                        provider_providerSubscriptionId: {
-                            provider: "RAZORPAY",
-                            providerSubscriptionId: subscription.id,
-                        },
-                    },
-                });
+            const existingSubscription = await findLocalSubscription(subscription.id);
 
             if (!existingSubscription) {
-                throw new AppError("Subscription record not found", 404);
+                console.warn(`[webhook] subscription.completed: unknown subscription ${subscription.id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
             }
 
             await prisma.subscription.update({
-                where: {
-                    id: existingSubscription.id,
-                },
+                where: { id: existingSubscription.id },
                 data: {
                     status: "COMPLETED",
-
-                    currentPeriodStart:
-                        subscription.current_start
-                            ? new Date(subscription.current_start * 1000)
-                            : existingSubscription.currentPeriodStart,
-
-                    currentPeriodEnd:
-                        subscription.current_end
-                            ? new Date(subscription.current_end * 1000)
-                            : existingSubscription.currentPeriodEnd,
+                    currentPeriodStart: epochToDate(subscription.current_start) ?? existingSubscription.currentPeriodStart,
+                    currentPeriodEnd: epochToDate(subscription.current_end) ?? existingSubscription.currentPeriodEnd,
+                    pendingPlanId: null,
+                    changeScheduledAt: null,
                 },
             });
 
@@ -521,88 +637,90 @@ const processWebhookEvent = async (payload: any) => {
         }
 
     case "subscription.updated": {
+        // The plan-change reconciler. has_scheduled_changes is authoritative for
+        // freezing planId; change_scheduled_at only supplies the timestamp.
         const subscription = payload.payload.subscription.entity;
 
-        const existingSubscription =
-            await prisma.subscription.findUnique({
-                where: {
-                    provider_providerSubscriptionId: {
-                        provider: "RAZORPAY",
-                        providerSubscriptionId: subscription.id,
-                    },
+        const existingSubscription = await findLocalSubscription(subscription.id);
+
+        if (!existingSubscription) {
+            console.warn(`[webhook] subscription.updated: unknown subscription ${subscription.id}; acknowledged`);
+            return { matched: false, ignored: "unknown" };
+        }
+        if (isTerminalSubscriptionStatus(existingSubscription.status)) {
+            return { matched: true, ignored: "terminal" };
+        }
+
+        const mappedPlan = await mapProviderPlan(subscription.plan_id);
+
+        if (!mappedPlan) {
+            console.error(`[webhook] subscription.updated: unmapped Razorpay plan '${subscription.plan_id}' on ${existingSubscription.id}; no mutation applied`);
+            return { matched: true, warning: "unmapped_plan" };
+        }
+
+        const billingCycle = cycleFromPlanMatch(mappedPlan, subscription.plan_id);
+        const scheduledWindowOpen = subscription.has_scheduled_changes === true;
+        const scheduledAt =
+            typeof subscription.change_scheduled_at === "number"
+                ? new Date(subscription.change_scheduled_at * 1000)
+                : (existingSubscription.changeScheduledAt ?? existingSubscription.currentPeriodEnd ?? new Date());
+
+        const periodFields = {
+            currentPeriodStart:
+                epochToDate(subscription.current_start) ?? existingSubscription.currentPeriodStart,
+
+            currentPeriodEnd:
+                epochToDate(subscription.current_end) ?? existingSubscription.currentPeriodEnd,
+        };
+
+        if (!scheduledWindowOpen) {
+            // Window CLOSED: provider truth is committed. Absolute-set + clear schedule.
+            // Effectuation path for BOTH cycle-end downgrades and immediate upgrades.
+            // Also correctly clears a stale local pending after someone cancels the
+            // scheduled update at the provider.
+            const planChanged = mappedPlan.id !== existingSubscription.planId;
+
+            await prisma.subscription.update({
+                where: { id: existingSubscription.id },
+                data: {
+                    ...(planChanged ? { planId: mappedPlan.id } : {}),
+                    billingCycle,
+                    pendingPlanId: null,
+                    changeScheduledAt: null,
+                    ...periodFields,
                 },
             });
 
-        if (!existingSubscription) {
-            throw new AppError("Subscription record not found", 404);
+            break;
         }
 
-        
-        const updatedPlan = await prisma.plan.findFirst({
-            where: {
-                OR: [
-                    {
-                        razorpayMonthlyPlanId: subscription.plan_id,
-                    },
-                    {
-                        razorpayYearlyPlanId: subscription.plan_id,
-                    },
-                    {
-                        razorpayUsdMonthlyPlanId : subscription.plan_id
-                    },
-                    {
-                        razorpayUsdYearlyPlanId : subscription.plan_id
-                    }
-                ],
-            },
-        });
+        // Window OPEN: planId is FROZEN - mirror future intent instead of applying it.
+        //   mapped == current plan         -> keep existing pendings (scheduling ack)
+        //   mapped == existing pending     -> keep (already mirrored)
+        //   mapped != current & no pending -> adopt (dashboard-initiated schedule)
+        //   conflicting pending            -> provider wins
+        const conflictingPending =
+            existingSubscription.pendingPlanId !== null &&
+            existingSubscription.pendingPlanId !== mappedPlan.id &&
+            mappedPlan.id !== existingSubscription.planId;
 
-        if (!updatedPlan) {
-            throw new AppError("Plan corresponding to Razorpay plan not found", 404);
+        if (conflictingPending) {
+            console.warn(`[webhook] subscription.updated: provider schedule '${subscription.plan_id}' overrides locally pending plan on ${existingSubscription.id}`);
         }
-        const billingCycle =
-            subscription.plan_id === updatedPlan.razorpayMonthlyPlanId ||
-            subscription.plan_id === updatedPlan.razorpayUsdMonthlyPlanId
-                ? "MONTHLY"
-                : "YEARLY";
 
-        await prisma.$transaction(async (tx) => {
+        const desiredPendingPlanId =
+            mappedPlan.id === existingSubscription.planId
+                ? existingSubscription.pendingPlanId
+                : mappedPlan.id;
 
-            const planChanged =
-                existingSubscription.planId !== updatedPlan.id;
-
-            await tx.subscription.update({
-            where: {
-                id: existingSubscription.id,
-            },
-
+        await prisma.subscription.update({
+            where: { id: existingSubscription.id },
             data: {
-                planId: planChanged
-                    ? updatedPlan.id
-                    : existingSubscription.planId,
-
-                pendingPlanId: planChanged
-                    ? null
-                    : existingSubscription.pendingPlanId,
-
-                changeScheduledAt: planChanged
-                    ? null
-                    : existingSubscription.changeScheduledAt,
-
-                billingCycle,
-
-                currentPeriodStart:
-                    subscription.current_start
-                        ? new Date(subscription.current_start * 1000)
-                        : existingSubscription.currentPeriodStart,
-
-                currentPeriodEnd:
-                    subscription.current_end
-                        ? new Date(subscription.current_end * 1000)
-                        : existingSubscription.currentPeriodEnd,
+                pendingPlanId: desiredPendingPlanId,
+                changeScheduledAt: scheduledAt,
+                ...periodFields,
             },
         });
-    })
 
         break;
     }
@@ -776,6 +894,8 @@ export const cancelSubscriptionService = async (userId: string, cancelAtPeriodEn
 
     let razorpaySubscription: { id: string; status: string };
     try {
+         // Razorpay permits cancelling created/authenticated/pending/halted/paused/active subs;
+        // at_cycle_end is only meaningful while ACTIVE (🔬T8 confirms pending/halted/paused specifics).
         razorpaySubscription = await razorpay.subscriptions.cancel(
             subscription.providerSubscriptionId,
             cancelAtPeriodEnd
@@ -838,6 +958,20 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
 
     if(!selectedPlan) {
         throw new AppError("Plan not found", 404);
+    }
+
+    if (selectedPlan.id === subscription.planId) {
+        // Same-plan request: clean no-op without calling Razorpay.
+        return {
+            subscriptionId: subscription.id,
+            providerSubscriptionId: subscription.providerSubscriptionId,
+            currentPlan: selectedPlan.name,
+            requestedPlan: selectedPlan.name,
+            billingCycle: subscription.billingCycle,
+            changeType: "NO_CHANGE" as const,
+            scheduleChangeAt: null,
+            appliedImmediately: true,
+        };
     }
 
     if (subscription.billingCycle !== billingCycle) {
@@ -912,8 +1046,14 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         throw new AppError("Razorpay plan is not configured", 500);
     }
 
-    const razorpaySubscription =
-        await razorpay.subscriptions.update(
+    let razorpaySubscription: {
+        id: string;
+        status: string;
+        has_scheduled_changes?: boolean;
+        change_scheduled_at?: number | null;
+    };
+    try {
+        razorpaySubscription = await razorpay.subscriptions.update(
             subscription.providerSubscriptionId,
             {
                 plan_id: razorpayPlanId,
@@ -921,32 +1061,44 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
                 customer_notify: true,
             }
         );
-
-    const latestSubscription =
-        await prisma.subscription.findUnique({
-            where: {
-                id: subscription.id,
-            },
-        });
-    
-    if (!latestSubscription) {
-        throw new AppError("Subscription record not found", 404);
+    } catch (err) {
+        console.error("Razorpay plan update failed:", err);
+        throw new AppError(
+            "Payment provider failed to apply the plan change. Please try again.",
+            502
+        );
     }
 
-    if (latestSubscription.planId !== selectedPlan.id) {
+    // Single conditional write driven by the PROVIDER RESPONSE ENTITY - never a
+    // stale DB re-read. Mirrors exactly what Razorpay accepted; the
+    // subscription.updated webhook later corroborates this idempotently.
+    const providerHasSchedule = razorpaySubscription.has_scheduled_changes === true;
+    const scheduledAt =
+        typeof razorpaySubscription.change_scheduled_at === "number"
+            ? new Date(razorpaySubscription.change_scheduled_at * 1000)
+            : (subscription.currentPeriodEnd ?? new Date());
+
+    if (providerHasSchedule) {
+        // Scheduled (downgrade at cycle_end): plan unchanged now; intent recorded.
         await prisma.subscription.update({
-            where: {
-                id: subscription.id,
-            },
+            where: { id: subscription.id },
             data: {
                 pendingPlanId: selectedPlan.id,
-                changeScheduledAt: isUpgrade
-                    ? null
-                    : subscription.currentPeriodEnd,
+                changeScheduledAt: scheduledAt,
+            },
+        });
+    } else {
+        // Immediate (upgrade "now"): provider already committed the new plan.
+        await prisma.subscription.update({
+            where: { id: subscription.id },
+            data: {
+                planId: selectedPlan.id,
+                pendingPlanId: null,
+                changeScheduledAt: null,
             },
         });
     }
-    
+
 
     return {
         subscriptionId: subscription.id,
@@ -956,6 +1108,7 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         billingCycle,
         changeType: isUpgrade ? "UPGRADE" : "DOWNGRADE",
         scheduleChangeAt,
+        appliedImmediately: !providerHasSchedule,
         status: razorpaySubscription.status,
     };
 }
@@ -1474,7 +1627,7 @@ export const getAnalyticsCutoff = async (userId: string, requestedDays ?: number
 };
 
 export const checkCsvExportAccess = async (userId: string) => {
-    const plan = await getUserPlan(userId);
+    const plan = await getUserPlan(userId); 
 
     if (!plan) {
         throw new AppError("Active subscription required", 403);
