@@ -124,7 +124,7 @@ export const razorpayWebhookService = async(signature : string, data : Buffer, e
 
 type WebhookProcessResult = {
     matched: boolean;
-    ignored?: "terminal" | "stale" | "unknown";
+    ignored?: "terminal" | "stale" | "unknown" | "duplicate";
     warning?: string;
 };
 
@@ -224,6 +224,9 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                         currency: payment.currency,
 
                         status: "SUCCESS",
+
+                        // Cycle/auth charges are always SUBSCRIPTION revenue.
+                        category: "SUBSCRIPTION",
                     },
                 });
             } else {
@@ -232,6 +235,9 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                     data: {
                         providerPaymentId: payment.id,
                         status: "SUCCESS",
+                        // Adoption: claims a provisional PRORATION row created by an
+                        // earlier invoice.paid (first-auth ordering race).
+                        category: "SUBSCRIPTION",
                     },
                 });
             }
@@ -270,6 +276,146 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                     status: "FAILED",
                 },
             });
+
+            break;
+        }
+
+        case "invoice.paid": {
+            // LEDGER-ONLY: never touches subscription status/periods/plan fields.
+            // Razorpay emits this for regular cycle invoices too, so classification
+            // is outcome-based (adoption): unmatched rows are created provisionally
+            // as PRORATION and flipped to SUBSCRIPTION by subscription.charged /
+            // payment.captured when their dedupe chains claim them.
+            // No billing_start/billing_end heuristics - 🔬T4b governs assumptions.
+            const invoice = payload.payload.invoice.entity;
+
+            if (!invoice.subscription_id) {
+                console.warn(`[webhook] invoice.paid: invoice ${invoice.id} has no subscription link; acknowledged`);
+                return { matched: false, ignored: "unknown" };
+            }
+
+            const localSubscription = await findLocalSubscription(invoice.subscription_id);
+
+            if (!localSubscription) {
+                console.warn(`[webhook] invoice.paid: unknown subscription ${invoice.subscription_id}; acknowledged`);
+                return { matched: false, ignored: "unknown" };
+            }
+
+            // Dedupe 1/2: a cycle charge recorded this invoice's payment already.
+            if (invoice.payment_id) {
+                const byPaymentId = await prisma.payment.findUnique({
+                    where: {
+                        provider_providerPaymentId: {
+                            provider: "RAZORPAY",
+                            providerPaymentId: invoice.payment_id,
+                        },
+                    },
+                });
+
+                if (byPaymentId) {
+                    return { matched: true, ignored: "duplicate" };
+                }
+            }
+
+            // Dedupe 2/2: fallback on the invoice's own order id.
+            if (invoice.order_id) {
+                const byOrderId = await prisma.payment.findUnique({
+                    where: {
+                        provider_providerOrderId: {
+                            provider: "RAZORPAY",
+                            providerOrderId: invoice.order_id,
+                        },
+                    },
+                });
+
+                if (byOrderId) {
+                    return { matched: true, ignored: "duplicate" };
+                }
+            }
+
+            const invoiceAmount =
+                typeof invoice.amount === "number"
+                    ? invoice.amount
+                    : Number.parseInt(String(invoice.amount ?? ""), 10);
+
+            if (!invoice.order_id || !Number.isFinite(invoiceAmount)) {
+                console.warn(`[webhook] invoice.paid: unusable payload on invoice ${invoice.id} (order_id/amount); acknowledged without ledger entry`);
+                return { matched: true, warning: "unusable_invoice_payload" };
+            }
+
+            await prisma.payment.create({
+                data: {
+                    planId: localSubscription.planId,
+                    userId: localSubscription.userId,
+                    subscriptionId: localSubscription.id,
+
+                    provider: "RAZORPAY",
+
+                    providerOrderId: invoice.order_id,
+                    providerPaymentId: invoice.payment_id ?? null,
+
+                    billingCycle: localSubscription.billingCycle,
+
+                    amount: invoiceAmount,
+                    currency: invoice.currency,
+
+                    status: "SUCCESS",
+
+                    // Provisional until claimed by a cycle charge (see S2 adoption flips).
+                    category: "PRORATION",
+                },
+            });
+
+            break;
+        }
+
+        case "refund.processed": {
+            // Refunds NEVER modify Subscription state: returning money is an
+            // independent business action from cancelling service.
+            // Policy (Option A): full refund -> REFUNDED; partial -> warn, no mutation.
+            const refund = payload.payload.refund.entity;
+
+            const existingPayment = refund.payment_id
+                ? await prisma.payment.findUnique({
+                      where: {
+                          provider_providerPaymentId: {
+                              provider: "RAZORPAY",
+                              providerPaymentId: refund.payment_id,
+                          },
+                      },
+                  })
+                : null;
+
+            if (!existingPayment) {
+                console.error(`[webhook] refund.processed: no local payment for '${refund.payment_id ?? "unknown"}'; acknowledged without mutation`);
+                return { matched: false, ignored: "unknown" };
+            }
+            if (existingPayment.status === "REFUNDED") {
+                return { matched: true, ignored: "duplicate" };
+            }
+
+            const refundAmount =
+                typeof refund.amount === "number"
+                    ? refund.amount
+                    : Number.parseInt(String(refund.amount ?? ""), 10);
+
+            if (!Number.isFinite(refundAmount)) {
+                console.warn(`[webhook] refund.processed: unusable amount on refund ${refund.id}; acknowledged`);
+                return { matched: true, warning: "unusable_refund_payload" };
+            }
+
+            if (refundAmount >= existingPayment.amount) {
+                await prisma.payment.update({
+                    where: { id: existingPayment.id },
+                    data: {
+                        status: "REFUNDED",
+                        providerRefundId: refund.id,
+                    },
+                });
+                break;
+            }
+
+            console.warn(`[webhook] refund.processed: PARTIAL refund ${refund.id} (${refundAmount}/${existingPayment.amount}) on payment ${existingPayment.id}; no mutation (Option A policy)`);
 
             break;
         }
@@ -436,6 +582,9 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                         currency: payment.currency,
 
                         status: "SUCCESS" as const,
+
+                        // Cycle charges are always SUBSCRIPTION revenue.
+                        category: "SUBSCRIPTION" as const,
                     };
 
                     if (!existingPayment) {
@@ -452,6 +601,9 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                             data: {
                                 providerPaymentId: payment.id,
                                 status: "SUCCESS",
+                                // Adoption: a provisional PRORATION row created by an
+                                // earlier invoice.paid is claimed by this cycle charge.
+                                category: "SUBSCRIPTION",
                             },
                         });
                     }

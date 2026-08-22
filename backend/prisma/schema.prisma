@@ -69,6 +69,14 @@ enum PaymentStatus {
   REFUNDED
 }
 
+// NULL on legacy rows ≡ SUBSCRIPTION (zero-backfill convention).
+// PRORATION rows are provisional: subscription.charged / payment.captured
+// adoption paths flip them to SUBSCRIPTION when a cycle charge claims them.
+enum PaymentCategory {
+  SUBSCRIPTION
+  PRORATION
+}
+
 enum BillingCycle {
   MONTHLY
   YEARLY
@@ -350,6 +358,7 @@ model Payment {
   currency Currency @default(INR)
 
   status PaymentStatus
+  category PaymentCategory?
 
   createdAt DateTime @default(now())
 
