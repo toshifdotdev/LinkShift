@@ -1164,7 +1164,9 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         throw new AppError("Plan not found", 404);
     }
 
-    if (selectedPlan.id === subscription.planId) {
+    // Same plan AND same billing cycle => true no-op. The SAME plan with a
+    // DIFFERENT cycle is a legitimate Monthly<->Yearly switch and must proceed.
+    if (selectedPlan.id === subscription.planId && billingCycle === subscription.billingCycle) {
         // Same-plan request: clean no-op without calling Razorpay.
         return {
             subscriptionId: subscription.id,
@@ -1178,9 +1180,10 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         };
     }
 
-    if (subscription.billingCycle !== billingCycle) {
-        throw new AppError("Changing billing cycle is currently not supported. Please wait until your current billing cycle ends.", 400);
-    }
+    // Monthly <-> Yearly switching is supported and ALWAYS schedules at cycle_end
+    // (no immediate proration, no mandate-charge risk). Same-frequency changes keep
+    // the existing immediate-upgrade / cycle-end-downgrade behavior.
+    const crossFrequency = subscription.billingCycle !== billingCycle;
 
     if(subscription.currency !== currency) {
         throw new AppError("Changing subscription currency is currently not supported", 400);
@@ -1227,11 +1230,14 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         }
     }   
 
-    const isUpgrade = newPrice > currentPrice;
+    // Cross-frequency switches never prorate: they take effect when the current
+    // prepaid period ends, so the schedule is always cycle_end regardless of
+    // direction. Upgrade/downgrade semantics only apply to same-frequency changes.
+    const isUpgrade = !crossFrequency && newPrice > currentPrice;
 
-    const scheduleChangeAt = isUpgrade
-        ? "now"
-        : "cycle_end";
+    const scheduleChangeAt = crossFrequency
+        ? "cycle_end"
+        : (isUpgrade ? "now" : "cycle_end");
     
     let razorpayPlanId : string | null = null;
 
@@ -1283,7 +1289,10 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
             : (subscription.currentPeriodEnd ?? new Date());
 
     if (providerHasSchedule) {
-        // Scheduled (downgrade at cycle_end): plan unchanged now; intent recorded.
+        // Scheduled at cycle_end: covers same-frequency downgrades AND
+        // Monthly<->Yearly switches. Plan/billingCycle stay unchanged locally
+        // until provider effectuation; subscription.updated / charged self-heal /
+        // reconciliation then commit them from provider truth.
         await prisma.subscription.update({
             where: { id: subscription.id },
             data: {
@@ -1310,7 +1319,9 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         currentPlan: subscription.plan.name,
         requestedPlan: selectedPlan.name,
         billingCycle,
-        changeType: isUpgrade ? "UPGRADE" : "DOWNGRADE",
+        changeType: crossFrequency
+            ? (billingCycle === "YEARLY" ? "SWITCH_TO_YEARLY" : "SWITCH_TO_MONTHLY")
+            : (isUpgrade ? "UPGRADE" : "DOWNGRADE"),
         scheduleChangeAt,
         appliedImmediately: !providerHasSchedule,
         status: razorpaySubscription.status,
@@ -1444,6 +1455,19 @@ export const getUserPlan = async (userId: string) => {
 
 const getBillingPeriod = (subscription: Awaited<ReturnType<typeof getActiveSubscription>>) => {
     if (subscription) {
+        // Quota windows are MONTHLY-labeled regardless of billing frequency.
+        // A YEARLY subscriber's provider period spans a whole year, so usage
+        // (QR codes / redirects / destination & slug changes) is metered on
+        // calendar months instead — identical semantics to non-subscribers.
+        // Billing itself stays provider-authoritative and is unaffected here.
+        if (subscription.billingCycle === "YEARLY") {
+            const now = new Date();
+            return {
+                periodStart: new Date(now.getFullYear(), now.getMonth(), 1),
+                periodEnd: new Date(now.getFullYear(), now.getMonth() + 1, 1),
+            };
+        }
+
         if (!subscription.currentPeriodStart || !subscription.currentPeriodEnd) {
             // Defensive fallback: a live row with missing provider periods must not
             // hard-fail quota checks (degrades to calendar month instead).

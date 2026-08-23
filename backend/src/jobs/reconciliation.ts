@@ -27,7 +27,7 @@ type LiveSubscriptionRow = Prisma.SubscriptionGetPayload<{
 // ---------------------------------------------------------------------------
 
 const LEASE_TTL_MINUTES = 15;
-const STALE_AP_HOURS = Number(process.env.RECON_STALE_AP_HOURS ?? 24);
+const STALE_AP_HOURS = 24;
 const PROVIDER_CALL_DELAY_MS = 100;
 const REFUND_SYNC_WINDOW_DAYS = 30;
 const MAX_PAGES_PER_LIST = 10;
