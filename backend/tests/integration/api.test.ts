@@ -117,12 +117,32 @@ describe.skipIf(!RUN)("Integration API", () => {
         const shortId = created.body.data.shortId;
         expect(shortId).toBeTruthy();
 
-        // Warm the Redis cache with a successful redirect.
+        // Redirect #1 — WITH a Referer header (warms the Redis cache).
         const first = await request(app)
             .get(`/r/${shortId}`)
-            .set("Host", "go.linkshift.in");
+            .set("Host", "go.linkshift.in")
+            .set("Referer", "https://news.example.com/article");
         expect(first.status).toBe(302);
         expect(first.headers.location).toContain("example.com");
+
+        // M3: referrer persisted + stored IP privacy-truncated.
+        const scan1 = await prisma.scan.findFirstOrThrow({
+            where: { linkId: created.body.data.id },
+            orderBy: { scannedAt: "desc" },
+        });
+        expect(scan1.referrer).toBe("https://news.example.com/article");
+        expect(scan1.ipAddress).toMatch(/\.0$|:/); // truncated tail or IPv6 prefix
+
+        // Redirect #2 — NO Referer header (still ACTIVE): null-safe scan.
+        await request(app)
+            .get(`/r/${shortId}`)
+            .set("Host", "go.linkshift.in")
+            .expect(302);
+        const scan2 = await prisma.scan.findFirstOrThrow({
+            where: { linkId: created.body.data.id, referrer: null },
+            orderBy: { scannedAt: "desc" },
+        });
+        expect(scan2.referrer).toBeNull();
 
         // Deactivate, then confirm the cached entry was invalidated.
         await request(app)
@@ -137,6 +157,12 @@ describe.skipIf(!RUN)("Integration API", () => {
         // /r/* errors render the HTML error branch (non-/api path prefix).
         expect(second.status).toBe(403);
         expect(second.text).toMatch(/disabled/i);
+
+        // Blocked redirects must NOT record scans (403 exits pre-analytics).
+        const scansAfterBlock = await prisma.scan.count({
+            where: { linkId: created.body.data.id },
+        });
+        expect(scansAfterBlock).toBe(2);
 
         void userId;
     });

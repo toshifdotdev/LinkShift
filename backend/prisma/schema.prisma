@@ -236,8 +236,9 @@ model Scan {
   os         String?
   country    String?
   city       String?
-  ipAddress  String?
- 
+  ipAddress  String?  // stored per SCAN_IP_PRIVACY (default: /24-/48 truncated)
+  referrer   String?
+
   utmSource   String?
   utmMedium   String?
   utmCampaign String?
