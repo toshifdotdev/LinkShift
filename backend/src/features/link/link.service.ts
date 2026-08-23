@@ -5,7 +5,7 @@ import { AppError } from '../../errors/AppError';
 import { getLinkMapper } from './link.mapper';
 import { CreateLinkData, updateData } from './link.validation';
 import { queryData } from './link.query.validation';
-import { deleteCache } from '../../utils/cache';
+import { deleteCache, linkCacheKey } from '../../utils/cache';
 import { getAvailableShortId } from '../../utils/shortId';
 import { getValidatedDomain } from '../../utils/validate.domain';
 import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit, checkUtmAccess } from '../billing/billing.service';
@@ -350,6 +350,22 @@ export const updateLink = async(data : UpdateLinkData) => {
         }
     })
 
+    // Invalidate every cache key this link could be served under: the redirect
+    // hot path caches per (host, shortId), and BOTH may change in one update
+    // (slug edit and/or domain switch). Resolve hosts for old + new domains.
+    const domainsForInvalidation = await prisma.domain.findMany({
+        where: { id: { in: [existingLink.domainId, domain.id] } },
+        select: { id: true, host: true },
+    });
+    const invalidationHosts = [...new Set(domainsForInvalidation.map(d => d.host))];
+    const invalidationSlugs = [...new Set([existingLink.shortId, shortId])];
+
+    await Promise.all(
+        invalidationHosts.flatMap(host =>
+            invalidationSlugs.map(slug => deleteCache(linkCacheKey(host, slug)))
+        )
+    );
+
     if (destinationChanged || slugChanged) {
         await prisma.linkChange.createMany({
             data: [
@@ -372,7 +388,7 @@ export const updateLink = async(data : UpdateLinkData) => {
         });
     }
 
-    await deleteCache(`link:${link.shortId}`);
+    await deleteCache(linkCacheKey(domain.host, link.shortId));
     await deleteCache(`dashboard:${link.userId}`);
 
     return getLinkMapper(link);
@@ -390,9 +406,15 @@ export const deleteLink = async(data : DeleteLinkData) => {
         throw new AppError("Link Not Found", 404);
     }
 
-    await deleteCache(`link:${existingLink.shortId}`);
-    await deleteCache(`dashboard:${existingLink.userId}`);
+    // Invalidate every host this link could be cached under before removal.
+    const owningDomains = await prisma.domain.findMany({
+        where: { id: existingLink.domainId },
+        select: { host: true },
+    });
 
+    await Promise.all(
+        owningDomains.map(d => deleteCache(linkCacheKey(d.host, existingLink.shortId)))
+    );
 
     await prisma.link.delete({
         where : {

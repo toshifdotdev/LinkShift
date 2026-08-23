@@ -2,7 +2,7 @@ import { Request } from "express";
 import { prisma } from "../../config"
 import * as bcrypt from 'bcrypt';
 import { AppError } from "../../errors/AppError"
-import { getCache, setCache } from "../../utils/cache";
+import { getCache, setCache, linkCacheKey } from "../../utils/cache";
 import { completeTargetUrl } from "../../utils/completeRedirect";
 import { checkRedirectLimit } from "../billing/billing.service";
 
@@ -34,7 +34,7 @@ type RedirectResult =
 
 
 export const redirect = async(shortId : string, host : string, req : Request) : Promise<RedirectResult> => {
-    const cacheKey = `link:${host}:${shortId}`;
+    const cacheKey = linkCacheKey(host, shortId);
 
 
     const cachedLink = await getCache(cacheKey);
@@ -104,8 +104,13 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
         throw new AppError("Link not found", 404);
     }
     
+    if (!targetUrl.isActive) {
+        throw new AppError("This link has been disabled by its owner.", 403)
+    }
+    if (targetUrl.expiresAt && new Date(targetUrl.expiresAt) < new Date()) {
+        throw new AppError("This link has expired.",410);
+    }
 
-    // to implemetnt link-unavailable frontend page if quota exceeds 
     await checkRedirectLimit(targetUrl.userId);
 
     if(targetUrl.passwordHash) {

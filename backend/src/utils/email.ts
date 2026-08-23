@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { config, prisma } from "../config";
 import { generateRandomToken, hashToken } from "./token";
+import { buildEmailVerificationUrl, buildPasswordResetUrl } from "./emailUrls";
 
 export const resend = new Resend(config.resendApiKey);
 
@@ -22,7 +23,9 @@ export const sendEmail = async(data : SendEmailData) => {
 }
 
 export const sendPasswordResetEmail = async(email : string, token : string) => {
-    const resetLink = `${config.frontendUrl}/reset-password?token=${token}`;
+    // Points at the FRONTEND origin — the reset page submits the new password
+    // through the API. (FRONTEND_URL must be the SPA origin, not the OAuth path.)
+    const resetLink = buildPasswordResetUrl(config.frontendUrl!, token);
 
     const html = `
          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -67,7 +70,9 @@ export const sendVerificationEmail = async (userId: string, email: string, name 
         }
     })
 
-    const verificationUrl = `${config.frontendUrl}/api/v1/auth/verify-email?token=${generatedToken}`;
+    // Points at the BACKEND verify-email route, which validates the token and
+    // then redirects the browser to the frontend login page.
+    const verificationUrl = buildEmailVerificationUrl(config.APP_URL!, generatedToken);
     const displayName = name ?? "there";
 
     const html = `

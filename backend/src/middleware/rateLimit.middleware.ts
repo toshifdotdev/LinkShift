@@ -1,5 +1,19 @@
 import { rateLimit } from 'express-rate-limit';
-// registerLimiter
+
+// Public redirect hot path: generous ceiling against floods/scripts while
+// staying invisible to normal traffic. Keyed on the proxy-aware req.ip
+// (see TRUST_PROXY_HOPS in app.ts).
+export const redirectLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    limit: 120,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message: 'Too many requests. Please slow down.',
+    },
+});
+
 export const registerLimiter = rateLimit({
     windowMs :  60 * 60 * 1000, // 1 hr
     limit : 5,

@@ -8,8 +8,11 @@ export const config = {
     databaseUrl : process.env.DATABASE_URL,
     googleClientId : process.env.GOOGLE_CLIENT_ID,
     googleClientSecret : process.env.GOOGLE_CLIENT_SECRET,
-    googleCallbackUrl : process.env.FRONTEND_URL,
+    // Full backend URL that Google redirects to after OAuth.
+    googleCallbackUrl : process.env.GOOGLE_CALLBACK_URL,
     resendApiKey : process.env.RESEND_API_KEY,
+    // Origin of the frontend SPA. Used for email links and post-verification
+    // redirects — must NOT be confused with the OAuth callback URL above.
     frontendUrl : process.env.FRONTEND_URL,
     node_env : process.env.NODE_ENV,
     cloudinaryCloudName : process.env.CLOUDINARY_CLOUD_NAME ,
