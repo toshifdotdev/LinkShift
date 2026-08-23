@@ -7,6 +7,7 @@ import linkRouter from './features/link/link.routes'
 import domainRouter from './features/domains/domain.routes'
 import billingRouter from './features/billing/billing.routes';
 import internalRouter from './features/internal/reconciliation.routes';
+import usersRouter from './features/users/users.routes';
 import { errorMiddleware } from './middleware/error.middleware';
 import { AppError } from './errors/AppError';
 import { razorpayWebhookController } from './features/billing/billing.controller';
@@ -79,6 +80,7 @@ app.use("/api/v1/dashboard",dashRouter);
 app.use("/api/v1/domains", domainRouter);
 app.use("/api/v1/billing", billingRouter)
 app.use("/api/v1/internal", internalRouter);
+app.use("/api/v1/users", usersRouter);
 
 app.use((req : Request, res : Response, next : NextFunction) => {
     next(new AppError("Route not found",404));

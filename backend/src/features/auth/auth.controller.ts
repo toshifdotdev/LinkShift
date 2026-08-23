@@ -201,6 +201,6 @@ export const resendVerificationController = asyncHandler(async(req : Request, re
 
     res.status(200).json({
         success: true,
-        message: "Verification email sent."
+        message: "If an account exists, a verification email has been sent."
     });
 })

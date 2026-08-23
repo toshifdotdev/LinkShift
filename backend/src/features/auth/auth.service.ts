@@ -43,6 +43,12 @@ export const registerUser = async (name : string, email : string, password : str
 }   
 
 
+// Enumeration resistance: unknown email, wrong password, Google-only accounts
+// and unverified accounts ALL return the identical generic 401. A pre-computed
+// dummy hash equalizes bcrypt cost for the unknown-email branch.
+const GENERIC_LOGIN_ERROR = "Invalid email or password.";
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync("linkshift-timing-equalizer", 10);
+
 export const loginUser = async (email : string, password : string) => {
     const existingUser = await prisma.user.findUnique({
         where : {
@@ -50,31 +56,38 @@ export const loginUser = async (email : string, password : string) => {
         }
     })
 
-    if(!existingUser) {
-        throw new AppError("Email not exists", 404);
+    const rejectGeneric = async (): Promise<never> => {
+        // Equalize bcrypt cost whether or not the account exists.
+        await bcrypt.compare(password, existingUser?.passwordHash ?? DUMMY_PASSWORD_HASH);
+        throw new AppError(GENERIC_LOGIN_ERROR, 401);
+    };
+
+    if (!existingUser) {
+        return rejectGeneric();
     }
 
     if (!existingUser.verified) {
-        throw new AppError(
-            "Please verify your email before logging in.",
-            403
-        );
+        // Same generic payload — recovery is via resend-verification, which is
+        // itself enumeration-neutral.
+        await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+        return rejectGeneric();
     }
 
     if(!existingUser.passwordHash) {
-        throw new AppError("Please login with Google.", 400);
+        // Google-only account: no local password to compare.
+        await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+        return rejectGeneric();
     }
 
     const comparePass = await bcrypt.compare(password, existingUser.passwordHash);
 
     if(!comparePass) {
-        throw new AppError("Incorrect credentials", 401);
+        return rejectGeneric();
     }
 
     const {accessToken, refreshToken} = await issueTokens(existingUser);
 
     return buildAuthResponse(existingUser, accessToken, refreshToken);
-    
 }
 
 
@@ -413,21 +426,18 @@ export const verifyEmailService = async(token : string) => {
 }
 
 export const resendVerificationService = async(email : string) => {
+    // Enumeration-neutral: identical success response whether or not the
+    // account exists / is already verified. Emails are sent only to real,
+    // unverified accounts.
     const user = await prisma.user.findUnique({
         where : {
             email
         }
     })
 
-    if(!user) {
-        throw new AppError("User not found", 404)
+    if(user && !user.verified) {
+        await sendVerificationEmail(user.id, user.email, user.name);
     }
-
-    if(user.verified) {
-        throw new AppError("Your email is already verified.", 409);
-    }
-
-    await sendVerificationEmail(user.id, user.email, user.name);
 
     return;
 
