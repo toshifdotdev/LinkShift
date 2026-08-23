@@ -69,11 +69,12 @@ describe.skipIf(!RUN)("Integration API", () => {
         expect(res.body.checks.database).toBe("up");
     });
 
-    it("login rejects bad credentials without mutation", async () => {
+    it("login rejects unknown accounts with the enumeration-neutral 401 (M2 contract)", async () => {
         const res = await request(app)
             .post("/api/v1/auth/login")
             .send({ email: `nobody-${Date.now()}@${EMAIL_DOMAIN}`, password: PASSWORD });
-        expect(res.status).toBe(404); // current contract; enumeration fix is backlog
+        expect(res.status).toBe(401); // M2: generic response, no account-existence leak
+        expect(res.body.message).toBe("Invalid email or password.");
     });
 
     it("register -> verify -> login -> read billing subscription", async () => {
