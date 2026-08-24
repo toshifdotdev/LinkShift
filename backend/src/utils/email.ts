@@ -15,7 +15,9 @@ interface SendEmailData {
 
 export const sendEmail = async(data : SendEmailData) => {
     await resend.emails.send({
-        from : "onboarding@resend.dev",
+        // Must be a verified sender on this Resend account. Production requires
+        // a domain you own (see EMAIL_FROM in .env.example / ENVIRONMENT.md).
+        from : config.emailFrom!,
         to : data.to,
         subject : data.subject,
         html : data.html

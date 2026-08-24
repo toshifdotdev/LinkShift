@@ -11,6 +11,9 @@ export const config = {
     // Full backend URL that Google redirects to after OAuth.
     googleCallbackUrl : process.env.GOOGLE_CALLBACK_URL,
     resendApiKey : process.env.RESEND_API_KEY,
+    // Verified Resend sender identity. Production MUST use a domain you own —
+    // onboarding@resend.dev only delivers to your own account email.
+    emailFrom : process.env.EMAIL_FROM,
     // Origin of the frontend SPA. Used for email links and post-verification
     // redirects — must NOT be confused with the OAuth callback URL above.
     frontendUrl : process.env.FRONTEND_URL,
