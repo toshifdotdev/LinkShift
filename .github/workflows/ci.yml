@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    name: Backend — typecheck, build, unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      # Placeholder credentials so module imports succeed without real secrets.
+      # Unit suite is hermetic (no DB/network); integration stays local-only.
+      RAZORPAY_KEY_ID: rzp_test_placeholder
+      RAZORPAY_KEY_SECRET: placeholder_secret
+      RAZORPAY_WEBHOOK_SECRET: whsec_placeholder
+      RESEND_API_KEY: re_placeholder
+      JWT_SECRET: ci-placeholder-jwt-secret
+      CLOUDINARY_CLOUD_NAME: ci-cloud
+      CLOUDINARY_API_KEY: "0"
+      CLOUDINARY_API_SECRET: ci-secret
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck + build (forced full pass)
+        run: npx tsc -b --force
+
+      - name: Unit tests (hermetic)
+        run: npx vitest run --exclude "tests/integration/**"
+
+      - name: Confirm no compiled artifacts outside dist
+        run: |
+          ! ls tests/*.js 2>/dev/null
+          ! ls vitest.config.js 2>/dev/null

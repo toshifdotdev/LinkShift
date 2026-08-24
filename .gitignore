@@ -7,6 +7,14 @@ backend/dist
 linkshift-audit.json
 
 backend/*.tsbuildinfo
+design/
+.continue
+
+
 # Frontend
 # frontend/node_modules/
+
+backend/tests/**/*.js
+backend/vitest.config.js
+
 
