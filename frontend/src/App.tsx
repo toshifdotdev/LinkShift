@@ -10,11 +10,11 @@ import { GoogleCallbackPage } from "@/pages/auth/google-callback";
 import { RequireAuth } from "@/auth/require-auth";
 import { AppLayout } from "@/components/app/app-layout";
 import { OverviewPage } from "@/pages/app/overview";
+import { LinksPage } from "@/pages/app/links/links-page";
 import {
   AnalyticsPlaceholder,
   BillingPlaceholder,
   DomainsPlaceholder,
-  LinksPlaceholder,
   QrPlaceholder,
   SettingsPlaceholder,
 } from "@/pages/app/module-placeholders";
@@ -55,7 +55,7 @@ function App() {
       <Route element={<RequireAuth />}>
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<OverviewPage />} />
-          <Route path="links" element={<LinksPlaceholder />} />
+          <Route path="links" element={<LinksPage />} />
           <Route path="qr" element={<QrPlaceholder />} />
           <Route path="analytics" element={<AnalyticsPlaceholder />} />
           <Route path="domains" element={<DomainsPlaceholder />} />

@@ -74,22 +74,23 @@ export interface ActivityItem {
   link: { name: string | null; shortId: string };
 }
 
-export interface LinkRow {
+/**
+ * Exact shape returned by the backend link mapper:
+ * { id, name, targetUrl (UTM params already appended), shortId, isActive,
+ *   expiresAt, createdAt, updatedAt, clicks }
+ * NOTE: domainId / stored UTM fields / password-set flag are intentionally
+ * NOT returned by the API and must not be invented client-side.
+ */
+export interface LinkItem {
   id: string;
   name: string | null;
   targetUrl: string;
   shortId: string;
   isActive: boolean;
-  domainId: string;
   expiresAt: string | null;
-  utmSource: string | null;
-  utmMedium: string | null;
-  utmCampaign: string | null;
-  utmTerm: string | null;
-  utmContent: string | null;
   createdAt: string;
   updatedAt: string;
-  _count: { scans: number };
+  clicks: number;
 }
 
 export interface LinksPagination {
@@ -97,6 +98,8 @@ export interface LinksPagination {
   limit: number;
   totalRecords: number;
   totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 export interface DomainRow {

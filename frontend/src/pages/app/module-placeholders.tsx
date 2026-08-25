@@ -1,7 +1,8 @@
-import { BarChart3, CreditCard, Globe, Link2, QrCode, Settings2 } from "lucide-react";
+import { BarChart3, CreditCard, Globe, QrCode, Settings2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, PageHeader } from "@/components/app/page-primitives";
+import { useSearchParams } from "react-router-dom";
 
 interface ModuleSpec {
   title: string;
@@ -13,22 +14,6 @@ interface ModuleSpec {
 }
 
 const MODULES = {
-  links: {
-    title: "Links",
-    description:
-      "Create, edit and inspect every short link — destinations, slugs, expiry, protection and UTM tagging.",
-    icon: <Link2 className="size-5" />,
-    planned: [
-      "Create with custom slugs & domains",
-      "Edit destinations without breaking shares",
-      "Password protection & expiry dates",
-      "UTM campaign tagging (Creator+)",
-      "Search, filter, sort & pagination",
-      "Copy, QR and per-link analytics",
-    ],
-    primaryLabel: "Back to overview",
-    primaryTo: "/app",
-  },
   qr: {
     title: "QR Codes",
     description:
@@ -109,9 +94,11 @@ const MODULES = {
 function ModulePage({
   module,
   index,
+  linkContext,
 }: {
   module: ModuleSpec;
   index: string;
+  linkContext?: string | null;
 }) {
   return (
     <>
@@ -129,6 +116,14 @@ function ModulePage({
           </Link>
         }
       />
+      {linkContext && (
+        <p className="mb-4 flex items-center gap-2 rounded-md border border-brand/25 bg-brand/[0.05] px-4 py-2.5 font-mono text-[11px] text-fg-secondary">
+          <span className="size-1.5 rounded-full bg-brand" aria-hidden="true" />
+          Requested for link <span className="text-brand">{linkContext}</span> — this module will
+          open in that context once it ships.
+        </p>
+      )}
+
       <div className="mt-6 rounded-lg border border-border bg-surface">
         <p className="border-b border-border px-5 py-3 font-mono text-[10px] tracking-[0.18em] text-fg-secondary uppercase">
           Planned capabilities · {index}
@@ -146,14 +141,13 @@ function ModulePage({
   );
 }
 
-function LinksPlaceholder() {
-  return <ModulePage module={MODULES.links} index="02" />;
-}
 function QrPlaceholder() {
-  return <ModulePage module={MODULES.qr} index="03" />;
+  const [params] = useSearchParams();
+  return <ModulePage module={MODULES.qr} index="03" linkContext={params.get("link")} />;
 }
 function AnalyticsPlaceholder() {
-  return <ModulePage module={MODULES.analytics} index="04" />;
+  const [params] = useSearchParams();
+  return <ModulePage module={MODULES.analytics} index="04" linkContext={params.get("link")} />;
 }
 function DomainsPlaceholder() {
   return <ModulePage module={MODULES.domains} index="05" />;
@@ -166,7 +160,6 @@ function SettingsPlaceholder() {
 }
 
 export {
-  LinksPlaceholder,
   QrPlaceholder,
   AnalyticsPlaceholder,
   DomainsPlaceholder,
