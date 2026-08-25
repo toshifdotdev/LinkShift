@@ -8,6 +8,7 @@ import { forgotPasswordSchema, loginUserSchema, registerUserSchema, resendVerifi
 import { forgotPasswordLimiter, loginLimiter, registerLimiter, resendVerificationLimiter, resetPasswordLimiter } from "../../middleware/rateLimit.middleware";
 import passport from "passport";
 import { authMiddleWare } from "../../middleware/auth.middleware";
+import { config } from "../../config";
 import { imageUpload } from "../../middleware/upload.middleware";
 
 const router = Router();
@@ -22,10 +23,7 @@ router.get('/google/callback', passport.authenticate("google", {
                                                             }),
                                                             googleCallbackController)
 router.get("/google/failure", (_, res) => {
-    res.status(401).json({
-        success: false,
-        message: "Google authentication failed."
-    });
+    res.redirect(`${config.frontendUrl}/login?error=google`);
 });
 
 router.post('/forgot-password', validate(forgotPasswordSchema, "body"), forgotPasswordLimiter,forgotPasswordController);

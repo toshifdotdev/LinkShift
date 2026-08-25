@@ -21,7 +21,7 @@ export default defineConfig([
   },
   {
     // UI primitive files export variant configs and hooks alongside components
-    files: ['src/components/ui/**/*.{ts,tsx}'],
+    files: ['src/components/ui/**/*.{ts,tsx}', 'src/auth/**/*.{ts,tsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',
     },

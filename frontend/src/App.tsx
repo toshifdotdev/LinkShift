@@ -1,10 +1,27 @@
 import { Link, Route, Routes } from "react-router-dom";
 import { LandingPage } from "@/pages/landing/landing-page";
 import { PricingPage } from "@/pages/pricing/pricing-page";
+import { LoginPage } from "@/pages/auth/login";
+import { RegisterPage } from "@/pages/auth/register";
+import { ForgotPasswordPage } from "@/pages/auth/forgot-password";
+import { ResetPasswordPage } from "@/pages/auth/reset-password";
+import { VerifyEmailPage } from "@/pages/auth/verify-email";
+import { GoogleCallbackPage } from "@/pages/auth/google-callback";
+import { RequireAuth } from "@/auth/require-auth";
+import { AppLayout } from "@/components/app/app-layout";
+import { OverviewPage } from "@/pages/app/overview";
+import {
+  AnalyticsPlaceholder,
+  BillingPlaceholder,
+  DomainsPlaceholder,
+  LinksPlaceholder,
+  QrPlaceholder,
+  SettingsPlaceholder,
+} from "@/pages/app/module-placeholders";
 
 function NotFound() {
   return (
-    <main className="flex min-h-screen items-center justify-center">
+    <main className="flex min-h-screen items-center justify-center bg-background">
       <div className="text-center">
         <p className="font-mono text-sm tracking-widest text-brand uppercase">404</p>
         <h1 className="font-display mt-3 text-3xl font-semibold">Page not found</h1>
@@ -27,6 +44,26 @@ function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
+
+      <Route element={<RequireAuth />}>
+        <Route path="/app" element={<AppLayout />}>
+          <Route index element={<OverviewPage />} />
+          <Route path="links" element={<LinksPlaceholder />} />
+          <Route path="qr" element={<QrPlaceholder />} />
+          <Route path="analytics" element={<AnalyticsPlaceholder />} />
+          <Route path="domains" element={<DomainsPlaceholder />} />
+          <Route path="billing" element={<BillingPlaceholder />} />
+          <Route path="settings" element={<SettingsPlaceholder />} />
+        </Route>
+      </Route>
+
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

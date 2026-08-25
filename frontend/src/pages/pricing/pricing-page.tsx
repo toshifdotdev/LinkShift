@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { LandingNavbar } from "@/pages/landing/landing-navbar";
 import { Footer } from "@/pages/landing/sections/footer";
 import { Container } from "@/components/ui/container";
@@ -18,6 +19,7 @@ import {
   type Currency,
 } from "@/api/billing";
 import { useToaster } from "@/components/ui/toaster";
+import { useSession } from "@/auth/session";
 import { BillingToggle } from "./components/billing-toggle";
 import { PlanMatrix } from "./components/plan-matrix";
 import { PlanStack } from "./components/plan-stack";
@@ -35,6 +37,8 @@ const NOTES: Array<[string, string]> = [
 
 function PricingPage() {
   const { toast } = useToaster();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useSession();
   const [cycle, setCycle] = useState<BillingCycle>("MONTHLY");
   const [currency, setCurrency] = useState<Currency>("USD");
   const [paidPlans, setPaidPlans] = useState<ApiPlan[]>([]);
@@ -61,6 +65,32 @@ function PricingPage() {
     const t = window.setTimeout(() => void loadPlans(), 0);
     return () => window.clearTimeout(t);
   }, [loadPlans]);
+
+  /* Plan intent carried through login: resume the intended checkout once
+     the session exists. Runs once — the intent is consumed on read. */
+  const intentDoneRef = useRef(false);
+  useEffect(() => {
+    if (!isAuthenticated || intentDoneRef.current) return;
+    const raw = sessionStorage.getItem("ls:plan-intent");
+    if (!raw) return;
+    intentDoneRef.current = true;
+    sessionStorage.removeItem("ls:plan-intent");
+    try {
+      const intent = JSON.parse(raw) as { plan?: string; cycle?: BillingCycle };
+      if (intent.plan && (intent.cycle === "MONTHLY" || intent.cycle === "YEARLY")) {
+        const plan = intent.plan;
+        const cycle = intent.cycle;
+        const t = window.setTimeout(() => {
+          setCycle(cycle);
+          void handleSubscribe(plan as "STARTER" | "CREATOR" | "PRO");
+        }, 0);
+        return () => window.clearTimeout(t);
+      }
+    } catch {
+      sessionStorage.removeItem("ls:plan-intent");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   /* Current-plan awareness only when a session token exists (silent on failure). */
   useEffect(() => {
@@ -135,12 +165,18 @@ function PricingPage() {
 
       checkout.open();
     } catch (err) {
+      if (err instanceof ApiError && err.status === 401) {
+        /* Journey: unauthenticated plan selection → auth → straight back
+           into the intended checkout. */
+        sessionStorage.setItem(
+          "ls:plan-intent",
+          JSON.stringify({ plan: planName, cycle }),
+        );
+        navigate("/login", { state: { from: "/pricing" } });
+        return;
+      }
       const message =
-        err instanceof ApiError && err.status === 401
-          ? "Please sign in to continue."
-          : err instanceof Error
-            ? err.message
-            : "Failed to start subscription";
+        err instanceof Error ? err.message : "Failed to start subscription";
       toast({ title: "Checkout unavailable", description: message, variant: "error" });
     } finally {
       setLoadingPlan(null);

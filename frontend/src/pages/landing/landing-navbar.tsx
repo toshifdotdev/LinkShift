@@ -121,12 +121,12 @@ function LandingNavbar() {
         <div className="hidden items-center gap-4 md:flex">
           <span aria-hidden="true" className="h-4 w-px bg-border" />
           <Link
-            to="/pricing"
+            to="/login"
             className="nav-rule text-[13px] text-fg-secondary transition-colors hover:text-foreground"
           >
             Log in
           </Link>
-          <Link to="/pricing">
+          <Link to="/register">
             <NavbarCta />
           </Link>
         </div>
@@ -177,12 +177,12 @@ function LandingNavbar() {
               );
             })}
             <div className="mt-3 flex gap-2">
-              <Link to="/pricing" className="flex-1">
+              <Link to="/login" className="flex-1">
                 <Button variant="outline" size="lg" className="w-full">
                   Log in
                 </Button>
               </Link>
-              <Link to="/pricing" className="flex-1">
+              <Link to="/register" className="flex-1">
                 <Button size="lg" className="w-full">
                   Get started
                 </Button>

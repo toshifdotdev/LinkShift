@@ -23,7 +23,7 @@ function FinalCta() {
               Join the people who treat every shared URL as part of their craft.
             </p>
             <div className="mt-9 flex justify-center">
-              <Link to="/pricing">
+              <Link to="/register">
                 <Button size="lg">Get started with LinkShift</Button>
               </Link>
             </div>

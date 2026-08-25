@@ -45,19 +45,17 @@ export const loginController = asyncHandler(async(req : Request, res : Response)
 
 export const googleCallbackController = (req : Request, res : Response) => {
     const authResponse = req.user as AuthResponse;
-//      later when frontend completes 
-//     return res.redirect(
-//     `${config.frontendUrl}/auth/success?token=${authResponse.token}`
-// );
 
-    
+    // Session handoff to the frontend: refresh cookie is set on this origin
+    // (cookies are host-scoped, so the SPA's proxied /api calls send it),
+    // and the short-lived access token travels via the redirect target,
+    // where the SPA stores it and primes users/me.
     setRefreshCookie(res,
         authResponse.refreshToken
     )
-    return res.status(200).json({
-        user : authResponse.user,
-        accessToken : authResponse.accessToken,
-    });
+    return res.redirect(
+        `${config.frontendUrl}/auth/google/callback?accessToken=${encodeURIComponent(authResponse.accessToken)}`
+    );
 
 }
 

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useSession } from "@/auth/session";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { ApiPlan, ApiSubscription, BillingCycle, Currency } from "@/api/billing";
@@ -147,13 +148,7 @@ function PlanBlock({
       </div>
 
       <div className="border-t border-border p-4">
-        {plan.name === "FREE" ? (
-          <Link to="/" className="block">
-            <Button variant="secondary" size="lg" className="w-full">
-              Start free
-            </Button>
-          </Link>
-        ) : (
+        {plan.name === "FREE" ? <FreeCta /> : (
           <Button
             variant={featured ? "default" : "secondary"}
             size="lg"
@@ -169,6 +164,17 @@ function PlanBlock({
         )}
       </div>
     </article>
+  );
+}
+
+function FreeCta() {
+  const { isAuthenticated } = useSession();
+  return (
+    <Link to={isAuthenticated ? "/app" : "/register"} className="block">
+      <Button variant="secondary" size="lg" className="w-full">
+        {isAuthenticated ? "Go to dashboard" : "Start free"}
+      </Button>
+    </Link>
   );
 }
 

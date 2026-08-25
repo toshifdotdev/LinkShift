@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useSession } from "@/auth/session";
 import { AnimatePresence, motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -282,11 +283,7 @@ function PlanCtaCell({
   if (plan.name === "FREE") {
     return (
       <div className={cn(CELL, "py-4")}>
-        <Link to="/" className="block">
-          <Button variant="secondary" size="md" className="w-full">
-            Start free
-          </Button>
-        </Link>
+        <FreeCta />
       </div>
     );
   }
@@ -320,6 +317,17 @@ function PlanCtaCell({
           : `Choose ${plan.name.charAt(0)}${plan.name.slice(1).toLowerCase()}`}
       </Button>
     </div>
+  );
+}
+
+function FreeCta() {
+  const { isAuthenticated } = useSession();
+  return (
+    <Link to={isAuthenticated ? "/app" : "/register"} className="block">
+      <Button variant="secondary" size="md" className="w-full">
+        {isAuthenticated ? "Go to dashboard" : "Start free"}
+      </Button>
+    </Link>
   );
 }
 

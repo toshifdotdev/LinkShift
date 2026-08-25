@@ -115,7 +115,7 @@ function Hero() {
 
             {/* 07 · CTAs */}
             <motion.div {...fade(0.72)} className="mt-8 flex flex-wrap items-center gap-3">
-              <Link to="/pricing">
+              <Link to="/register">
                 <Button size="lg">
                   Start shortening
                   <MoveRight className="size-4" />
