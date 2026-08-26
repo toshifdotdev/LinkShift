@@ -8,7 +8,9 @@ import "./features/auth/google.strategy";
 const FORCE_EXIT_MS = 10_000;
 
 async function startServer() {
-    await connectRedis();
+    // Fire-and-forget: Redis is a cache, not a startup dependency.
+    // A dead/unreachable Redis degrades health but never blocks the port.
+    void connectRedis();
 
     app.use(cookieParser());
     app.use(passport.initialize());

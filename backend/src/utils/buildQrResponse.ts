@@ -13,6 +13,7 @@ export const buildQrResponse = (qr: qrType, shortId: string) => ({
     margin: qr.margin,
     pattern: qr.pattern,
     eyeBallStyle: qr.eyeBallStyle,
+    frame: qr.frame,
     eyeStyle: qr.eyeStyle,
 
     logoUrl: qr.logoUrl,

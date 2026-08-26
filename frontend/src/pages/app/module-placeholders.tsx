@@ -1,8 +1,7 @@
-import { BarChart3, CreditCard, Globe, QrCode, Settings2 } from "lucide-react";
+import { CreditCard, Globe, Settings2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, PageHeader } from "@/components/app/page-primitives";
-import { useSearchParams } from "react-router-dom";
 
 interface ModuleSpec {
   title: string;
@@ -14,37 +13,6 @@ interface ModuleSpec {
 }
 
 const MODULES = {
-  qr: {
-    title: "QR Codes",
-    description:
-      "Every link ships with a scannable twin — styled per campaign, always in sync with its destination.",
-    icon: <QrCode className="size-5" />,
-    planned: [
-      "Generate QR codes for any link",
-      "Patterns, eye styles & colors",
-      "Logo embedding",
-      "PNG download",
-      "Delete & regenerate",
-    ],
-    primaryLabel: "Back to overview",
-    primaryTo: "/app",
-  },
-  analytics: {
-    title: "Analytics",
-    description:
-      "Click-level truth per link: browsers, devices, geography and UTM performance — within your plan's window.",
-    icon: <BarChart3 className="size-5" />,
-    planned: [
-      "Per-link breakdown dashboards",
-      "Browser / OS / device splits",
-      "Country & city geography",
-      "UTM source · medium · campaign",
-      "CSV export (Creator+)",
-      "Plan-window range control",
-    ],
-    primaryLabel: "Back to overview",
-    primaryTo: "/app",
-  },
   domains: {
     title: "Domains",
     description:
@@ -141,14 +109,6 @@ function ModulePage({
   );
 }
 
-function QrPlaceholder() {
-  const [params] = useSearchParams();
-  return <ModulePage module={MODULES.qr} index="03" linkContext={params.get("link")} />;
-}
-function AnalyticsPlaceholder() {
-  const [params] = useSearchParams();
-  return <ModulePage module={MODULES.analytics} index="04" linkContext={params.get("link")} />;
-}
 function DomainsPlaceholder() {
   return <ModulePage module={MODULES.domains} index="05" />;
 }
@@ -160,8 +120,6 @@ function SettingsPlaceholder() {
 }
 
 export {
-  QrPlaceholder,
-  AnalyticsPlaceholder,
   DomainsPlaceholder,
   BillingPlaceholder,
   SettingsPlaceholder,

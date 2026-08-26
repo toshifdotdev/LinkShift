@@ -11,11 +11,11 @@ import { RequireAuth } from "@/auth/require-auth";
 import { AppLayout } from "@/components/app/app-layout";
 import { OverviewPage } from "@/pages/app/overview";
 import { LinksPage } from "@/pages/app/links/links-page";
+import { QrPage } from "@/pages/app/qr/qr-page";
+import { AnalyticsPage } from "@/pages/app/analytics/analytics-page";
 import {
-  AnalyticsPlaceholder,
   BillingPlaceholder,
   DomainsPlaceholder,
-  QrPlaceholder,
   SettingsPlaceholder,
 } from "@/pages/app/module-placeholders";
 
@@ -56,8 +56,8 @@ function App() {
         <Route path="/app" element={<AppLayout />}>
           <Route index element={<OverviewPage />} />
           <Route path="links" element={<LinksPage />} />
-          <Route path="qr" element={<QrPlaceholder />} />
-          <Route path="analytics" element={<AnalyticsPlaceholder />} />
+          <Route path="qr" element={<QrPage />} />
+          <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="domains" element={<DomainsPlaceholder />} />
           <Route path="billing" element={<BillingPlaceholder />} />
           <Route path="settings" element={<SettingsPlaceholder />} />

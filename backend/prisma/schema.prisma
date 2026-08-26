@@ -219,6 +219,7 @@ model Qr {
   eyeBallStyle     EyeBallStyle  @default(square)
 
   margin           Int?     @default(2)
+  frame            String   @default("none")
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

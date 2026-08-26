@@ -17,7 +17,10 @@ export const uploadImage = async (file: Express.Multer.File, folder: string): Pr
             },
             (error, result : UploadApiResponse | undefined) => {
                 if(error) {
-                    return reject(new AppError("Failed to upload image.", 500));
+                    // Surface the real Cloudinary cause — a swallowed error
+                    // here made logo uploads impossible to diagnose.
+                    console.error("[upload] cloudinary error:", error.message || error);
+                    return reject(new AppError(`Image upload failed: ${error.message || "unknown error"}`, 502));
                 }
                 if (!result) {
                     return reject(new Error("Unknown error: Cloudinary returned no result."));

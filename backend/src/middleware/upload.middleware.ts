@@ -7,6 +7,7 @@ const fileFilter : multer.Options["fileFilter"] = (req, file, cb) => {
     const allowedMimeTypes = new Set([
         "image/png",
         "image/jpeg",
+        "image/jpg", // Windows quirk: some sources report image/jpg
         "image/webp",
         "image/svg+xml"
     ]);

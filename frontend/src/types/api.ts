@@ -122,9 +122,43 @@ export interface QrResponse {
   pattern: "square" | "dots" | "rounded";
   eyeStyle: "square" | "dot" | "extraRounded";
   eyeBallStyle: "square" | "dot";
+  frame: "none" | "clean" | "double" | "accent" | "label" | "branded";
   logoUrl: string | null;
   logoPublicId: string | null;
 }
 
 export const ANALYTICS_DAYS = [7, 30, 60, 90, 180, 365, 730, 1095] as const;
 export type AnalyticsDays = (typeof ANALYTICS_DAYS)[number];
+
+/* ---- Analytics (per-link; account level exposes stats/activity only) ---- */
+
+export interface DailyPoint {
+  day: string;
+  clicks: number;
+}
+
+export interface LinkAnalytics {
+  totalClicks: number;
+  browserStats: Array<{ browser: string | null; count: number }>;
+  deviceStats: Array<{ device: string | null; count: number }>;
+  countryStats: Array<{ country: string | null; count: number }>;
+  osStats: Array<{ os: string | null; count: number }>;
+  utmSource: Array<{ utmSource: string | null; count: number }>;
+  utmMedium: Array<{ utmMedium: string | null; count: number }>;
+  utmCampaign: Array<{ utmCampaign: string | null; count: number }>;
+  utmTerm: Array<{ utmTerm: string | null; count: number }>;
+  utmContent: Array<{ utmContent: string | null; count: number }>;
+}
+
+export interface LinkCharts {
+  browserStats: Array<{ browser: string | null; count: number }>;
+  countryStats: Array<{ country: string | null; count: number }>;
+  deviceStats: Array<{ device: string | null; count: number }>;
+  osStats: Array<{ os: string | null; count: number }>;
+  dailyStats: DailyPoint[];
+  utmSourceStats: Array<{ utmSource: string | null; count: number }>;
+  utmMediumStats: Array<{ utmMedium: string | null; count: number }>;
+  utmCampaignStats: Array<{ utmCampaign: string | null; count: number }>;
+  utmTermStats: Array<{ utmTerm: string | null; count: number }>;
+  utmContentStats: Array<{ utmContent: string | null; count: number }>;
+}

@@ -386,18 +386,20 @@ export const getChartData = async(id : string, linkId : string, requestedDays ?:
         }),
     ]);
 
+    // Identifiers are quoted: Prisma creates camelCase tables/columns, and
+    // unquoted SQL folds to lowercase (table "scan" does not exist).
     const dailyStats = await prisma.$queryRaw<DailyStats[]>`
             SELECT
-                DATE(s.scannedAt) AS day,
+                DATE(s."scannedAt") AS day,
                 COUNT(*) AS clicks
-            FROM Scan s
-            JOIN Link l
-                ON s.linkId = l.id
+            FROM "Scan" s
+            JOIN "Link" l
+                ON s."linkId" = l.id
             WHERE
-                s.linkId = ${linkId}
-                AND l.userId = ${id}
-                AND s.scannedAt >= ${cutoff}
-            GROUP BY DATE(s.scannedAt)
+                s."linkId" = ${linkId}
+                AND l."userId" = ${id}
+                AND s."scannedAt" >= ${cutoff}
+            GROUP BY DATE(s."scannedAt")
             ORDER BY day ASC
             `;
 

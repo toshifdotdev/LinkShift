@@ -64,7 +64,9 @@ async function apiFetch<T>(pathStr: string, options: RequestOptions = {}): Promi
 
   const token = accessToken ?? getAccessToken();
   const finalHeaders: Record<string, string> = { ...headers };
-  if (body !== undefined) finalHeaders["Content-Type"] = "application/json";
+  /* FormData sets its own multipart boundary — never override it */
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+  if (body !== undefined && !isFormData) finalHeaders["Content-Type"] = "application/json";
   if (token) finalHeaders["Authorization"] = `Bearer ${token}`;
 
   let response: Response;
