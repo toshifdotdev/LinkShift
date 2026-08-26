@@ -106,9 +106,16 @@ export interface DomainRow {
   id: string;
   host: string;
   verified: boolean;
+  verifiedAt: string | null;
   isDefault: boolean;
   userId: string | null;
   createdAt: string;
+}
+
+export interface DomainInstructions {
+  type: "CNAME";
+  host: string;
+  target: string;
 }
 
 export interface QrResponse {

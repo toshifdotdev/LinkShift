@@ -297,13 +297,15 @@ function EditLinkDialog({
                   onChange={(e) => setDomainId(e.target.value)}
                   className={selectClass}
                 >
-                  <option value="">Select a domain…</option>
-                  {domains.data?.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.host}
-                      {d.isDefault ? " (default)" : ""}
-                    </option>
-                  ))}
+                  <option value="">Select a verified domain…</option>
+                  {(domains.data ?? [])
+                    .filter((d) => d.verified || d.isDefault)
+                    .map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.host}
+                        {d.isDefault ? " (default)" : ""}
+                      </option>
+                    ))}
                 </select>
               )}
               <FieldHint>

@@ -1,4 +1,4 @@
-import { CreditCard, Globe, Settings2 } from "lucide-react";
+import { CreditCard, Settings2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, PageHeader } from "@/components/app/page-primitives";
@@ -13,21 +13,6 @@ interface ModuleSpec {
 }
 
 const MODULES = {
-  domains: {
-    title: "Domains",
-    description:
-      "Put your name on every link. Add a domain, verify via DNS, and shift on your own turf.",
-    icon: <Globe className="size-5" />,
-    planned: [
-      "Connect custom domains",
-      "CNAME verification flow",
-      "Default domain selection",
-      "Plan-quota awareness",
-      "Remove domains safely",
-    ],
-    primaryLabel: "Back to overview",
-    primaryTo: "/app",
-  },
   billing: {
     title: "Billing",
     description:
@@ -109,9 +94,6 @@ function ModulePage({
   );
 }
 
-function DomainsPlaceholder() {
-  return <ModulePage module={MODULES.domains} index="05" />;
-}
 function BillingPlaceholder() {
   return <ModulePage module={MODULES.billing} index="06" />;
 }
@@ -120,7 +102,6 @@ function SettingsPlaceholder() {
 }
 
 export {
-  DomainsPlaceholder,
   BillingPlaceholder,
   SettingsPlaceholder,
 };

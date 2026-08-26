@@ -13,9 +13,9 @@ import { OverviewPage } from "@/pages/app/overview";
 import { LinksPage } from "@/pages/app/links/links-page";
 import { QrPage } from "@/pages/app/qr/qr-page";
 import { AnalyticsPage } from "@/pages/app/analytics/analytics-page";
+import { DomainsPage } from "@/pages/app/domains/domains-page";
 import {
   BillingPlaceholder,
-  DomainsPlaceholder,
   SettingsPlaceholder,
 } from "@/pages/app/module-placeholders";
 
@@ -58,7 +58,7 @@ function App() {
           <Route path="links" element={<LinksPage />} />
           <Route path="qr" element={<QrPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
-          <Route path="domains" element={<DomainsPlaceholder />} />
+          <Route path="domains" element={<DomainsPage />} />
           <Route path="billing" element={<BillingPlaceholder />} />
           <Route path="settings" element={<SettingsPlaceholder />} />
         </Route>

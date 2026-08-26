@@ -15,8 +15,9 @@ import { shortUrl } from "@/lib/short-url";
 import { useCountUp } from "@/lib/use-count-up";
 import { cn } from "@/lib/utils";
 import { BreakdownPanel } from "./breakdown-panel";
+import { DonutChart } from "./donut-chart";
+import { AreaChart } from "./area-chart";
 import { RANGE_OPTIONS, RangeSelect, planRank, rangeLocked } from "./range-select";
-import { TimeSeriesChart } from "./time-series-chart";
 
 /* ---------- shared bits ---------- */
 
@@ -319,7 +320,8 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
   async function handleExport() {
     setExporting(true);
     try {
-      await exportLinkCsv(linkId, days);
+      const shortId = linkInfo.data?.shortId ?? linkId;
+      await exportLinkCsv(linkId, days, `linkshift-${shortId}-scans`);
       toast({ title: "Export ready", description: "CSV downloaded.", variant: "success" });
     } catch (err) {
       toast({
@@ -398,7 +400,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
             onRetry={() => void charts.refetch()}
           />
         ) : (
-          <TimeSeriesChart
+          <AreaChart
             data={charts.data?.dailyStats ?? []}
             loading={charts.isPending}
             emptyTitle="No clicks in this window"
@@ -418,17 +420,17 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
           </div>
         ) : (
           <>
+            <DonutChart
+              title="Devices"
+              items={(a?.deviceStats ?? []).map((d) => ({ label: d.device ?? "Unknown", count: d.count }))}
+              loading={analytics.isPending}
+              emptyText="No device data yet."
+            />
             <BreakdownPanel
               title="Countries"
               items={(a?.countryStats ?? []).map((c) => ({ label: c.country ?? "Unknown", count: c.count }))}
               loading={analytics.isPending}
               emptyText="No geographic data yet."
-            />
-            <BreakdownPanel
-              title="Devices"
-              items={(a?.deviceStats ?? []).map((d) => ({ label: d.device ?? "Unknown", count: d.count }))}
-              loading={analytics.isPending}
-              emptyText="No device data yet."
             />
             <BreakdownPanel
               title="Browsers"

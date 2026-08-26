@@ -20,5 +20,12 @@ export const getValidatedDomain = async(domainId : string, userId : string) => {
         if(domain.userId != userId) {
             throw new AppError("Forbidden", 403);
         }
+
+        // Attach-time enforcement: an unverified custom domain must never
+        // back a live short link (the redirect path rejects it as well).
+        if(!domain.verified) {
+            throw new AppError("Domain is not verified yet. Complete DNS verification first.", 403)
+        }
+
         return domain;
 }

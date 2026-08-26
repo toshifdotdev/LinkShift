@@ -26,6 +26,7 @@ function BreakdownPanel({
 }) {
   const visible = items.slice(0, maxItems);
   const max = Math.max(...visible.map((v) => v.count), 1);
+  const total = visible.reduce((sum, v) => sum + v.count, 0);
 
   return (
     <section
@@ -63,8 +64,9 @@ function BreakdownPanel({
                 >
                   {item.label}
                 </p>
-                <p className="shrink-0 font-mono text-xs text-foreground tabular-nums">
-                  {item.count.toLocaleString()}
+                <p className="shrink-0 font-mono text-xs text-fg-secondary tabular-nums">
+                  {total > 0 ? `${Math.round((item.count / total) * 100)}%` : ""}
+                  <span className="ml-1.5 text-foreground">{item.count.toLocaleString()}</span>
                 </p>
               </div>
               <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-elevated">

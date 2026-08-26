@@ -175,12 +175,14 @@ function CreateLinkDialog({
                 className="h-9 w-full cursor-pointer rounded-md border border-input bg-surface px-3 text-sm text-foreground transition-colors hover:border-border-strong focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-ring/40"
               >
                 {domains.isPending && <option>Loading domains…</option>}
-                {domains.data?.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.host}
-                    {d.isDefault ? " (default)" : ""}
-                  </option>
-                ))}
+                {(domains.data ?? [])
+                  .filter((d) => d.verified || d.isDefault)
+                  .map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.host}
+                      {d.isDefault ? " (default)" : ""}
+                    </option>
+                  ))}
               </select>
               <FieldHint>Your short link will live on this domain.</FieldHint>
             </Field>

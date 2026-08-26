@@ -45,7 +45,7 @@ export const addDomain = async(userId : string, hostName : string) => {
         throw new AppError("This domain is already connected to another account.", 409)
     }
 
-    await prisma.domain.create({
+    const created = await prisma.domain.create({
         data : 
             {
                 userId,
@@ -56,6 +56,9 @@ export const addDomain = async(userId : string, hostName : string) => {
     })
 
     return {
+        id : created.id,
+        host : created.host,
+        verified : created.verified,
         instructions : {
             type: "CNAME",
             host: hostName,
@@ -135,6 +138,7 @@ export const updateDomainService = async(userId : string, domainId : string, hos
     })
 
      return {
+        id : domain.id,
         instructions : {
             type: "CNAME",
             host: hostName,
