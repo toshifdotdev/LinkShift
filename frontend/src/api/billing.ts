@@ -96,3 +96,33 @@ export function verifySubscription(payload: {
     body: payload,
   });
 }
+
+export function cancelSubscription(cancelAtPeriodEnd: boolean) {
+  return apiFetch<{ success: true; result: { localStatus: string; cancelAtPeriodEnd: boolean } }>(
+    "/billing/cancel",
+    { method: "POST", body: { cancelAtPeriodEnd } },
+  );
+}
+
+export function changePlan(plan: PlanName, billingCycle: BillingCycle) {
+  return apiFetch<{
+    success: true;
+    result: {
+      changeType: "UPGRADE" | "DOWNGRADE" | "SWITCH_TO_MONTHLY" | "SWITCH_TO_YEARLY" | "NO_CHANGE";
+      scheduleChangeAt: string | null;
+      appliedImmediately: boolean;
+    };
+  }>("/billing/change-plan", { method: "POST", body: { plan, billingCycle } });
+}
+
+export interface BillingUsage {
+  periodStart: string;
+  links: { used: number; cap: number | null };
+  customSlugs: { used: number; cap: number | null };
+  destinationEdits: { used: number; cap: number | null };
+  redirects: { used: number; cap: number | null };
+}
+
+export function getBillingUsage() {
+  return apiFetch<{ success: true; data: BillingUsage }>("/billing/usage");
+}

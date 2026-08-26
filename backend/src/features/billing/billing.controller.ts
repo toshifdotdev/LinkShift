@@ -2,7 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { AppError } from "../../errors/AppError";
 import { CancelSubscriptionInput, ChangePlanInput, SubscriptionInput, SubscriptionVerificationInput } from "./billing.validation";
-import { cancelSubscriptionService, changePlanService, getPlansService, getSubscriptionService, razorpayWebhookService, subscriptionService, verifySubscriptionService } from "./billing.service";
+import { cancelSubscriptionService, changePlanService, getPlansService, getSubscriptionService, getUsageService, razorpayWebhookService, subscriptionService, verifySubscriptionService } from "./billing.service";
 import { getCurrencyFromRequest } from "./billing.utils";
 
 
@@ -139,3 +139,13 @@ export const getSubscriptionController = asyncHandler(async(req : Request, res :
         });
 })
 
+
+
+export const getUsageController = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+    const auth = req.auth;
+    if (!auth) {
+        return next(new AppError("Unauthorized", 401));
+    }
+    const usage = await getUsageService(auth.id);
+    res.status(200).json({ success : true, data : usage });
+})

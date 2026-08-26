@@ -1871,3 +1871,32 @@ export const checkCsvExportAccess = async (userId: string) => {
         throw new AppError("CSV Analytics Export is available on Creator and Pro plans", 403);
     }
 };
+
+export const getUsageService = async (userId: string) => {
+    const subscription = await getActiveSubscription(userId);
+    const plan = await getUserPlan(userId);
+    const { periodStart } = getBillingPeriod(subscription);
+
+    const periodFilter = { gte: periodStart };
+
+    const [totalLinks, customSlugs, destinationEdits, redirects] = await Promise.all([
+        prisma.link.count({ where: { userId } }),
+        prisma.linkChange.count({
+            where: { userId, type: "CUSTOM_SLUG", createdAt: periodFilter },
+        }),
+        prisma.linkChange.count({
+            where: { userId, type: "DESTINATION", createdAt: periodFilter },
+        }),
+        prisma.scan.count({
+            where: { link: { userId }, scannedAt: periodFilter },
+        }),
+    ]);
+
+    return {
+        periodStart,
+        links: { used: totalLinks, cap: plan.maxLinks },
+        customSlugs: { used: customSlugs, cap: plan.maxCustomSlugsPerMonth },
+        destinationEdits: { used: destinationEdits, cap: plan.maxDestinationChangesPerMonth },
+        redirects: { used: redirects, cap: plan.maxRedirectsPerMonth },
+    };
+};

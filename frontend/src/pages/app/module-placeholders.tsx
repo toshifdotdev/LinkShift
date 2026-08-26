@@ -1,4 +1,4 @@
-import { CreditCard, Settings2 } from "lucide-react";
+import { Settings2 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState, PageHeader } from "@/components/app/page-primitives";
@@ -13,21 +13,6 @@ interface ModuleSpec {
 }
 
 const MODULES = {
-  billing: {
-    title: "Billing",
-    description:
-      "Your subscription, billing cycle and plan changes — managed against the live provider.",
-    icon: <CreditCard className="size-5" />,
-    planned: [
-      "Current plan & period status",
-      "Upgrade / downgrade with schedule visibility",
-      "Monthly ↔ yearly switching",
-      "Cancellation at period end",
-      "Full marketing comparison on /pricing",
-    ],
-    primaryLabel: "View plans",
-    primaryTo: "/pricing",
-  },
   settings: {
     title: "Settings",
     description: "Your account identity and dangerous edges — handled with the care they deserve.",
@@ -94,14 +79,10 @@ function ModulePage({
   );
 }
 
-function BillingPlaceholder() {
-  return <ModulePage module={MODULES.billing} index="06" />;
-}
 function SettingsPlaceholder() {
   return <ModulePage module={MODULES.settings} index="07" />;
 }
 
 export {
-  BillingPlaceholder,
   SettingsPlaceholder,
 };

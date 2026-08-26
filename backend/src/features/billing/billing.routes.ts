@@ -3,7 +3,7 @@ import { validate } from '../../middleware/validate.middleware';
 import { authMiddleWare } from '../../middleware/auth.middleware';
 import { billingMutationLimiter } from '../../middleware/rateLimit.middleware';
 import { cancelSubscriptionSchema, changePlanSchema, subscriptionSchema, subscriptionVerificationSchema} from './billing.validation';
-import { cancelSubscriptionController, changePlanController, getPlansController, getSubscriptionController, subscriptionController, verifySubscriptionController } from './billing.controller';
+import { cancelSubscriptionController, changePlanController, getPlansController, getSubscriptionController, getUsageController, subscriptionController, verifySubscriptionController } from './billing.controller';
 const router = Router();
 
 // router.post('/checkout', authMiddleWare, validate(checkoutSchema, "body"), checkoutController);
@@ -19,5 +19,6 @@ router.post('/cancel', authMiddleWare, billingMutationLimiter, validate(cancelSu
 router.post('/change-plan', authMiddleWare, billingMutationLimiter, validate(changePlanSchema, "body"), changePlanController)
 
 router.get('/subscription', authMiddleWare, getSubscriptionController);
+router.get('/usage', authMiddleWare, getUsageController);
 
 export default router; 

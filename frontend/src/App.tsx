@@ -14,10 +14,8 @@ import { LinksPage } from "@/pages/app/links/links-page";
 import { QrPage } from "@/pages/app/qr/qr-page";
 import { AnalyticsPage } from "@/pages/app/analytics/analytics-page";
 import { DomainsPage } from "@/pages/app/domains/domains-page";
-import {
-  BillingPlaceholder,
-  SettingsPlaceholder,
-} from "@/pages/app/module-placeholders";
+import { BillingPage } from "@/pages/app/billing/billing-page";
+import { SettingsPlaceholder } from "@/pages/app/module-placeholders";
 
 function NotFound() {
   return (
@@ -59,7 +57,7 @@ function App() {
           <Route path="qr" element={<QrPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
           <Route path="domains" element={<DomainsPage />} />
-          <Route path="billing" element={<BillingPlaceholder />} />
+          <Route path="billing" element={<BillingPage />} />
           <Route path="settings" element={<SettingsPlaceholder />} />
         </Route>
       </Route>
