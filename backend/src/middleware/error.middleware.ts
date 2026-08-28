@@ -1,10 +1,3 @@
-// TODO:
-// Replace inline HTML with a proper EJS error page
-// after the frontend theme and mascot are finalized.
-
-
-
-
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
 
@@ -17,7 +10,9 @@ export const errorMiddleware = (err : unknown, req : Request, res : Response, ne
                     message: err.message
                 });
             }
-            console.log(err);
+            // Log the real exception so a 500 is debuggable from the server
+            // terminal — generic "Internal Server Error" is useless on its own.
+            console.error(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> 500:`, err);
             return res.status(500).json({
                 success: false,
                 message: "Internal Server Error"
@@ -38,8 +33,3 @@ export const errorMiddleware = (err : unknown, req : Request, res : Response, ne
 
         }
     }
-
-
-           
-
-

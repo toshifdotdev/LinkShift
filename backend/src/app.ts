@@ -13,8 +13,11 @@ import { AppError } from './errors/AppError';
 import { razorpayWebhookController } from './features/billing/billing.controller';
 import cors from "cors";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import passport from "passport";
 import { prisma } from "./config";
 import { redisClient } from "./config/redis";
+import "./features/auth/google.strategy";
 
 export const app = express();
 
@@ -27,6 +30,15 @@ const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
 if (Number.isFinite(trustProxyHops) && trustProxyHops > 0) {
     app.set('trust proxy', trustProxyHops);
 }
+
+// Cookie parsing and passport MUST be registered before any router — Express
+// runs middleware in registration order, and mounting these in server.ts
+// (after app.ts already attached every router) left them at the END of the
+// chain where they never executed. req.cookies stayed undefined and every
+// /auth/refresh & /auth/logout crashed with a TypeError -> generic 500,
+// silently killing the refresh-token flow.
+app.use(cookieParser());
+app.use(passport.initialize());
 
 app.use(helmet());
 
@@ -68,7 +80,7 @@ app.get("/health", async (_, res) => {
 });
 
 app.use("/api/v1/auth",authRouter);
-app.use("/api/v1/qr",qrRouter);
+app.use("/api/v1/qr",qrRouter); 
 app.use("/api/v1/links", linkRouter);
 
 app.get("/favicon.ico", (_, res) => {

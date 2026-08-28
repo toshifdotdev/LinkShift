@@ -1879,7 +1879,7 @@ export const getUsageService = async (userId: string) => {
 
     const periodFilter = { gte: periodStart };
 
-    const [totalLinks, customSlugs, destinationEdits, redirects] = await Promise.all([
+    const [totalLinks, customSlugs, destinationEdits, redirects, qrCodes] = await Promise.all([
         prisma.link.count({ where: { userId } }),
         prisma.linkChange.count({
             where: { userId, type: "CUSTOM_SLUG", createdAt: periodFilter },
@@ -1890,6 +1890,9 @@ export const getUsageService = async (userId: string) => {
         prisma.scan.count({
             where: { link: { userId }, scannedAt: periodFilter },
         }),
+        prisma.qr.count({
+            where: { link: { userId }, createdAt: periodFilter },
+        }),
     ]);
 
     return {
@@ -1898,5 +1901,6 @@ export const getUsageService = async (userId: string) => {
         customSlugs: { used: customSlugs, cap: plan.maxCustomSlugsPerMonth },
         destinationEdits: { used: destinationEdits, cap: plan.maxDestinationChangesPerMonth },
         redirects: { used: redirects, cap: plan.maxRedirectsPerMonth },
+        qrCodes: { used: qrCodes, cap: plan.maxQrPerMonth },
     };
 };

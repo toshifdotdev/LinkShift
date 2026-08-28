@@ -102,9 +102,10 @@ describe.skipIf(!RUN)("Integration API", () => {
         });
         const slug = `it${Date.now().toString(36)}`;
 
-        // NOTE: no custom slug — FREE users are currently hard-blocked by
-        // checkCustomSlugLimit's ACTIVE-subscription requirement (known
-        // entitlement inconsistency, tracked separately).
+        // NOTE: no custom slug. FREE is rejected by both layers of
+        // checkCustomSlugLimit — the ACTIVE-subscription requirement and the
+        // plan's maxCustomSlugsPerMonth=0 quota — so custom slugs are
+        // effectively a Starter+ capability.
         const created = await request(app)
             .post("/api/v1/links")
             .set("Authorization", `Bearer ${token}`)

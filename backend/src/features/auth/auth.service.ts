@@ -237,6 +237,13 @@ export const resetPasswordService = async(token : string, password : string) => 
 }
 
 export const refreshService = async(token : string) : Promise<RefreshedTokens> => {
+    // Missing cookie (no cookie-parser entry at all) must be a clean 401 —
+    // hashToken(undefined) would throw a TypeError and surface as a generic
+    // 500 "Internal Server Error" instead.
+    if (!token) {
+        throw new AppError("Unauthorized", 401);
+    }
+
     const hashedRefreshToken = hashToken(token);
 
     const user = await prisma.user.findFirst({

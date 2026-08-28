@@ -1,9 +1,6 @@
 import { app } from "./app";
 import { config, prisma } from "./config";
 import { connectRedis, redisClient } from "./config/redis";
-import passport from "passport";
-import cookieParser from "cookie-parser"
-import "./features/auth/google.strategy";
 
 const FORCE_EXIT_MS = 10_000;
 
@@ -12,8 +9,9 @@ async function startServer() {
     // A dead/unreachable Redis degrades health but never blocks the port.
     void connectRedis();
 
-    app.use(cookieParser());
-    app.use(passport.initialize());
+    // cookieParser + passport.initialize are mounted in app.ts BEFORE the
+    // routers — mounting them here (after app.ts registered every route)
+    // placed them at the end of the middleware chain where they never ran.
 
     const server = app.listen(config.port, () => {
         console.log(`Server running on port ${config.port}`);
