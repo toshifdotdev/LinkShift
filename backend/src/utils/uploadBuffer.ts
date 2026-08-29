@@ -1,15 +1,16 @@
 import { UploadApiResponse } from "cloudinary";
-import { Readable } from "stream";    
+import { Readable } from "stream";
 import cloudinary from "../config/cloudinary";
 import { AppError } from "../errors/AppError";
+import { withRetry } from "./retry";
 
 export type UploadResult = {
     publicId: string;
     url: string;
 }
 
-export const uploadBuffer = async (buffer : Buffer, folder: string): Promise<UploadResult> => {
-    return new Promise((resolve, reject) => {
+const performUpload = (buffer : Buffer, folder: string): Promise<UploadResult> =>
+    new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
             {
                 folder : folder,
@@ -31,7 +32,15 @@ export const uploadBuffer = async (buffer : Buffer, folder: string): Promise<Upl
             }
         )
          Readable.from(buffer).pipe(uploadStream);
-    })
+    });
 
-    
-}
+export const uploadBuffer = async (buffer : Buffer, folder: string): Promise<UploadResult> => {
+    try {
+        return await withRetry("uploadBuffer", () => performUpload(buffer, folder));
+    } catch (err) {
+        if (!(err instanceof AppError) && !(err instanceof Error)) {
+            throw err;
+        }
+        throw err;
+    }
+};

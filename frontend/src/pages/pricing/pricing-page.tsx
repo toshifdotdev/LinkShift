@@ -40,7 +40,10 @@ function PricingPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useSession();
   const [cycle, setCycle] = useState<BillingCycle>("MONTHLY");
-  const [currency, setCurrency] = useState<Currency>("USD");
+  /* Currency is owned by the backend (region-aware via getPlans). Until that
+     resolves we render an indeterminate "loading prices…" label and refuse to
+     show a hardcoded value. */
+  const [currency, setCurrency] = useState<Currency | null>(null);
   const [paidPlans, setPaidPlans] = useState<ApiPlan[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -107,7 +110,7 @@ function PricingPage() {
   }, []);
 
   const plans = useMemo<ApiPlan[]>(
-    () => [{ ...FREE_PLAN, currency }, ...paidPlans],
+    () => (currency ? [{ ...FREE_PLAN, currency }, ...paidPlans] : []),
     [paidPlans, currency],
   );
   const discount = useMemo(() => yearlyDiscountPercent(paidPlans), [paidPlans]);
@@ -230,8 +233,8 @@ function PricingPage() {
 
             <div className="flex flex-col items-start gap-3 lg:items-end">
               <BillingToggle cycle={cycle} onChange={setCycle} discountPercent={discount} />
-              <p className="font-mono text-[11px] tracking-[0.14em] text-fg-muted uppercase">
-                Prices in {currency}
+              <p className="font-mono text-[11px] tracking-[0.14em] text-fg-muted uppercase" aria-live="polite">
+                {currency ? `Prices in ${currency}` : "Loading prices…"}
               </p>
             </div>
           </header>
@@ -260,7 +263,7 @@ function PricingPage() {
             </div>
           )}
 
-          {status === "ready" && (
+          {status === "ready" && currency && (
             <>
               <div className="mt-12 md:mt-16">
                 <PlanMatrix

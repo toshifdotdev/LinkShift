@@ -1,6 +1,7 @@
 import { app } from "./app";
 import { config, prisma } from "./config";
 import { connectRedis, redisClient } from "./config/redis";
+import { log } from "./utils/logger";
 
 const FORCE_EXIT_MS = 10_000;
 
@@ -14,7 +15,7 @@ async function startServer() {
     // placed them at the end of the middleware chain where they never ran.
 
     const server = app.listen(config.port, () => {
-        console.log(`Server running on port ${config.port}`);
+        log.info("server_listening", { port: config.port });
     });
 
     // Graceful shutdown (Wave M1): stop accepting new connections, drain
@@ -24,10 +25,10 @@ async function startServer() {
     const shutdown = async (signal: string) => {
         if (shuttingDown) return;
         shuttingDown = true;
-        console.log(`${signal} received — shutting down gracefully...`);
+        log.info("shutdown_started", { signal });
 
         const forceExit = setTimeout(() => {
-            console.error("Graceful shutdown timed out — forcing exit.");
+            log.error("shutdown_forced", { reason: "timeout", timeoutMs: FORCE_EXIT_MS });
             process.exit(1);
         }, FORCE_EXIT_MS).unref();
 
@@ -35,9 +36,9 @@ async function startServer() {
             try {
                 await prisma.$disconnect();
                 await redisClient.quit();
-                console.log("Shutdown complete.");
+                log.info("shutdown_complete", {});
             } catch (err) {
-                console.error("Error during shutdown cleanup:", err);
+                log.error("shutdown_cleanup_error", { error: (err as Error)?.message ?? String(err) });
             } finally {
                 clearTimeout(forceExit);
                 process.exit(0);
@@ -50,6 +51,6 @@ async function startServer() {
 }
 
 startServer().catch((err) => {
-    console.error("Failed to start server:", err);
+    log.error("server_start_failed", { error: (err as Error)?.message ?? String(err) });
     process.exit(1);
 });

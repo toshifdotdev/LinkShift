@@ -196,7 +196,7 @@ function QrStudio({
               onClick={() => {
                 if (!savedLinkId || !savedQr) return;
                 setDownloading(true);
-                downloadQrImage(savedLinkId, savedQr.shortId, getAccessToken() ?? "", design.frame)
+                downloadQrImage(savedLinkId, savedQr.shortId, getAccessToken() ?? "")
                   .finally(() => setDownloading(false));
               }}
             >

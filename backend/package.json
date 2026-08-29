@@ -7,6 +7,7 @@
     "dev": "tsc -b && node ./dist/server.js",
     "test": "vitest run",
     "test:integration": "RUN_INTEGRATION=1 vitest run",
+    "test:e2e": "RUN_E2E=1 node tests/e2e/qr-studio.spec.mjs",
     "dev:fast": "node dist/server.js"
   },
   "keywords": [],
@@ -24,6 +25,7 @@
     "@types/sharp": "^0.31.1",
     "@types/supertest": "^7.2.1",
     "@types/ua-parser-js": "^0.7.39",
+    "jsqr": "^1.4.0",
     "supertest": "^7.2.2",
     "tsx": "^4.23.8",
     "typescript": "^7.0.2",

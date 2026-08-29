@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import { AppError } from "../../errors/AppError";
 import { deleteImage } from "../../utils/deleteImage";
 import { linkCacheKey, deleteCache } from "../../utils/cache";
+import { log } from "../../utils/logger";
 import { getUserPlan, getSubscriptionService } from "../billing/billing.service";
 
 // Non-terminal local states imply a provider mandate that could still charge.
@@ -47,7 +48,10 @@ async function cancelLiveProviderSubscriptions(userId: string, sdk: typeof razor
             // Already terminal at the provider is success for our purposes.
             if (!/already\s+cancelled|has been cancelled|expired/i.test(description)) {
                 failedProviderIds.push(providerId);
-                console.error(`[users] provider cancel failed for ${providerId}:`, description || err);
+                log.error("provider_cancel_failed", {
+                    providerSubscriptionId: providerId,
+                    reason: description || String(err),
+                });
             }
         }
     }
@@ -146,7 +150,10 @@ export const deleteMe = async (userId: string, password: string | undefined, con
         try {
             await deleteImage(publicId);
         } catch (err) {
-            console.warn(`[users] cloudinary cleanup skipped for ${publicId}:`, err);
+            log.warn("cloudinary_cleanup_skipped", {
+                publicId,
+                error: (err as Error)?.message ?? String(err),
+            });
         }
     }
 };

@@ -3,6 +3,7 @@ import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { qrService, qrDownloadService, uploadQrLogoService, deleteQrService} from "./qr.service";
 import { createLinkQr, qrFrameSchema } from "./qr.validation";
+import { log } from "../../utils/logger";
 
 type linkIdParams = {
     id : string
@@ -91,7 +92,9 @@ export const uploadQrLogoController = asyncHandler(async(req : Request, res : Re
     if (!req.file) {
         // Diagnostic: makes an unparseable multipart body diagnosable
         // instead of a bare 400.
-        console.error("[qr/logo] no file — content-type:", req.headers["content-type"]);
+        log.error("qr_logo_no_file", {
+            contentType: req.headers["content-type"] ?? null,
+        });
         throw new AppError("Image is required.", 400);
     }
 

@@ -1,5 +1,6 @@
 import { createClient } from 'redis';
 import { config } from './env';
+import { log } from '../utils/logger';
 
 /**
  * Redis is a required infrastructure dependency, but it must degrade
@@ -14,7 +15,6 @@ import { config } from './env';
  *   just because Redis is down.
  */
 
-const backoff = Math.max;
 const reconnectStrategy = (retries: number) => {
     // (2^retries)*50ms capped at 5s + up to 200ms jitter — mirrors the
     // node-redis default shape but with a gentler cap.
@@ -36,18 +36,17 @@ redisClient.on('error', (err) => {
     // state visible without the noise; the next 'ready' logs recovery.
     if (!loggedDown) {
         loggedDown = true;
-        if (config.node_env === 'production') {
-            // Production failures must stay observable and actionable.
-            console.error('[redis] unavailable — running without cache; auto-reconnecting with backoff.', err);
-        } else {
-            console.warn('[redis] unavailable — running without cache; auto-reconnecting in the background.');
-        }
+        const isProd = config.node_env === 'production';
+        log[isProd ? 'error' : 'warn']('redis_unavailable', {
+            mode: isProd ? 'with_backoff' : 'background',
+            error: (err as Error)?.message ?? String(err),
+        });
     }
 });
 
 redisClient.on('ready', () => {
     loggedDown = false;
-    console.log('[redis] connected');
+    log.info('redis_connected', {});
 });
 
 export const connectRedis = async () => {
@@ -57,7 +56,7 @@ export const connectRedis = async () => {
         // With the reconnect strategy above, connect() keeps retrying and
         // normally never rejects — this catch only fires if retrying stops.
         if (config.node_env === 'production') {
-            console.error('[redis] connect failed.', err);
+            log.error('redis_connect_failed', { error: (err as Error)?.message ?? String(err) });
         }
     }
 }

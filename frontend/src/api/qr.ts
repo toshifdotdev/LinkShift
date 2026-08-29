@@ -1,6 +1,5 @@
 import { ApiError, apiFetch } from "./client";
 import type { QrResponse } from "@/types/api";
-type Frame = "clean" | "double" | "accent" | "label" | "branded";
 
 export interface QrConfig {
   foregroundColor: string;
@@ -28,9 +27,10 @@ export function deleteQr(qrId: string) {
 }
 
 /**
- * Authenticated download/preview URL for a link's LATEST QR.
- * 302s to the persisted Cloudinary asset (fl_attachment on navigation,
- * renders inline as an <img> src).
+ * Authenticated download/preview URL for a link's LATEST persisted QR.
+ * The asset is composed at save time (frames, logos), so it IS the final
+ * design — preview, library thumbnail, and download PNG are the SAME
+ * configuration. The endpoint 302s to the persisted Cloudinary asset.
  */
 export function qrDownloadUrl(linkId: string): string {
   return `/api/v1/qr/${linkId}/download`;
@@ -55,19 +55,14 @@ export async function fetchQrImage(
   linkId: string,
   token: string,
   signal?: AbortSignal,
-  frame?: Frame | "none",
 ): Promise<{ url: string; exists: true }> {
   /* credentials omitted: the redirect target (Cloudinary) sends ACAO:* but
      not allow-credentials, and auth travels via the Bearer header anyway. */
-  const res = await fetch(
-    `/api/v1/qr/${linkId}/download${frame && frame !== "none" ? `?frame=${frame}` : ""}`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-      signal,
-    },
-  );
+  const res = await fetch(`/api/v1/qr/${linkId}/download`, {
+    headers: { Authorization: `Bearer ${token}` },
+    signal,
+  });
   if (res.status === 404) throw new ApiError(404, "No QR code yet");
-  if (res.status === 403) throw new ApiError(403, "Frames require the Creator plan or higher");
   if (!res.ok) throw new ApiError(res.status, `Could not load QR (${res.status})`);
   const blob = await res.blob();
   return { url: URL.createObjectURL(blob), exists: true };
@@ -78,12 +73,11 @@ export async function downloadQrImage(
   linkId: string,
   shortId: string,
   token: string,
-  frame?: Frame | "none",
 ): Promise<void> {
-  const { url } = await fetchQrImage(linkId, token, undefined, frame);
+  const { url } = await fetchQrImage(linkId, token, undefined);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `linkshift-${shortId}${frame && frame !== "none" ? `-${frame}` : ""}.png`;
+  a.download = `linkshift-${shortId}.png`;
   document.body.appendChild(a);
   a.click();
   a.remove();

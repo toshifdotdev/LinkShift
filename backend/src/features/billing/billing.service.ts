@@ -932,7 +932,7 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         where: {
             userId,
             status: {
-                in: [...LIVE_SUBSCRIPTION_STATUSES, "PENDING"], // legacy PENDING kept defensively until enum removal
+                in: [...LIVE_SUBSCRIPTION_STATUSES],
             },
         },
     });

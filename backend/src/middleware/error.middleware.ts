@@ -1,5 +1,132 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
+import { log } from "../utils/logger";
+
+/* Public short-link error template. Mirrors the LinkShift ink-and-ember
+   language used by the auth shell and the landing page — monochrome surface,
+   ember micro-label, Fraunces display, Inter body. Self-contained: no
+   external assets, no analytics, no auth surface, no backend leaks. */
+function escapeHtml(s: string): string {
+    return s
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function copyFor(statusCode: number, message: string): { kicker: string; headline: string; note: string } {
+    if (statusCode === 404) {
+        return {
+            kicker: "404",
+            headline: "This short link doesn't exist.",
+            note: "The link may have been removed, or the address typed in doesn't match anything on LinkShift.",
+        };
+    }
+    if (statusCode === 410) {
+        return {
+            kicker: "410",
+            headline: "This short link has expired.",
+            note: "It stopped resolving on the date the owner set. Ask them for an updated link.",
+        };
+    }
+    if (statusCode === 403) {
+        return {
+            kicker: "403",
+            headline: "This short link is unavailable.",
+            note: message || "The link has been paused by its owner, or the destination is not currently reachable.",
+        };
+    }
+    return {
+        kicker: String(statusCode),
+        headline: "Something went wrong.",
+        note: message || "The link is temporarily unavailable. Please try again in a moment.",
+    };
+}
+
+function renderPublicError(statusCode: number, message: string): string {
+    const safe = escapeHtml(message || "");
+    const { kicker, headline, note } = copyFor(statusCode, safe);
+    return `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<meta name="robots" content="noindex,nofollow" />
+<title>LinkShift — ${kicker}</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #0d0d0d; color: #f5f1eb; min-height: 100vh; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    display: flex; flex-direction: column;
+  }
+  .wrap { flex: 1; display: grid; place-items: center; padding: 32px 20px; }
+  .card { width: 100%; max-width: 28rem; }
+  .row { display: flex; align-items: center; gap: 12px; }
+  .plate {
+    width: 28px; height: 28px; border-radius: 6px; border: 1px solid #262626; background: #111111;
+    display: grid; place-items: center; color: #e8590c; flex: 0 0 auto;
+  }
+  .plate svg { width: 16px; height: 16px; }
+  .wordmark { font-family: ui-serif, Georgia, "Times New Roman", serif; font-weight: 600; letter-spacing: -0.01em; font-size: 18px; }
+  .kicker {
+    font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, monospace;
+    color: #e8590c; font-size: 11px; font-weight: 500;
+    letter-spacing: 0.18em; text-transform: uppercase;
+  }
+  .headline {
+    font-family: ui-serif, Georgia, "Times New Roman", serif; font-weight: 600;
+    letter-spacing: -0.02em; margin: 14px 0 12px;
+    font-size: clamp(1.6rem, 4.5vw, 2.1rem); line-height: 1.15;
+  }
+  .note { color: #a8a199; font-size: 14px; line-height: 1.55; margin: 0; }
+  .actions { margin-top: 28px; display: flex; gap: 8px; }
+  .btn {
+    appearance: none; -webkit-appearance: none; cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 36px; padding: 0 16px; border-radius: 6px;
+    font: 600 12px/1 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border: 1px solid #262626; color: #f5f1eb; background: #111111;
+  }
+  .btn:hover { border-color: #3a3a3a; background: #161616; }
+  .foot { padding: 20px; text-align: center; color: #6b6560; }
+  .foot a { color: #a8a199; text-decoration: none; }
+  .foot a:hover { color: #f5f1eb; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <main class="card" role="main">
+      <div class="row">
+        <span class="plate" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M8 4v12h9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M8 16L18 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" />
+            <path d="M13 6h5v5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <span class="wordmark">LinkShift</span>
+      </div>
+      <p class="kicker">${kicker}</p>
+      <h1 class="headline">${headline}</h1>
+      <p class="note">${note}</p>
+      <div class="actions">
+        <a class="btn" href="https://linkshift.in">Back to LinkShift</a>
+      </div>
+    </main>
+  </div>
+  <footer class="foot">
+    <a href="https://linkshift.in">linkshift.in</a>
+  </footer>
+</body>
+</html>`;
+}
 
 export const errorMiddleware = (err : unknown, req : Request, res : Response, next : NextFunction) => {
     if(req.path.startsWith('/api')) {
@@ -12,7 +139,13 @@ export const errorMiddleware = (err : unknown, req : Request, res : Response, ne
             }
             // Log the real exception so a 500 is debuggable from the server
             // terminal — generic "Internal Server Error" is useless on its own.
-            console.error(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl} -> 500:`, err);
+            log.error("http_500", {
+                method: req.method,
+                path: req.originalUrl,
+                errName: (err as Error)?.name,
+                errMessage: (err as Error)?.message,
+                errStack: (err as Error)?.stack,
+            });
             return res.status(500).json({
                 success: false,
                 message: "Internal Server Error"
@@ -20,16 +153,10 @@ export const errorMiddleware = (err : unknown, req : Request, res : Response, ne
     }
 
         if(err instanceof AppError) {
-            return res.status(err.statusCode).send(`
-                        <h1>${err.statusCode}</h1>
-                        <p>${err.message}</p>
-                        `);
+            return res.status(err.statusCode).send(renderPublicError(err.statusCode, err.message));
         }
         else {
-           return res.status(500).send(`
-                        <h1>500</h1>
-                        <p>Internal Server Error</p>
-                        `);
+           return res.status(500).send(renderPublicError(500, "Internal Server Error"));
 
         }
     }

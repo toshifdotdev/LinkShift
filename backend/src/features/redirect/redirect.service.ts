@@ -36,25 +36,7 @@ type RedirectResult =
 export const redirect = async(shortId : string, host : string, req : Request) : Promise<RedirectResult> => {
     const cacheKey = linkCacheKey(host, shortId);
 
-
     const cachedLink = await getCache(cacheKey);
-
-    const domain = await prisma.domain.findUnique({
-            where : {
-                host
-            }
-        })
-
-    if(!domain) {
-        throw new AppError("Domain Not Found", 400);
-    }
-
-    if (!domain.verified) {
-        throw new AppError(
-            "Domain is not verified.",
-            403
-        );
-    }
 
     let targetUrl : CachedLink | null = null;
 
@@ -68,42 +50,55 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
         };
     }
 
-
-    else {
-        targetUrl = await prisma.link.findFirst({
-            where : {
+    if (!targetUrl) {
+        /* Hot path: one Prisma call resolves the link AND its domain row
+           (include), so the common cache-miss case no longer does a domain
+           lookup + a link lookup back-to-back. */
+        const linkWithDomain = await prisma.link.findFirst({
+            where: {
                 shortId,
-                domainId : domain.id
-                
-            }
-        })
+                domain: { host },
+            },
+            include: { domain: true },
+        });
 
-        if(!targetUrl) {
+        if (!linkWithDomain) {
+            /* Slow path (no link). Disambiguate "no such domain" vs "no
+               such link" with a single follow-up so the right branded
+               page is shown. */
+            const domain = await prisma.domain.findUnique({ where: { host } });
+            if (!domain) {
+                throw new AppError("Domain Not Found", 400);
+            }
             throw new AppError("This short link doesn't exist.", 404);
         }
 
-        const cacheData = {
-            id : targetUrl.id,
-            domainId : targetUrl.domainId,
-            userId : targetUrl.userId,
-            targetUrl: targetUrl.targetUrl,
-            isActive: targetUrl.isActive,
-            expiresAt: targetUrl.expiresAt,
-            passwordHash : targetUrl.passwordHash,
-            utmSource: targetUrl.utmSource,
-            utmMedium: targetUrl.utmMedium,
-            utmCampaign: targetUrl.utmCampaign,
-            utmTerm: targetUrl.utmTerm,
-            utmContent: targetUrl.utmContent
+        if (!linkWithDomain.domain.verified) {
+            throw new AppError("Domain is not verified.", 403);
+        }
+
+        targetUrl = {
+            id: linkWithDomain.id,
+            domainId: linkWithDomain.domainId,
+            userId: linkWithDomain.userId,
+            targetUrl: linkWithDomain.targetUrl,
+            isActive: linkWithDomain.isActive,
+            expiresAt: linkWithDomain.expiresAt,
+            passwordHash: linkWithDomain.passwordHash,
+            utmSource: linkWithDomain.utmSource,
+            utmMedium: linkWithDomain.utmMedium,
+            utmCampaign: linkWithDomain.utmCampaign,
+            utmTerm: linkWithDomain.utmTerm,
+            utmContent: linkWithDomain.utmContent,
         };
 
-        await setCache(cacheKey, cacheData, 86400);
+        await setCache(cacheKey, targetUrl, 86400);
     }
 
     if (!targetUrl) {
         throw new AppError("Link not found", 404);
     }
-    
+
     if (!targetUrl.isActive) {
         throw new AppError("This link has been disabled by its owner.", 403)
     }
