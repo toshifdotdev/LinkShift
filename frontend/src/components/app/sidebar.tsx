@@ -76,12 +76,19 @@ function PlanCard() {
   );
 }
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({
+  onNavigate,
+  headerAction,
+}: {
+  onNavigate?: () => void;
+  headerAction?: React.ReactNode;
+}) {
   const { user } = useSession();
   return (
     <div className="flex h-full flex-col">
-      <div className="px-5 pt-5 pb-6">
+      <div className="flex items-center justify-between px-5 pt-5 pb-6">
         <Logo to="/app" />
+        {headerAction}
       </div>
       <SidebarNav onNavigate={onNavigate} />
       <div className="mt-auto">

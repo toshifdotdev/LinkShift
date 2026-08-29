@@ -1,13 +1,18 @@
 import { Menu } from "lucide-react";
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { logout as logoutApi } from "@/api/auth";
 import { useLogout } from "@/auth/session";
-import { MobileNav } from "./mobile-nav";
 import { UserMenu } from "./user-menu";
 
-function Topbar({ title }: { title: string }) {
-  const [navOpen, setNavOpen] = useState(false);
+function Topbar({
+  title,
+  navOpen,
+  onOpenNav,
+}: {
+  title: string;
+  navOpen: boolean;
+  onOpenNav: () => void;
+}) {
   const navigate = useNavigate();
   const logout = useLogout();
 
@@ -26,7 +31,8 @@ function Topbar({ title }: { title: string }) {
         <button
           type="button"
           aria-label="Open navigation"
-          onClick={() => setNavOpen(true)}
+          aria-expanded={navOpen}
+          onClick={onOpenNav}
           className="flex size-9 items-center justify-center rounded-md text-fg-secondary transition-colors hover:bg-elevated hover:text-foreground lg:hidden"
         >
           <Menu className="size-5" />
@@ -41,7 +47,6 @@ function Topbar({ title }: { title: string }) {
           />
         </div>
       </div>
-      <MobileNav open={navOpen} onClose={() => setNavOpen(false)} />
     </header>
   );
 }

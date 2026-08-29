@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from "framer-motion";
+import { X } from "lucide-react";
 import { useEffect } from "react";
 import { SidebarContent } from "./sidebar";
 
@@ -34,7 +35,19 @@ function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
             className="fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-surface lg:hidden"
             aria-label="Navigation"
           >
-            <SidebarContent onNavigate={onClose} />
+            <SidebarContent
+              onNavigate={onClose}
+              headerAction={
+                <button
+                  type="button"
+                  aria-label="Close navigation"
+                  onClick={onClose}
+                  className="flex size-9 items-center justify-center rounded-md text-fg-secondary transition-colors hover:bg-elevated hover:text-foreground"
+                >
+                  <X className="size-5" />
+                </button>
+              }
+            />
           </motion.aside>
         </>
       )}
