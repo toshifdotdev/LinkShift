@@ -1,12 +1,14 @@
 import { useCallback, useRef, useState } from "react";
-import { Check, Crop, X } from "lucide-react";
+import { Check, Circle, Crop, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 /**
- * Square logo crop step.
+ * Logo crop step.
  * The image is contained in a fixed box; the user drags the image behind a
  * fixed square mask (position) and scales it with a slider (zoom). Apply
- * renders the masked region from the ORIGINAL bitmap via canvas.
+ * renders the masked region from the ORIGINAL bitmap via canvas as a
+ * 512×512 PNG and optionally clips it to a circle (transparent corners).
  */
 function LogoCrop({
   src,
@@ -17,7 +19,8 @@ function LogoCrop({
   onApply: (file: File) => void;
   onCancel: () => void;
 }) {
-  const [pos, setPos] = useState({ x: 0.5, y: 0.5 }); // 0..1 image point under crop center
+  const [pos, setPos] = useState({ x: 0, y: 0 }); // image-point offset from box center in 0..1 units
+  const [shape, setShape] = useState<"square" | "circle">("square");
   const [zoom, setZoom] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [imgSize, setImgSize] = useState({ w: 0, h: 0 });
@@ -65,16 +68,32 @@ function LogoCrop({
     canvas.height = out;
     const ctx = canvas.getContext("2d")!;
 
-    /* Source square in IMAGE pixels, centered at (cx,cy) — clamped fully
-       inside the image so drawImage never receives out-of-bounds source
-       coordinates (which render blank/stretched output). */
+    /* ONE source of truth — the exact source square under the crop window,
+       derived from the SAME geometry as the preview transform:
+       img element top-left = (BOX-dispW)/2 + cx*dispW (x), (BOX-dispH)/2 + cy*dispH (y),
+       crop square top-left = (BOX-CROP)/2 (both axes), src px per display px = 1/scale.
+       The crop origin in image pixels is therefore:
+         ((BOX-CROP)/2 - (BOX-dispW)/2 - cx*dispW) / scale = (dispW-CROP)/(2*scale) - cx*natW
+       (dispW/scale = natW). This is what the preview shows, so the baked
+       asset and the saved QR always match the crop selection. */
     const srcSize = CROP / scale;
-    const centerX = cx * (img.naturalWidth || 0);
-    const centerY = cy * (img.naturalHeight || 0);
-    const sx = Math.min(Math.max(centerX - srcSize / 2, 0), Math.max(0, img.naturalWidth - srcSize));
-    const sy = Math.min(Math.max(centerY - srcSize / 2, 0), Math.max(0, img.naturalHeight - srcSize));
+    const sx0 = (dispW - CROP) / (2 * scale) - cx * (img.naturalWidth || 0);
+    const sy0 = (dispH - CROP) / (2 * scale) - cy * (img.naturalHeight || 0);
+    const sx = Math.min(Math.max(sx0, 0), Math.max(0, img.naturalWidth - srcSize));
+    const sy = Math.min(Math.max(sy0, 0), Math.max(0, img.naturalHeight - srcSize));
 
     ctx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, out, out);
+
+    /* Circle shape = inscribe a circle in the exported square and drop the
+       corners (alpha=0) — a baked asset, so preview and saved QR agree. */
+    if (shape === "circle") {
+      ctx.globalCompositeOperation = "destination-in";
+      ctx.beginPath();
+      ctx.arc(out / 2, out / 2, out / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
+    }
+
     const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
     if (!blob) {
       setError("Could not process the image — try a different file.");
@@ -106,6 +125,7 @@ function LogoCrop({
           src={src}
           alt="Crop source"
           onLoad={onImgLoad}
+          onError={() => setError("Could not load the image — please pick another file.")}
           draggable={false}
           className="pointer-events-none absolute select-none"
           style={{
@@ -116,11 +136,38 @@ function LogoCrop({
             transform: `translate(calc(-50% + ${cx * dispW}px), calc(-50% + ${cy * dispH}px))`,
           }}
         />
-        {/* mask + crop square */}
-        <div
-          className="pointer-events-none absolute border-2 border-brand shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]"
-          style={{ width: CROP, height: CROP, left: "50%", top: "50%", transform: "translate(-50%,-50%)" }}
-        />
+        {/* mask + crop shape */}
+        {shape === "circle" ? (
+          <div
+            className="pointer-events-none absolute rounded-full border-2 border-brand shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]"
+            style={{ width: CROP, height: CROP, left: "50%", top: "50%", transform: "translate(-50%,-50%)" }}
+          />
+        ) : (
+          <div
+            className="pointer-events-none absolute border-2 border-brand shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]"
+            style={{ width: CROP, height: CROP, left: "50%", top: "50%", transform: "translate(-50%,-50%)" }}
+          />
+        )}
+      </div>
+
+      <div className="mt-3 flex items-center justify-center gap-2">
+        {(["square", "circle"] as const).map((s) => (
+          <button
+            key={s}
+            type="button"
+            aria-pressed={shape === s}
+            onClick={() => setShape(s)}
+            className={cn(
+              "flex h-8 cursor-pointer items-center gap-1.5 rounded-sm px-2.5 text-[12px] font-medium transition-colors",
+              shape === s
+                ? "border border-border-strong bg-raised text-foreground"
+                : "border border-transparent text-fg-muted hover:text-fg-secondary",
+            )}
+          >
+            {s === "circle" ? <Circle className="size-3.5" /> : <Square className="size-3.5" />}
+            {s === "circle" ? "Circle" : "Square"}
+          </button>
+        ))}
       </div>
 
       <label className="mt-3 block">

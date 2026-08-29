@@ -9,7 +9,7 @@ const AUTH_EXEMPT = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/lo
 
 export const UNAUTHORIZED_EVENT = "ls:unauthorized";
 
-async function requestRefresh(): Promise<boolean> {
+async function performRefresh(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: "POST",
@@ -23,6 +23,22 @@ async function requestRefresh(): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/* Single-flight refresh: when the access token expires, several API calls can
+   401 simultaneously. The backend rotates the refresh cookie on every refresh,
+   so parallel refresh calls would invalidate each other and log the user out.
+   Sharing one in-flight promise means concurrent 401s wait for a single
+   refresh and then all retry with the new token. */
+let refreshInFlight: Promise<boolean> | null = null;
+
+function requestRefresh(): Promise<boolean> {
+  if (!refreshInFlight) {
+    refreshInFlight = performRefresh().finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
 }
 
 /** Error carrying the real HTTP status from the backend. */
@@ -76,7 +92,7 @@ async function apiFetch<T>(pathStr: string, options: RequestOptions = {}): Promi
       headers: finalHeaders,
       credentials: "include",
       signal,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: isFormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
     // fetch only throws on network-level failures

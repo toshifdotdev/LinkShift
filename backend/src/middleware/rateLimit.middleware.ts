@@ -47,6 +47,19 @@ export const billingMutationLimiter = createUserRateLimiter({
     message: { success: false, message: "Too many billing operations. Please slow down." },
 });
 
+// Sensitive account operations (Settings): authenticated + user-keyed.
+export const changePasswordLimiter = createUserRateLimiter({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    message: { success: false, message: "Too many password change attempts. Please wait a bit." },
+});
+
+export const deleteAccountLimiter = createUserRateLimiter({
+    windowMs: 60 * 60 * 1000,
+    limit: 5,
+    message: { success: false, message: "Too many account deletion attempts. Please try again later." },
+});
+
 
 // Public redirect hot path: generous ceiling against floods/scripts while
 // staying invisible to normal traffic. Keyed on the proxy-aware req.ip

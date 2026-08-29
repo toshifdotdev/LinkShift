@@ -3,8 +3,11 @@ backend/node_modules/
 backend/.env
 backend/src/generated/prisma/
 backend/dist
+backend/server.err.log
+backend/server.out.log
 .opencodeignore
 linkshift-audit.json
+
 
 backend/*.tsbuildinfo
 design/

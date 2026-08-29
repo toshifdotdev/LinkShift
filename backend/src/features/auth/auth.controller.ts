@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { loginUser, registerUser, forgotPasswordService, resetPasswordService, refreshService, logoutService, profileService, uploadAvatarService, deleteAvatarService, verifyEmailService, resendVerificationService} from "./auth.service";
+import { loginUser, registerUser, forgotPasswordService, resetPasswordService, refreshService, logoutService, profileService, uploadAvatarService, deleteAvatarService, verifyEmailService, resendVerificationService, changePasswordService} from "./auth.service";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { forgotPasswordInput, LoginUserInput, RegisterUserInput, resendVerificationInput, resetPasswordInput, verifyEmailInput } from "./auth.validation";
 import { setRefreshCookie } from "../../utils/refreshCookie";
@@ -98,6 +98,27 @@ export const refreshTokenController = asyncHandler(async(req : Request, res : Re
 
     res.status(200).json({
         accessToken : tokens.accessToken,
+    });
+
+})
+
+export const changePasswordController = asyncHandler(async(req : Request, res : Response) => {
+    const auth = req.auth;
+
+    if (!auth) {
+        throw new AppError("Unauthorized", 401);
+    }
+
+    const body = req.validated!.body as { currentPassword?: string; newPassword: string };
+
+    await changePasswordService(auth.id, body.currentPassword, body.newPassword);
+
+    // The single-slot refresh session was revoked server-side; drop the stale cookie.
+    res.clearCookie("refreshToken");
+
+    res.status(200).json({
+        success: true,
+        message: "Password updated. Please sign in again.",
     });
 
 })

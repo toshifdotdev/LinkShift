@@ -1,10 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, Lock } from "lucide-react";
 import { useState } from "react";
 import { createLink } from "@/api/links";
-import { getDomains } from "@/api/domains";
 import { ApiError } from "@/api/client";
 import { useSession } from "@/auth/session";
+import { useDomains } from "@/hooks/use-domains";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field";
@@ -50,11 +50,7 @@ function CreateLinkDialog({
   const [utm, setUtm] = useState({ source: "", medium: "", campaign: "", term: "", content: "" });
   const [fieldError, setFieldError] = useState<string | null>(null);
 
-  const domains = useQuery({
-    queryKey: ["domains"],
-    queryFn: async () => (await getDomains()).data,
-    enabled: open,
-  });
+  const domains = useDomains({ enabled: open });
 
   /* effective domain = user choice, else the default domain once loaded */
   const defaultDomain = domains.data?.find((d) => d.isDefault) ?? domains.data?.[0];

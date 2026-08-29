@@ -9,7 +9,7 @@ import {
 } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getMe } from "@/api/users";
-import { UNAUTHORIZED_EVENT } from "@/api/client";
+import { ApiError, UNAUTHORIZED_EVENT } from "@/api/client";
 import { clearAccessToken, getAccessToken } from "@/api/token";
 import type { MeUser } from "@/types/api";
 
@@ -17,6 +17,8 @@ interface SessionValue {
   user: MeUser | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  /** True when the /me bootstrap call failed in a way refresh cannot recover. */
+  hasError: boolean;
   refetch: () => void;
 }
 
@@ -56,6 +58,13 @@ function SessionProvider({ children }: { children: ReactNode }) {
       user: meQuery.data ?? null,
       isLoading: meQuery.isPending,
       isAuthenticated: !!meQuery.data,
+      // Only treat non-401 failures as bootstrap errors. 401s are routed to
+      // /login by the UNAUTHORIZED_EVENT handler; everything else (5xx,
+      // network, unexpected shape) surfaces as a recoverable error state
+      // instead of an unrendered blank screen.
+      hasError:
+        meQuery.isError &&
+        !(meQuery.error instanceof ApiError && meQuery.error.status === 401),
       refetch: () => void meQuery.refetch(),
     }),
     [meQuery],

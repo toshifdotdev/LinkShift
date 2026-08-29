@@ -1,8 +1,9 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Globe, Plus, RefreshCcw, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { addDomain, deleteDomain, getDomains, verifyDomain } from "@/api/domains";
+import { addDomain, deleteDomain, verifyDomain } from "@/api/domains";
 import { useSession } from "@/auth/session";
+import { useDomains } from "@/hooks/use-domains";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { EmptyState, ErrorState, PageHeader } from "@/components/app/page-primitives";
@@ -176,11 +177,7 @@ function DomainsPage() {
   const [deleting, setDeleting] = useState<DomainRow | null>(null);
   const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
-  const domains = useQuery({
-    queryKey: ["domains"],
-    queryFn: () => getDomains(),
-    select: (d) => d.data,
-  });
+  const domains = useDomains();
 
   const rows = domains.data ?? [];
   const own = rows.filter((d) => d.userId !== null);

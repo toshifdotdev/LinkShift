@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ImagePlus, Lock, RefreshCcw, Search, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { createQr, deleteQr, downloadQrImage, uploadQrLogo, type QrConfig } from "@/api/qr";
 import { listLinks } from "@/api/links";
 import { ApiError } from "@/api/client";
@@ -31,6 +31,9 @@ const PATTERNS = [
   { value: "square", label: "Square" },
   { value: "dots", label: "Dots" },
   { value: "rounded", label: "Rounded" },
+  { value: "extraRounded", label: "Extra Rounded" },
+  { value: "classy", label: "Classy" },
+  { value: "classyRounded", label: "Classy Rounded" },
 ] as const;
 
 const EYE_STYLES = [
@@ -408,7 +411,7 @@ function QrStudio({
             {/* pattern */}
             <Field>
               <FieldLabel>Pattern</FieldLabel>
-              <div role="radiogroup" aria-label="Pattern style" className="flex gap-2">
+              <div role="radiogroup" aria-label="Pattern style" className="flex flex-wrap gap-2">
                 {PATTERNS.map((p) => (
                   <button
                     key={p.value}
@@ -693,36 +696,59 @@ export { QrStudio };
 
 
 /* ---- control glyphs ---- */
-function PatternGlyph({ kind, active }: { kind: "square" | "dots" | "rounded"; active: boolean }) {
+function PatternGlyph({
+  kind,
+  active,
+}: {
+  kind: "square" | "dots" | "rounded" | "extraRounded" | "classy" | "classyRounded";
+  active: boolean;
+}) {
   const fill = "currentColor";
+  const dim = active ? 1 : 0.5;
+  const positions = [
+    [1, 1],
+    [4.5, 1],
+    [8, 1],
+    [1, 4.5],
+    [4.5, 4.5],
+    [8, 4.5],
+  ] as const;
+  const cell = (X: number, Y: number, w: number, h: number, rx: number) => (
+    <rect x={X} y={Y} width={w} height={h} rx={rx} fill={fill} />
+  );
+  const dot = (X: number, Y: number, r: number) => <circle cx={X} cy={Y} r={r} fill={fill} />;
+  const rows: ReactNode[] = positions.map(([px, py], i) => {
+    const op = i < 3 ? 1 : dim;
+    if (kind === "dots" || kind === "extraRounded") {
+      return kind === "dots" ? (
+        <g key={i} opacity={op}>
+          {dot(px + 1.5, py + 1.5, 1.6)}
+        </g>
+      ) : (
+        <g key={i} opacity={op}>
+          {cell(px + 0.2, py + 0.7, 2.6, 1.6, 0.8)}
+        </g>
+      );
+    }
+    if (kind === "classy" || kind === "classyRounded") {
+      const rx = kind === "classy" ? 0 : 0.9;
+      return (
+        <g key={i} opacity={op}>
+          {cell(px, py, 3, 3, rx)}
+          {dot(px + 2.1, py + 2.1, 0.55)}
+        </g>
+      );
+    }
+    const rx = kind === "rounded" ? 1 : 0;
+    return (
+      <g key={i} opacity={op}>
+        {cell(px, py, 3, 3, rx)}
+      </g>
+    );
+  });
   return (
     <svg viewBox="0 0 12 12" className="size-3" aria-hidden="true">
-      {kind === "dots" ? (
-        <>
-          <circle cx="2.5" cy="2.5" r="1.6" fill={fill} />
-          <circle cx="6" cy="2.5" r="1.6" fill={fill} />
-          <circle cx="9.5" cy="2.5" r="1.6" fill={fill} />
-          <circle cx="2.5" cy="6" r="1.6" fill={fill} opacity={active ? 1 : 0.5} />
-          <circle cx="6" cy="6" r="1.6" fill={fill} opacity={active ? 1 : 0.5} />
-          <circle cx="9.5" cy="6" r="1.6" fill={fill} opacity={active ? 1 : 0.5} />
-        </>
-      ) : kind === "rounded" ? (
-        <>
-          <rect x="1" y="1" width="3" height="3" rx="1" fill={fill} />
-          <rect x="4.5" y="1" width="3" height="3" rx="1" fill={fill} />
-          <rect x="8" y="1" width="3" height="3" rx="1" fill={fill} />
-          <rect x="1" y="4.5" width="3" height="3" rx="1" fill={fill} opacity={active ? 1 : 0.5} />
-          <rect x="4.5" y="4.5" width="3" height="3" rx="1" fill={fill} opacity={active ? 1 : 0.5} />
-        </>
-      ) : (
-        <>
-          <rect x="1" y="1" width="3" height="3" fill={fill} />
-          <rect x="4.5" y="1" width="3" height="3" fill={fill} />
-          <rect x="8" y="1" width="3" height="3" fill={fill} />
-          <rect x="1" y="4.5" width="3" height="3" fill={fill} opacity={active ? 1 : 0.5} />
-          <rect x="4.5" y="4.5" width="3" height="3" fill={fill} opacity={active ? 1 : 0.5} />
-        </>
-      )}
+      {rows}
     </svg>
   );
 }
@@ -761,7 +787,7 @@ function PresetThumb({
 }: {
   fg: string;
   bg: string;
-  pattern: "square" | "dots" | "rounded";
+  pattern: "square" | "dots" | "rounded" | "extraRounded" | "classy" | "classyRounded";
   frame: "none" | "clean" | "double" | "accent" | "label" | "branded";
 }) {
   const frameStyle =

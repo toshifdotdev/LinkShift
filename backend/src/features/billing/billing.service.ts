@@ -1873,13 +1873,17 @@ export const checkCsvExportAccess = async (userId: string) => {
 };
 
 export const getUsageService = async (userId: string) => {
-    const subscription = await getActiveSubscription(userId);
+    // Period semantics identical to the quota guards (checkRedirectLimit /
+    // checkQrLimit / checkCustomSlugLimit / checkDestinationLimit): metered on
+    // the entitled subscription's provider window, or the calendar month when
+    // there is no entitled subscription / no provider period.
+    const subscription = await getEntitledSubscription(userId);
     const plan = await getUserPlan(userId);
     const { periodStart } = getBillingPeriod(subscription);
 
     const periodFilter = { gte: periodStart };
 
-    const [totalLinks, customSlugs, destinationEdits, redirects, qrCodes] = await Promise.all([
+    const [totalLinks, customSlugs, destinationEdits, redirects, qrCodes, domainCount] = await Promise.all([
         prisma.link.count({ where: { userId } }),
         prisma.linkChange.count({
             where: { userId, type: "CUSTOM_SLUG", createdAt: periodFilter },
@@ -1893,6 +1897,7 @@ export const getUsageService = async (userId: string) => {
         prisma.qr.count({
             where: { link: { userId }, createdAt: periodFilter },
         }),
+        prisma.domain.count({ where: { userId } }),
     ]);
 
     return {
@@ -1902,5 +1907,7 @@ export const getUsageService = async (userId: string) => {
         destinationEdits: { used: destinationEdits, cap: plan.maxDestinationChangesPerMonth },
         redirects: { used: redirects, cap: plan.maxRedirectsPerMonth },
         qrCodes: { used: qrCodes, cap: plan.maxQrPerMonth },
+        domains: { used: domainCount, cap: plan.maxDomains },
+        analyticsDays: plan.analyticsDays,
     };
 };

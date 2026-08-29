@@ -78,11 +78,12 @@ async function collectCloudinaryAssets(userId: string): Promise<string[]> {
     ].filter((id): id is string => !!id);
 }
 
-export const deleteMe = async (userId: string, password: string | undefined, sdk: typeof razorpay = razorpay): Promise<void> => {
+export const deleteMe = async (userId: string, password: string | undefined, confirmation: string, sdk: typeof razorpay = razorpay): Promise<void> => {
     const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
             id: true,
+            email: true,
             passwordHash: true,
             avatarPublicId: true,
         },
@@ -92,6 +93,11 @@ export const deleteMe = async (userId: string, password: string | undefined, sdk
         throw new AppError("Account not found", 404);
     }
 
+    // Server-side confirmation — the user must type their exact account email.
+    // Case-insensitive to match how registration stores the value as-typed.
+    if (!confirmation.trim() || confirmation.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
+        throw new AppError("Confirmation email does not match your account email.", 400);
+    }
 
     if (user.passwordHash) {
         if (!password) {
@@ -154,6 +160,10 @@ export const getMe = async (userId: string) => {
             name: true,
             email: true,
             avatarUrl: true,
+            provider: true,
+            verified: true,
+            createdAt: true,
+            passwordHash: true,
         },
     });
 
@@ -165,7 +175,14 @@ export const getMe = async (userId: string) => {
     const subscription = await getSubscriptionService(userId);
 
     return {
-        ...user,
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+        provider: user.provider,
+        verified: user.verified,
+        createdAt: user.createdAt,
+        hasPassword: !!user.passwordHash,
         plan: { name: plan.name },
         subscription: subscription
             ? {

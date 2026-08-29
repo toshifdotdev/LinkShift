@@ -11,6 +11,9 @@ enum PatternStyle {
   square
   dots
   rounded
+  extraRounded
+  classy
+  classyRounded
 }
 
 enum EyeStyle {

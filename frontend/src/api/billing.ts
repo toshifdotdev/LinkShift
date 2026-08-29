@@ -1,4 +1,4 @@
-import { apiFetch } from "./client";
+import { apiFetch, ApiError } from "./client";
 
 export type PlanName = "STARTER" | "CREATOR" | "PRO";
 export type BillingCycle = "MONTHLY" | "YEARLY";
@@ -121,8 +121,37 @@ export interface BillingUsage {
   customSlugs: { used: number; cap: number | null };
   destinationEdits: { used: number; cap: number | null };
   redirects: { used: number; cap: number | null };
+  qrCodes: { used: number; cap: number | null };
+  domains: { used: number; cap: number | null };
+  analyticsDays: number;
 }
 
-export function getBillingUsage() {
-  return apiFetch<{ success: true; data: BillingUsage }>("/billing/usage");
+const USAGE_CATEGORIES = [
+  "links",
+  "customSlugs",
+  "destinationEdits",
+  "redirects",
+  "qrCodes",
+  "domains",
+] as const;
+
+/**
+ * GET /billing/usage — every category and cap the page renders. The response
+ * is validated here (not scattered through the page) so a stale/malformed
+ * backend contract surfaces as a recoverable query error instead of a
+ * `Cannot read properties of undefined` render crash (blank page).
+ */
+export async function getBillingUsage() {
+  const res = await apiFetch<{ success: true; data: Partial<BillingUsage> }>("/billing/usage");
+  const data = res.data;
+  if (!data || typeof data.periodStart !== "string" || typeof data.analyticsDays !== "number") {
+    throw new ApiError(502, "Billing usage data is invalid — please try again.");
+  }
+  for (const key of USAGE_CATEGORIES) {
+    const cat = data[key];
+    if (!cat || typeof cat.used !== "number" || (cat.cap !== null && typeof cat.cap !== "number")) {
+      throw new ApiError(502, `Billing usage data is incomplete (${key}) — please try again.`);
+    }
+  }
+  return res as { success: true; data: BillingUsage };
 }

@@ -4,6 +4,7 @@ import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 import { APP_NAV } from "./nav-config";
 import { useSession } from "@/auth/session";
+import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function usePageTitle(): string {
@@ -24,14 +25,16 @@ function AppLayout() {
       <div className="lg:pl-64">
         <Topbar title={usePageTitle()} />
         <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-          >
-            <Outlet context={{ user }} />
-          </motion.div>
+          <ErrorBoundary resetKey={location.pathname}>
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, ease: "easeOut" }}
+            >
+              <Outlet context={{ user }} />
+            </motion.div>
+          </ErrorBoundary>
         </main>
       </div>
     </div>

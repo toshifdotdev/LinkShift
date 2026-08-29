@@ -2,10 +2,10 @@ import { Router } from "express";
 import { loginController, registerController, googleCallbackController, forgotPasswordController, resetPasswordController, 
          refreshTokenController, logoutController, profileController, uploadAvatarConntroller, deleteAvatarController,
          verifyEmailController,
-         resendVerificationController} from "./auth.controller";
+         resendVerificationController, changePasswordController} from "./auth.controller";
 import { validate } from "../../middleware/validate.middleware";
-import { forgotPasswordSchema, loginUserSchema, registerUserSchema, resendVerificationSchema, resetPasswordSchema, verifyEmailSchema } from "./auth.validation";
-import { forgotPasswordLimiter, loginLimiter, registerLimiter, resendVerificationLimiter, resetPasswordLimiter } from "../../middleware/rateLimit.middleware";
+import { forgotPasswordSchema, loginUserSchema, registerUserSchema, resendVerificationSchema, resetPasswordSchema, verifyEmailSchema, changePasswordSchema } from "./auth.validation";
+import { forgotPasswordLimiter, loginLimiter, registerLimiter, resendVerificationLimiter, resetPasswordLimiter, changePasswordLimiter } from "../../middleware/rateLimit.middleware";
 import passport from "passport";
 import { authMiddleWare } from "../../middleware/auth.middleware";
 import { config } from "../../config";
@@ -32,6 +32,8 @@ router.post('/reset-password', validate(resetPasswordSchema, "body"), resetPassw
 router.post('/refresh', refreshTokenController);
 
 router.post('/logout', logoutController);
+
+router.post('/change-password', authMiddleWare, changePasswordLimiter, validate(changePasswordSchema, "body"), changePasswordController);
 
 router.get('/profile', authMiddleWare, profileController);
 

@@ -2,11 +2,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ArrowUpRight, CreditCard, Download, FileEdit, Globe, Link2, Pencil, QrCode } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { cancelSubscription, getBillingUsage, getPlans } from "@/api/billing";
-import { getDomains } from "@/api/domains";
+import { cancelSubscription, getBillingUsage } from "@/api/billing";
 import { useSession } from "@/auth/session";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { PageHeader } from "@/components/app/page-primitives";
+import { ErrorState, PageHeader } from "@/components/app/page-primitives";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
@@ -54,17 +53,8 @@ function BillingPage() {
   const sub = user?.subscription ?? null;
   const planName = user?.plan.name ?? "FREE";
 
-  const plans = useQuery({
-    queryKey: ["billing-plans"],
-    queryFn: () => getPlans(),
-    select: (d) => d.plans,
-  });
-  const domains = useQuery({
-    queryKey: ["domains"],
-    queryFn: () => getDomains(),
-    select: (d) => d.data.filter((d) => d.userId !== null),
-  });
-
+  /* Usage & limits come from the single billing-usage contract; every cap is
+     the real plan value the backend enforces (unlimited = null cap). */
   const usage = useQuery({
     queryKey: ["billing-usage"],
     queryFn: () => getBillingUsage(),
@@ -83,19 +73,6 @@ function BillingPage() {
       toast({ title: "Cancellation failed", description: err.message, variant: "error" });
     },
   });
-
-  /* current plan limits — from the real plans API (paid) or seeded FREE */
-  const currentPlanData = plans.data?.find((p) => p.name === planName);
-  const limits = currentPlanData
-    ? {
-        links: currentPlanData.maxLinks,
-        qr: currentPlanData.maxQrPerMonth,
-        domains: currentPlanData.maxDomains,
-        analyticsDays: currentPlanData.analyticsDays,
-      }
-    : planName === "FREE"
-      ? { links: 50, qr: 10, domains: 0, analyticsDays: 30 }
-      : null;
 
   const isPaid = planName !== "FREE";
   const status = statusInfo(sub);
@@ -189,7 +166,13 @@ function BillingPage() {
           </h2>
         </header>
 
-        {limits === null || usage.isPending || !usage.data ? (
+        {usage.isError ? (
+          <ErrorState
+            title="Couldn't load your usage"
+            message={usage.error instanceof Error ? usage.error.message : undefined}
+            onRetry={() => void usage.refetch()}
+          />
+        ) : usage.isPending || !usage.data ? (
           <div className="space-y-3 p-5">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-4/5" />
@@ -203,45 +186,45 @@ function BillingPage() {
             <UsageRow
               icon={<Link2 className="size-3.5" />}
               label="Short links"
-              used={usage.data!.links.used}
-              cap={usage.data!.links.cap}
+              used={usage.data.links.used}
+              cap={usage.data.links.cap}
             />
             <UsageRow
               icon={<ArrowUpRight className="size-3.5" />}
               label="Redirects / month"
-              used={usage.data!.redirects.used}
-              cap={usage.data!.redirects.cap}
+              used={usage.data.redirects.used}
+              cap={usage.data.redirects.cap}
             />
             <UsageRow
               icon={<Pencil className="size-3.5" />}
               label="Custom slugs / month"
-              used={usage.data!.customSlugs.used}
-              cap={usage.data!.customSlugs.cap}
+              used={usage.data.customSlugs.used}
+              cap={usage.data.customSlugs.cap}
             />
             <UsageRow
               icon={<FileEdit className="size-3.5" />}
               label="Destination edits / month"
-              used={usage.data!.destinationEdits.used}
-              cap={usage.data!.destinationEdits.cap}
+              used={usage.data.destinationEdits.used}
+              cap={usage.data.destinationEdits.cap}
             />
             <UsageRow
               icon={<Globe className="size-3.5" />}
               label="Custom domains"
-              used={domains.data?.length ?? 0}
-              cap={limits.domains}
+              used={usage.data.domains.used}
+              cap={usage.data.domains.cap}
             />
             <UsageRow
               icon={<QrCode className="size-3.5" />}
               label="QR codes / month"
-              used={null}
-              cap={limits.qr}
+              used={usage.data.qrCodes.used}
+              cap={usage.data.qrCodes.cap}
             />
             <UsageRow
               icon={<Download className="size-3.5" />}
               label="Analytics history"
               used={null}
-              cap={limits.analyticsDays}
-              capLabel={limits.analyticsDays >= 365 ? `${Math.round(limits.analyticsDays / 365)} yr` : `${limits.analyticsDays} days`}
+              cap={usage.data.analyticsDays}
+              capLabel={usage.data.analyticsDays >= 365 ? `${Math.round(usage.data.analyticsDays / 365)} yr` : `${usage.data.analyticsDays} days`}
             />
           </dl>
         )}

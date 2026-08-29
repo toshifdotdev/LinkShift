@@ -295,6 +295,49 @@ export const logoutService = async(refreshToken : string) => {
     })
 }
 
+export const changePasswordService = async (
+    userId: string,
+    currentPassword: string | undefined,
+    newPassword: string
+) => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, passwordHash: true },
+    });
+
+    if (!user) {
+        throw new AppError("Account not found.", 404);
+    }
+
+    // Accounts created via Google have no local password yet — no current
+    // credential to verify, the user is simply setting one.
+    if (user.passwordHash) {
+        if (!currentPassword) {
+            throw new AppError("Current password is required.", 400);
+        }
+        const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!ok) {
+            throw new AppError("Current password is incorrect.", 403);
+        }
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Revoke the single-slot refresh session (one session per account) so
+    // the new credential is required on the next sign-in, and clear any
+    // stale password-reset tokens.
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            passwordHash: hashedPassword,
+            refreshTokenHash: null,
+            refreshTokenExpiresAt: null,
+            resetPasswordToken: null,
+            resetPasswordExpires: null,
+        },
+    });
+};
+
 export const profileService = async(id : string) => {
     const user = await prisma.user.findUnique({
         where : {

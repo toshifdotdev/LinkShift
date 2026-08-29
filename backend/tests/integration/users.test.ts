@@ -175,22 +175,35 @@ describe.skipIf(!RUN)("Integration Users (M2)", () => {
         const res = await request(app)
             .delete("/api/v1/users/me")
             .set("Authorization", `Bearer ${token}`)
-            .send({ password: "Wr0ng!Passw0rd" })
+            .send({ password: "Wr0ng!Passw0rd", confirmation: email })
             .expect(403);
 
         expect(res.body.message).toMatch(/invalid/i);
         const stillThere = await prisma.user.findUnique({ where: { id: userId } });
         expect(stillThere).not.toBeNull();
-        void email;
     });
 
-    it("deletion without password confirmation is rejected (password accounts)", async () => {
+    it("deletion rejects a mismatched confirmation email and PRESERVES the account", async () => {
         const { userId, token } = await createVerifiedUser();
 
         const res = await request(app)
             .delete("/api/v1/users/me")
             .set("Authorization", `Bearer ${token}`)
-            .send({});
+            .send({ password: PASSWORD, confirmation: "not-the-account@example.com" })
+            .expect(400);
+
+        expect(res.body.message).toMatch(/does not match/i);
+        const stillThere = await prisma.user.findUnique({ where: { id: userId } });
+        expect(stillThere).not.toBeNull();
+    });
+
+    it("deletion without password confirmation is rejected (password accounts)", async () => {
+        const { userId, email, token } = await createVerifiedUser();
+
+        const res = await request(app)
+            .delete("/api/v1/users/me")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ confirmation: email });
         expect([400, 403]).toContain(res.status);
 
         const stillThere = await prisma.user.findUnique({ where: { id: userId } });
@@ -198,12 +211,12 @@ describe.skipIf(!RUN)("Integration Users (M2)", () => {
     });
 
     it("Google-only accounts can delete with a valid session alone", async () => {
-        const { userId, token } = await seedGoogleOnlyUser();
+        const { userId, email, token } = await seedGoogleOnlyUser();
 
         const res = await request(app)
             .delete("/api/v1/users/me")
             .set("Authorization", `Bearer ${token}`)
-            .send({});
+            .send({ confirmation: email });
         expect(res.status).toBe(200);
 
         const gone = await prisma.user.findUnique({ where: { id: userId } });
@@ -228,7 +241,7 @@ describe.skipIf(!RUN)("Integration Users (M2)", () => {
         const res = await request(app)
             .delete("/api/v1/users/me")
             .set("Authorization", `Bearer ${token}`)
-            .send({ password: PASSWORD })
+            .send({ password: PASSWORD, confirmation: email })
             .expect(200);
 
         expect(res.headers["set-cookie"]?.[0]).toContain("refreshToken=;");
@@ -241,7 +254,7 @@ describe.skipIf(!RUN)("Integration Users (M2)", () => {
     });
 
     it("provider-cancel failure ABORTS deletion and preserves the account (Option A safety)", async () => {
-        const { userId, token } = await createVerifiedUser("AbortCase");
+        const { userId, email, token } = await createVerifiedUser("AbortCase");
 
         const plan = await prisma.plan.findUniqueOrThrow({ where: { name: "CREATOR" } });
         // One live subscription whose provider id does not exist at Razorpay —
@@ -263,7 +276,7 @@ describe.skipIf(!RUN)("Integration Users (M2)", () => {
         const res = await request(app)
             .delete("/api/v1/users/me")
             .set("Authorization", `Bearer ${token}`)
-            .send({ password: PASSWORD });
+            .send({ password: PASSWORD, confirmation: email });
 
         expect(res.status).toBe(502);
         expect(res.body.message).toMatch(/has not been deleted/i);
@@ -271,5 +284,51 @@ describe.skipIf(!RUN)("Integration Users (M2)", () => {
         expect(intact).not.toBeNull(); // nothing mutated on abort
         const subs = await prisma.subscription.count({ where: { userId } });
         expect(subs).toBe(1); // preserved verbatim
+    });
+
+    it("change-password updates the hash, revokes the refresh session, and wrong current password is rejected", async () => {
+        const { userId, email, token } = await createVerifiedUser("PwdChanger");
+
+        // Simulate a live session by seeding the single refresh slot directly.
+        await prisma.user.update({
+            where: { id: userId },
+            data: { refreshTokenHash: "live-session-hash", refreshTokenExpiresAt: new Date(Date.now() + 86400000) },
+        });
+
+        // Wrong current password is rejected and nothing changes.
+        const bad = await request(app)
+            .post("/api/v1/auth/change-password")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ currentPassword: "Wr0ng!Passw0rd", newPassword: "Chang3d!Passw0rd" });
+        expect(bad.status).toBe(403);
+
+        // Happy path: new hash stored, refresh slot revoked, reset tokens cleared.
+        const res = await request(app)
+            .post("/api/v1/auth/change-password")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ currentPassword: PASSWORD, newPassword: "Chang3d!Passw0rd" });
+        expect(res.status).toBe(200);
+
+        const db = await prisma.user.findUnique({ where: { id: userId } });
+        const bcrypt = await import("bcrypt");
+        expect(await bcrypt.compare("Chang3d!Passw0rd", db?.passwordHash ?? "")).toBe(true);
+        expect(await bcrypt.compare(PASSWORD, db?.passwordHash ?? "")).toBe(false);
+        expect(db?.refreshTokenHash).toBeNull();
+        expect(db?.refreshTokenExpiresAt).toBeNull();
+        void email;
+    });
+
+    it("Google-only accounts can set a password without a current password", async () => {
+        const { userId, token } = await seedGoogleOnlyUser();
+
+        const res = await request(app)
+            .post("/api/v1/auth/change-password")
+            .set("Authorization", `Bearer ${token}`)
+            .send({ newPassword: "New!Passw0rd" });
+        expect(res.status).toBe(200);
+
+        const db = await prisma.user.findUnique({ where: { id: userId } });
+        const bcrypt = await import("bcrypt");
+        expect(await bcrypt.compare("New!Passw0rd", db?.passwordHash ?? "")).toBe(true);
     });
 });

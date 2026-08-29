@@ -17,6 +17,10 @@
     "prisma",
     "scripts",
     "tests",
-    "vitest.config.ts"
+    "vitest.config.ts",
+    "_gen-token.ts",
+    "_repro-billing.ts",
+    "_gen-token.js",
+    "_repro-billing.js"
   ]
 }

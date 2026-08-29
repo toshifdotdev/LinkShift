@@ -33,9 +33,9 @@ export const updateNameController = asyncHandler(async (req: AuthedRequest, res:
 export const deleteMeController = asyncHandler(async (req: AuthedRequest, res: Response) => {
     const userId = requireAuth(req);
     const validated = req.validated!;
-    const body = validated.body as { password?: string };
+    const body = validated.body as { password?: string; confirmation: string };
 
-    await deleteMe(userId, body.password);
+    await deleteMe(userId, body.password, body.confirmation);
 
     // Session cookie is dead with the account.
     res.clearCookie("refreshToken");

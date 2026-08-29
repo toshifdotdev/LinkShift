@@ -6,15 +6,11 @@ export function getMe() {
 }
 
 export function updateName(name: string) {
-  return apiFetch<{ success: true; message: string }>("/users/me", {
-    method: "PATCH",
-    body: { name },
-  });
-}
-
-export function deleteAccount(password?: string) {
-  return apiFetch<{ success: true; message: string }>("/users/me", {
-    method: "DELETE",
-    body: password ? { password } : {},
-  });
+  return apiFetch<{ success: true; data: { id: string; name: string; email: string; avatarUrl: string | null } }>(
+    "/users/me",
+    {
+      method: "PATCH",
+      body: { name },
+    },
+  );
 }

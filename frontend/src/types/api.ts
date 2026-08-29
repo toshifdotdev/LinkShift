@@ -14,6 +14,10 @@ export interface MeUser {
   name: string;
   email: string;
   avatarUrl: string | null;
+  provider: "LOCAL" | "GOOGLE";
+  verified: boolean;
+  createdAt: string;
+  hasPassword: boolean;
   plan: { name: string };
   subscription: {
     status: SubscriptionStatus;
@@ -126,7 +130,7 @@ export interface QrResponse {
   foregroundColor: string;
   backgroundColor: string;
   margin: number | null;
-  pattern: "square" | "dots" | "rounded";
+  pattern: "square" | "dots" | "rounded" | "extraRounded" | "classy" | "classyRounded";
   eyeStyle: "square" | "dot" | "extraRounded";
   eyeBallStyle: "square" | "dot";
   frame: "none" | "clean" | "double" | "accent" | "label" | "branded";

@@ -1,10 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Info } from "lucide-react";
 import { useState } from "react";
 import { ApiError } from "@/api/client";
-import { getDomains } from "@/api/domains";
 import { updateLink } from "@/api/links";
 import { useSession } from "@/auth/session";
+import { useDomains } from "@/hooks/use-domains";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field";
@@ -53,11 +53,7 @@ function EditLinkDialog({
   const [domainId, setDomainId] = useState("");
   const [fieldError, setFieldError] = useState<string | null>(null);
 
-  /* mounted only while an edit session is open, so fetch immediately */
-  const domains = useQuery({
-    queryKey: ["domains"],
-    queryFn: async () => (await getDomains()).data,
-  });
+  const domains = useDomains();
 
   function close() {
     onClose();

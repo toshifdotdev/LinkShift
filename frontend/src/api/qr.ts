@@ -6,7 +6,7 @@ export interface QrConfig {
   foregroundColor: string;
   backgroundColor: string;
   margin: number;
-  pattern: "square" | "dots" | "rounded";
+  pattern: "square" | "dots" | "rounded" | "extraRounded" | "classy" | "classyRounded";
   eyeStyle: "square" | "dot" | "extraRounded";
   eyeBallStyle: "square" | "dot";
   logoUrl?: string;

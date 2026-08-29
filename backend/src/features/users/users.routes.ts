@@ -3,6 +3,7 @@ import { z } from "zod";
 import { authMiddleWare } from "../../middleware/auth.middleware";
 import { validate } from "../../middleware/validate.middleware";
 import { deleteMeController, getMeController, updateNameController,} from "./users.controller";
+import { deleteAccountLimiter } from "../../middleware/rateLimit.middleware";
 
 const router = Router();
 
@@ -25,11 +26,16 @@ router.patch(
 
 const deleteAccountSchema = z.object({
     password: z.string().min(1).optional(),
+    confirmation: z
+        .string()
+        .trim()
+        .min(1, "Type your account email to confirm deletion."),
 });
 
 router.delete(
     "/me",
     authMiddleWare,
+    deleteAccountLimiter,
     validate(deleteAccountSchema, "body"),
     deleteMeController
 );

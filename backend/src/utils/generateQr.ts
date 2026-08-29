@@ -2,7 +2,7 @@ import QRCodeCanvas from '@solana/qr-code-styling';
 import sharp from 'sharp';
 import { AppError } from '../errors/AppError';
 import { JSDOM } from 'jsdom';
-import type { CornerSquareType } from "@solana/qr-code-styling";
+import type { CornerSquareType, DotType } from "@solana/qr-code-styling";
 import { EyeBallStyle, EyeStyle, PatternStyle } from '../generated/prisma/enums';
 import { uploadBuffer } from './uploadBuffer';
 
@@ -19,6 +19,15 @@ const eyeStyleMap: Record<EyeStyle, CornerSquareType> = {
     square: "square",
     dot: "dot",
     extraRounded: "extra-rounded"
+} as const;
+
+const patternStyleMap: Record<PatternStyle, DotType> = {
+    square: "square",
+    dots: "dots",
+    rounded: "rounded",
+    extraRounded: "extra-rounded",
+    classy: "classy",
+    classyRounded: "classy-rounded"
 } as const;
 
 
@@ -49,7 +58,7 @@ export const generateQrImage = async (data: qrCodeData) => {
         // It is composited with sharp below, after rasterization.
         dotsOptions: {
             color: data.foregroundColor,
-            type: data.pattern 
+            type: patternStyleMap[data.pattern]
         },
         backgroundOptions: {
             color: data.backgroundColor,
