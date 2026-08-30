@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { UpgradeHint } from "./upgrade-hint";
 import { cn } from "@/lib/utils";
+import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import type { LinkItem } from "@/types/api";
 
 const SLUG_RE = /^[a-zA-Z0-9_-]+$/;
@@ -56,6 +57,7 @@ function CreateLinkDialog({
   /* effective domain = user choice, else the default domain once loaded */
   const defaultDomain = domains.data?.find((d) => d.isDefault) ?? domains.data?.[0];
   const effectiveDomainId = domainId || defaultDomain?.id || "";
+  const domainHost = domains.data?.find((d) => d.id === effectiveDomainId)?.host ?? DEFAULT_SHORT_DOMAIN;
 
   const slugValid = !slug || (slug.length >= 3 && slug.length <= 50 && SLUG_RE.test(slug));
   const passwordValid = !usePassword || PASSWORD_RULES.every((r) => r.test(password));
@@ -144,7 +146,7 @@ function CreateLinkDialog({
           aria-label="Short link preview"
           className="mt-4 flex items-center gap-2 rounded-md border border-border bg-sunken/50 px-3 py-2 font-mono text-[12.5px]"
         >
-          <span className="shrink-0 text-fg-muted/80">go.linkshift.in/</span>
+          <span className="shrink-0 text-fg-muted/80">{domainHost}/</span>
           <span className="min-w-0 truncate font-medium text-foreground">
             {canUseSlug ? (slug.trim() || "your-slug") : "your-slug"}
           </span>
@@ -244,7 +246,7 @@ function CreateLinkDialog({
                         aria-invalid={!!slug && !slugValid}
                       />
                       <FieldHint>
-                        <span className="text-fg-muted/70">go.linkshift.in/</span>
+                        <span className="text-fg-muted/70">{domainHost}/</span>
                         <span className="text-foreground">{slug || "your-slug"}</span>
                       </FieldHint>
                       <FieldError>

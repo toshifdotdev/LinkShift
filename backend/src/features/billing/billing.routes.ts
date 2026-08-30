@@ -6,9 +6,6 @@ import { cancelSubscriptionSchema, changePlanSchema, subscriptionSchema, subscri
 import { cancelSubscriptionController, changePlanController, getPlansController, getSubscriptionController, getUsageController, subscriptionController, verifySubscriptionController } from './billing.controller';
 const router = Router();
 
-// router.post('/checkout', authMiddleWare, validate(checkoutSchema, "body"), checkoutController);
-// router.post('/verify', authMiddleWare, validate(paymentVerificationSchema, "body"), verifyPaymentController);
-
 router.get('/plans', getPlansController);
 
 router.post('/subscribe', authMiddleWare, billingMutationLimiter, validate(subscriptionSchema, "body"), subscriptionController);

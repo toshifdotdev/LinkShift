@@ -61,21 +61,19 @@ export interface DashboardStats {
   topLinks: TopLink[];
 }
 
-export type ScanDimension = string | null;
-
+/**
+ * Exact shape returned by the backend activity mapper (dashboard.mapper.ts
+ * analyticsMapper): a flat row per scan — there is no nested `link` object
+ * and no `id`/`os`/`city`/`referrer`/`utm*` fields, despite what an older
+ * version of this type implied.
+ */
 export interface ActivityItem {
-  id: string;
-  device: ScanDimension;
-  browser: ScanDimension;
-  os: ScanDimension;
-  country: ScanDimension;
-  city: ScanDimension;
-  referrer: ScanDimension;
-  utmSource: ScanDimension;
-  utmMedium: ScanDimension;
-  utmCampaign: ScanDimension;
+  linkName: string;
+  shortId: string;
+  device: string;
+  browser: string;
+  country: string;
   scannedAt: string;
-  link: { name: string | null; shortId: string };
 }
 
 /**

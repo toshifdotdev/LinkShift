@@ -15,7 +15,7 @@ import cors from "cors";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import passport from "passport";
-import { prisma } from "./config";
+import { config, prisma } from "./config";
 import { redisClient } from "./config/redis";
 import "./features/auth/google.strategy";
 
@@ -44,7 +44,7 @@ app.use(helmet());
 
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: config.corsOrigins,
         credentials: true,
     })
 );

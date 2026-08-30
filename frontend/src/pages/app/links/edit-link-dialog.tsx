@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { UpgradeHint } from "./upgrade-hint";
 import { cn } from "@/lib/utils";
+import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import { toLocalInputValue, fromLocalInputValue } from "./utils";
 import type { LinkItem } from "@/types/api";
 
@@ -54,6 +55,16 @@ function EditLinkDialog({
   const [fieldError, setFieldError] = useState<string | null>(null);
 
   const domains = useDomains();
+
+  /* The API never returns the link's current domain (see LinkItem note), so
+     until the user opts to switch, fall back to the account's default domain
+     — the same host the previous hardcoded string assumed. Once switching is
+     on, the preview reflects whichever domain is actually selected. */
+  const defaultDomain = domains.data?.find((d) => d.isDefault) ?? domains.data?.[0];
+  const domainHost =
+    switchDomain && domainId
+      ? domains.data?.find((d) => d.id === domainId)?.host ?? DEFAULT_SHORT_DOMAIN
+      : defaultDomain?.host ?? DEFAULT_SHORT_DOMAIN;
 
   function close() {
     onClose();
@@ -114,8 +125,8 @@ function EditLinkDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogTitle>Edit link</DialogTitle>
         <div className="mt-2 flex items-center gap-2 rounded-md border border-border bg-sunken/50 px-3 py-1.5 font-mono text-[12.5px]">
-          <span className="shrink-0 text-fg-muted/80">go.linkshift.in/</span>
-          <span className="truncate text-foreground">{link?.shortId}</span>
+          <span className="shrink-0 text-fg-muted/80">{domainHost}/</span>
+          <span className="truncate text-foreground">{slug || link?.shortId}</span>
         </div>
 
         {link && (

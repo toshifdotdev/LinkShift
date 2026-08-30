@@ -332,18 +332,18 @@ function AccountView({ days }: { days: AnalyticsDays }) {
             </div>
           ) : (
             <ol className="divide-y divide-border/60">
-              {activity.data.map((a) => (
-                <li key={a.id} className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50 sm:px-6">
+              {activity.data.map((a, i) => (
+                <li key={`${a.shortId}-${a.scannedAt}-${i}`} className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50 sm:px-6">
                   <span aria-hidden="true" className="relative flex size-1.5 shrink-0">
                     <span className="absolute inset-0 rounded-full bg-emerald-400/60 ls-ping" />
                     <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] text-foreground">
-                      {a.link.name ?? "Untitled link"}
+                      {a.linkName || "Untitled link"}
                     </p>
                     <p className="truncate font-mono text-[10px] tracking-[0.04em] text-fg-muted">
-                      {[a.browser, a.os, a.country].filter(Boolean).join(" · ") || "Unknown client"}
+                      {[a.device, a.browser, a.country].filter(Boolean).join(" · ") || "Unknown client"}
                     </p>
                   </div>
                   <time className="shrink-0 font-mono text-[10px] tracking-[0.14em] text-fg-muted">

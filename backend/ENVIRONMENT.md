@@ -17,7 +17,8 @@ in `.env` (dev, gitignored) or your platform's secret store (production).
 | `JWT_SECRET` | dev value OK | **long random secret (rotate)** | HS256 access tokens |
 | `GOOGLE_CLIENT_ID/SECRET` | test OAuth app | production OAuth app | Authorized redirect must equal `GOOGLE_CALLBACK_URL` |
 | `GOOGLE_CALLBACK_URL` | `http://localhost:3000/api/v1/auth/google/callback` | `https://api.linkshift.in/api/v1/auth/google/callback` | Full backend path |
-| `FRONTEND_URL` | `http://localhost:5173` | `https://linkshift.in` | SPA origin — email reset links + verify redirect. **Never** the OAuth callback path (M1 fix) |
+| `FRONTEND_URL` | `http://localhost:5173` | `https://linkshift.in` | SPA origin — email reset links + verify redirect. **Never** the OAuth callback path (M1 fix). Also the default CORS-allowed origin (see `CORS_ORIGINS`) |
+| `CORS_ORIGINS` | unset (falls back to `FRONTEND_URL`) | unset unless multiple origins need API access (e.g. staging + prod) | Comma-separated list of allowed CORS origins for `app.ts`; set only when one origin isn't enough |
 | `RESEND_API_KEY` | test key | production key |
 | `EMAIL_FROM` | `onboarding@resend.dev` (dev) | **verified domain sender**, e.g. `noreply@linkshift.in` — Resend blocks unverified senders for third-party recipients; hard requirement at deploy | |
 | `CLOUDINARY_*` | dev account | prod account | |

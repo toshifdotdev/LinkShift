@@ -202,7 +202,7 @@ function RecentActivity({
   data,
   loading,
 }: {
-  data: { id: string; link: { name: string | null; shortId: string }; browser: string | null; os: string | null; country: string | null; scannedAt: string }[];
+  data: { linkName: string; shortId: string; device: string; browser: string; country: string; scannedAt: string }[];
   loading?: boolean;
 }) {
   if (loading) {
@@ -238,8 +238,8 @@ function RecentActivity({
   }
   return (
     <ol className="divide-y divide-border/60">
-      {data.map((a) => (
-        <li key={a.id} className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50 sm:px-6">
+      {data.map((a, i) => (
+        <li key={`${a.shortId}-${a.scannedAt}-${i}`} className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50 sm:px-6">
           <span
             aria-hidden="true"
             className="relative flex size-1.5 shrink-0"
@@ -249,10 +249,10 @@ function RecentActivity({
           </span>
           <div className="min-w-0 flex-1">
             <p className="truncate text-[13px] text-foreground">
-              {a.link.name ?? "Untitled link"}
+              {a.linkName || "Untitled link"}
             </p>
             <p className="truncate font-mono text-[10px] tracking-[0.04em] text-fg-muted">
-              {[a.browser, a.os, a.country].filter(Boolean).join(" · ") || "Unknown client"}
+              {[a.device, a.browser, a.country].filter(Boolean).join(" · ") || "Unknown client"}
             </p>
           </div>
           <time className="shrink-0 font-mono text-[10px] tracking-[0.14em] text-fg-muted">

@@ -1,1 +1,0 @@
-[frame-debug] overlay-svg: <svg width="352" height="408" xmlns="http://www.w3.org/2000/svg">

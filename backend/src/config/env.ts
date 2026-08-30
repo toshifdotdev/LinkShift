@@ -17,6 +17,13 @@ export const config = {
     // Origin of the frontend SPA. Used for email links and post-verification
     // redirects — must NOT be confused with the OAuth callback URL above.
     frontendUrl : process.env.FRONTEND_URL,
+    // Allowed CORS origins for the API. Defaults to FRONTEND_URL so a single
+    // env var covers both use cases; set CORS_ORIGINS (comma-separated) when
+    // more than one origin needs access (e.g. staging + production).
+    corsOrigins : (process.env.CORS_ORIGINS ?? process.env.FRONTEND_URL ?? "http://localhost:5173")
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean),
     node_env : process.env.NODE_ENV,
     cloudinaryCloudName : process.env.CLOUDINARY_CLOUD_NAME ,
     cloudinaryApiKey : process.env.CLOUDINARY_API_KEY,
