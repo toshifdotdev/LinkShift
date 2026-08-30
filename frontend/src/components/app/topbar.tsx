@@ -26,7 +26,7 @@ function Topbar({
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-background/85 backdrop-blur-sm">
+    <header className="sticky top-0 z-20 border-b border-border bg-background/80 backdrop-blur-sm">
       <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
         <button
           type="button"
@@ -38,7 +38,15 @@ function Topbar({
           <Menu className="size-5" />
         </button>
 
-        <p className="truncate text-sm font-medium text-foreground">{title}</p>
+        <div className="relative flex min-w-0 items-center pl-3">
+          <span
+            aria-hidden="true"
+            className="absolute top-1/2 left-0 h-4 w-0.5 -translate-y-1/2 rounded-full bg-brand/70"
+          />
+          <p className="truncate pl-3 text-[13.5px] font-medium tracking-tight text-foreground">
+            {title}
+          </p>
+        </div>
 
         <div className="ml-auto flex items-center gap-2">
           <UserMenu

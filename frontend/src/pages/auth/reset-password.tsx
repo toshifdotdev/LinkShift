@@ -47,7 +47,7 @@ function ResetPasswordPage() {
       setError(
         err instanceof ApiError
           ? err.message
-          : "Could not reset your password — the link may have expired.",
+          : "Couldn't reset your password. The link may have expired.",
       );
     } finally {
       setSubmitting(false);
@@ -59,7 +59,7 @@ function ResetPasswordPage() {
       <AuthLayout
         kicker="Account recovery"
         title="Reset link required"
-        description="Open the reset link from your email — it contains the security token this page needs."
+        description="Open the reset link from your email. It contains the security token this page needs."
         footer={
           <Link
             to="/forgot-password"
@@ -98,7 +98,7 @@ function ResetPasswordPage() {
     <AuthLayout
       kicker="Account recovery"
       title="Choose a new password"
-      description="Pick something strong — the same rules apply as at signup."
+      description="Pick something strong. The same rules apply as at signup."
       footer={
         <Link
           to="/login"

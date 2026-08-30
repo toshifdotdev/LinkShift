@@ -90,9 +90,9 @@ function DomainsSection() {
                 Your name in every link.
               </h2>
               <p className="text-pretty mt-5 max-w-md text-[15px] leading-relaxed text-fg-secondary">
-                Connect a custom domain and the shift happens on your turf — no
-                third-party branding between you and your audience. Verification is
-                built in: add one DNS record, flip to verified, start shifting.
+                Connect a custom domain. The shift happens on your turf. No
+                third-party branding between you and your audience. Verification
+                is built in. Add one DNS record, flip to verified, start shifting.
               </p>
             </Reveal>
           </div>

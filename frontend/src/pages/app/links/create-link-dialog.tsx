@@ -5,6 +5,7 @@ import { createLink } from "@/api/links";
 import { ApiError } from "@/api/client";
 import { useSession } from "@/auth/session";
 import { useDomains } from "@/hooks/use-domains";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field";
@@ -87,7 +88,7 @@ function CreateLinkDialog({
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!destinationValid) {
-      setFieldError("Enter a valid destination URL starting with http:// or https://");
+      setFieldError("Enter a valid destination URL. It must start with http:// or https://");
       return;
     }
     if (!effectiveDomainId) {
@@ -95,7 +96,7 @@ function CreateLinkDialog({
       return;
     }
     if (!slugValid) {
-      setFieldError("Slugs are 3–50 characters: letters, numbers, hyphens and underscores only.");
+      setFieldError("Slugs are 3 to 50 characters. Letters, numbers, hyphens, and underscores only.");
       return;
     }
     if (!passwordValid) {
@@ -133,8 +134,24 @@ function CreateLinkDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogTitle>Create a new link</DialogTitle>
         <p className="mt-1 text-sm text-fg-secondary">
-          Paste a destination — everything else is optional.
+          Paste a destination. Everything else is optional.
         </p>
+
+        {/* The live slug preview — a single line that always reads as
+            `go.linkshift.in/<slug>` and updates as the user types or as
+            the auto-generated slug changes. The slug slot is the chip. */}
+        <div
+          aria-label="Short link preview"
+          className="mt-4 flex items-center gap-2 rounded-md border border-border bg-sunken/50 px-3 py-2 font-mono text-[12.5px]"
+        >
+          <span className="shrink-0 text-fg-muted/80">go.linkshift.in/</span>
+          <span className="min-w-0 truncate font-medium text-foreground">
+            {canUseSlug ? (slug.trim() || "your-slug") : "your-slug"}
+          </span>
+          <Badge shape="mark" variant="dim" className="ml-auto">
+            {canUseSlug ? "Custom" : "Auto"}
+          </Badge>
+        </div>
 
         <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4" noValidate>
           <Field>
@@ -193,8 +210,8 @@ function CreateLinkDialog({
               className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left"
             >
               <span className="text-[13px] font-medium text-fg-secondary">
-                Advanced options
-                <span className="ml-2 font-mono text-[10px] text-fg-muted">
+                Advanced
+                <span className="ml-2 font-mono text-[10px] tracking-[0.12em] text-fg-muted uppercase">
                   slug · expiry · password · UTM
                 </span>
               </span>
@@ -211,8 +228,8 @@ function CreateLinkDialog({
                   <FieldLabel htmlFor="create-slug">
                     Custom slug
                     {!canUseSlug && (
-                      <span className="ml-2 inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-brand uppercase">
-                        <Lock className="size-2.5" /> Starter+
+                      <span className="ml-2 inline-flex items-center gap-1 font-mono text-[9px] tracking-[0.16em] text-brand uppercase">
+                        <Lock className="size-2.5" /> Starter and above
                       </span>
                     )}
                   </FieldLabel>
@@ -227,14 +244,17 @@ function CreateLinkDialog({
                         aria-invalid={!!slug && !slugValid}
                       />
                       <FieldHint>
-                        go.linkshift.in/<span className="text-brand">{slug || "your-slug"}</span>
+                        <span className="text-fg-muted/70">go.linkshift.in/</span>
+                        <span className="text-foreground">{slug || "your-slug"}</span>
                       </FieldHint>
-                      <FieldError>{slug && !slugValid ? "3–50 characters: letters, numbers, hyphens, underscores." : null}</FieldError>
+                      <FieldError>
+                        {slug && !slugValid ? "3 to 50 characters. Letters, numbers, hyphens, underscores." : null}
+                      </FieldError>
                     </>
                   ) : (
                     <UpgradeHint
                       feature="Custom slugs let you choose the exact words after the domain."
-                      requirement="Starter or higher"
+                      requirement="Starter or above"
                     />
                   )}
                 </Field>
@@ -280,7 +300,7 @@ function CreateLinkDialog({
                           <li
                             key={r.key}
                             className={cn(
-                              "rounded-full border px-2 py-0.5 font-mono text-[9px] tracking-wide uppercase transition-colors",
+                              "rounded-full border px-2 py-0.5 font-mono text-[9px] tracking-[0.16em] uppercase transition-colors",
                               r.test(password)
                                 ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
                                 : "border-border bg-elevated text-fg-muted",
@@ -299,8 +319,8 @@ function CreateLinkDialog({
                   <p className="flex items-center gap-2 text-[13px] font-medium text-fg-secondary">
                     UTM campaign tagging
                     {!canUseUtm && (
-                      <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-brand uppercase">
-                        <Lock className="size-2.5" /> Creator/Pro
+                      <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-[0.16em] text-brand uppercase">
+                        <Lock className="size-2.5" /> Creator and above
                       </span>
                     )}
                   </p>
@@ -312,14 +332,14 @@ function CreateLinkDialog({
                       <Input value={utm.term} onChange={(e) => setUtm({ ...utm, term: e.target.value })} placeholder="utm_term (optional)" aria-label="UTM term" />
                       <Input value={utm.content} onChange={(e) => setUtm({ ...utm, content: e.target.value })} placeholder="utm_content (optional)" aria-label="UTM content" />
                       <p className="text-xs text-fg-muted sm:col-span-2">
-                        Appended to the destination URL and tracked on every scan.
+                        Appended to the destination URL. Every scan carries it.
                       </p>
                     </div>
                   ) : (
                     <div className="mt-2">
                       <UpgradeHint
-                        feature="Tag scans by campaign, source and medium — reported in analytics and CSV exports."
-                        requirement="Creator or Pro"
+                        feature="Tag scans by campaign, source, and medium. Reported in analytics and CSV exports."
+                        requirement="Creator or above"
                       />
                     </div>
                   )}
@@ -335,7 +355,7 @@ function CreateLinkDialog({
           {is403 && (
             <UpgradeHint
               feature={backendMessage ?? "This capability"}
-              requirement="a higher plan"
+              requirement="A higher plan"
               className="border-brand/25"
             />
           )}

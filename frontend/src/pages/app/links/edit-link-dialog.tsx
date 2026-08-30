@@ -113,10 +113,10 @@ function EditLinkDialog({
     <Dialog open onOpenChange={(o) => { if (!o) close(); }}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogTitle>Edit link</DialogTitle>
-        <p className="mt-1 truncate font-mono text-[11px]">
-          <span className="text-fg-muted">go.linkshift.in/</span>
-          <span className="text-brand">{link?.shortId}</span>
-        </p>
+        <div className="mt-2 flex items-center gap-2 rounded-md border border-border bg-sunken/50 px-3 py-1.5 font-mono text-[12.5px]">
+          <span className="shrink-0 text-fg-muted/80">go.linkshift.in/</span>
+          <span className="truncate text-foreground">{link?.shortId}</span>
+        </div>
 
         {link && (
           <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4" noValidate>
@@ -140,7 +140,7 @@ function EditLinkDialog({
               />
               <FieldHint>
                 Changing the destination counts against your monthly destination edits.
-                {link.targetUrl.includes("utm_") && " This link carries UTM parameters — they are re-applied automatically."}
+                {link.targetUrl.includes("utm_") && " This link carries UTM parameters. They are re-applied automatically."}
               </FieldHint>
               <FieldError>{targetUrl && !destinationValid ? "Enter a valid http(s) URL." : null}</FieldError>
             </Field>
@@ -150,8 +150,8 @@ function EditLinkDialog({
               <div className="flex items-start gap-2.5 rounded-md border border-border bg-elevated/60 px-3.5 py-3">
                 <Info className="mt-0.5 size-3.5 shrink-0 text-fg-muted" aria-hidden="true" />
                 <p className="text-xs leading-relaxed text-fg-muted">
-                  This link has UTM parameters attached. Editing existing UTM values arrives with a
-                  backend mapper update — recreating the link with new UTM tags is the current path.
+                  This link has UTM parameters attached. Editing existing UTM values requires
+                  recreating the link with new tags. That's the current path.
                 </p>
               </div>
             )}
@@ -174,11 +174,11 @@ function EditLinkDialog({
                       onChange={(e) => setSlug(e.target.value)}
                       aria-invalid={slugChanged && !slugValid}
                     />
-                    <FieldError>
-                      {slugChanged && !slugValid
-                        ? "3–50 characters: letters, numbers, hyphens, underscores."
-                        : null}
-                    </FieldError>
+                  <FieldError>
+                    {slugChanged && !slugValid
+                      ? "3 to 50 characters. Letters, numbers, hyphens, underscores."
+                      : null}
+                  </FieldError>
                   </>
                 ) : (
                   <>
@@ -209,7 +209,7 @@ function EditLinkDialog({
                   className="[color-scheme:dark]"
                 />
                 <FieldError>
-                  {isExpiredCheck(expiry) ? "This moment is in the past — the link will 410 immediately." : null}
+                  {isExpiredCheck(expiry) ? "This moment is in the past. The link will 410 immediately." : null}
                 </FieldError>
                 <FieldHint>Clear the field to remove the expiry.</FieldHint>
               </Field>
@@ -317,7 +317,7 @@ function EditLinkDialog({
                 onChange={(e) => setIsActive(e.target.checked)}
                 className="size-3.5 accent-[#E8590C]"
               />
-              Link is active (unchecking pauses all redirects)
+              Link is active. Unchecking pauses all redirects.
             </label>
 
             {backendError && (

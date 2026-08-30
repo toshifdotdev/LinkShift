@@ -20,7 +20,7 @@ function FinalCta() {
               Put your links <em className="text-brand italic">to work.</em>
             </h2>
             <p className="text-pretty mx-auto mt-5 max-w-md text-base leading-relaxed text-fg-secondary">
-              Join the people who treat every shared URL as part of their craft.
+              Join the publishers, marketers, and builders who treat every shared URL as part of their craft.
             </p>
             <div className="mt-9 flex justify-center">
               <Link to="/register">

@@ -11,8 +11,8 @@ import { formatDate, hostOf, isExpired } from "./utils";
 const GRID =
   "grid grid-cols-[minmax(0,1.35fr)_minmax(0,0.9fr)_84px_72px_88px_84px] items-center gap-6";
 
-/* LinkShift status mark: rotated-square indicator + mono micro-label.
-   Editorial and precise — deliberately not a pill. */
+/* The LinkShift status mark: a small rotated square + mono micro-label.
+   Editorial and precise, deliberately not a pill. */
 function StatusMark({ link }: { link: LinkItem }) {
   const expired = isExpired(link);
   const tone = expired
@@ -73,7 +73,7 @@ function LinksTable({
     <>
       {/* desktop ledger */}
       <div className="hidden md:block" role="region" aria-label="Links">
-        <div className={cn(GRID, "border-b border-border px-5 py-2.5")}>
+        <div className={cn(GRID, "border-b border-border/60 px-5 py-2.5")}>
           <p className="font-mono text-[10px] tracking-[0.16em] text-fg-muted uppercase">Link</p>
           <p className="font-mono text-[10px] tracking-[0.16em] text-fg-muted uppercase">Destination</p>
           <p className="font-mono text-[10px] tracking-[0.16em] text-fg-muted uppercase text-center">Status</p>
@@ -87,35 +87,39 @@ function LinksTable({
             <div
               key={link.id}
               className={cn(
-                "group",
+                "group relative",
                 GRID,
-                "border-b border-border px-5 py-3.5 transition-colors hover:bg-elevated/40",
-                highlightId === link.id && "bg-brand/[0.06]",
+                "border-b border-border/60 px-5 py-3.5 transition-colors hover:bg-elevated/50",
+                highlightId === link.id && "bg-brand/[0.04]",
               )}
             >
+              {/* The Ember Stripe — only the freshly-created row carries it. */}
+              {highlightId === link.id && (
+                <span aria-hidden="true" className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-brand" />
+              )}
               {/* link identity */}
               <div className="min-w-0">
-                <p className="truncate text-[13px] font-medium text-foreground">
+                <p className="truncate text-[13.5px] font-medium text-foreground">
                   {link.name ?? "Untitled link"}
                 </p>
-                <p className="truncate font-mono text-[11px]">
-                  <span className="text-fg-muted">go.linkshift.in/</span>
-                  <span className="text-brand">{link.shortId}</span>
+                <p className="truncate font-mono text-[11px] tracking-[0.04em]">
+                  <span className="text-fg-muted/70">go.linkshift.in/</span>
+                  <span className="text-foreground">{link.shortId}</span>
                 </p>
               </div>
 
               {/* destination */}
-              <p className="truncate font-mono text-[11px] text-fg-muted" title={link.targetUrl}>
+              <p className="truncate font-mono text-[11px] tracking-[0.04em] text-fg-muted" title={link.targetUrl}>
                 {hostOf(link.targetUrl)}
               </p>
 
               <div className="text-center"><StatusMark link={link} /></div>
 
-              <p className="text-center font-mono text-sm text-foreground tabular-nums">
-                {link.clicks.toLocaleString()}
+              <p className="text-center font-mono text-sm tabular-nums">
+                <span className="text-foreground">{link.clicks.toLocaleString()}</span>
               </p>
 
-              <p className="text-center font-mono text-[10px] text-fg-muted lg:text-[11px]">
+              <p className="text-center font-mono text-[10px] tracking-[0.04em] text-fg-muted lg:text-[11px]">
                 {formatDate(link.createdAt)}
               </p>
 
@@ -133,10 +137,13 @@ function LinksTable({
           <article
             key={link.id}
             className={cn(
-              "rounded-lg border bg-surface p-4",
+              "relative rounded-lg border bg-surface p-4",
               highlightId === link.id && "border-brand/40",
             )}
           >
+            {highlightId === link.id && (
+              <span aria-hidden="true" className="absolute inset-y-3 left-0 w-0.5 rounded-full bg-brand" />
+            )}
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-medium text-foreground">
@@ -159,7 +166,7 @@ function LinksTable({
             </p>
 
             <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-              <div className="flex items-center gap-4 font-mono text-[10px] text-fg-muted">
+              <div className="flex items-center gap-4 font-mono text-[10px] tracking-[0.04em] text-fg-muted">
                 <span className="tabular-nums">{link.clicks.toLocaleString()} clicks</span>
                 <span>{formatDate(link.createdAt)}</span>
               </div>

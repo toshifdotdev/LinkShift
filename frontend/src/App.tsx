@@ -19,16 +19,21 @@ import { SettingsPage } from "@/pages/app/settings/settings-page";
 
 function NotFound() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <p className="font-mono text-sm tracking-widest text-brand uppercase">404</p>
-        <h1 className="font-display mt-3 text-3xl font-semibold">Page not found</h1>
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-5">
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute top-0 left-1/2 h-px w-[min(40rem,80%)] -translate-x-1/2 bg-gradient-to-r from-transparent via-brand/30 to-transparent"
+      />
+      <div className="relative w-full max-w-md rounded-xl border border-border bg-surface p-8 text-center">
+        <span aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-brand/70" />
+        <p className="ls-marquee justify-center">404</p>
+        <h1 className="font-display mt-3 text-2xl font-semibold tracking-[-0.015em]">Page not found</h1>
         <p className="mt-2 text-sm text-fg-secondary">
           The page you requested does not exist.
         </p>
         <Link
           to="/"
-          className="mt-6 inline-block text-sm font-medium text-fg-secondary underline-offset-4 hover:text-foreground hover:underline"
+          className="mt-6 inline-flex h-9 items-center rounded-md bg-brand px-4 font-mono text-[11px] font-medium tracking-[0.08em] text-white uppercase transition-colors hover:bg-brand-hover"
         >
           Back to home
         </Link>

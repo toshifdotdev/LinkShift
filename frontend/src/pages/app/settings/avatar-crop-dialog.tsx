@@ -194,8 +194,8 @@ function AvatarCropDialog({
           <div className="shrink-0 px-4 pt-5 sm:px-6 sm:pt-6">
             <DialogTitle>Crop your avatar</DialogTitle>
             <DialogDescription>
-              Drag to reposition and use the zoom slider to frame the image. The finished avatar is a
-              square crop, shown here as a circle.
+              Drag to reposition and use the zoom slider to frame the image. The finished avatar
+              is a square crop, shown here as a circle.
             </DialogDescription>
           </div>
 

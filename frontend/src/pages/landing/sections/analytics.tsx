@@ -88,7 +88,7 @@ function Analytics() {
               </h2>
               <p className="text-pretty mt-5 max-w-md text-[15px] leading-relaxed text-fg-secondary">
                 Traffic stops being a mystery number in someone else's dashboard. Each
-                link reports its own story — volume, rhythm, origin — in a format you
+                link reports its own story. Volume, rhythm, origin, in a format you
                 can actually read.
               </p>
             </Reveal>

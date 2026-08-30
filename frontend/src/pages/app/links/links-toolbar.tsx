@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -18,6 +19,11 @@ const SORT_OPTIONS = [
   { label: "Least clicks", sort: "clicks" as const, order: "asc" as const },
 ];
 
+function isMac() {
+  if (typeof navigator === "undefined") return false;
+  return /mac|iphone|ipad|ipod/i.test(navigator.platform);
+}
+
 function LinksToolbar({
   search,
   onSearch,
@@ -36,6 +42,11 @@ function LinksToolbar({
   onSort: (sort: NonNullable<ListLinksParams["sort"]>, order: NonNullable<ListLinksParams["order"]>) => void;
 }) {
   const current = SORT_OPTIONS.find((o) => o.sort === sort && o.order === order);
+  const [mac, setMac] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMac(isMac());
+  }, []);
 
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -58,7 +69,7 @@ function LinksToolbar({
                 "relative h-7 cursor-pointer rounded-sm px-3 text-[12px] font-medium transition-colors",
                 active
                   ? "border border-border-strong bg-raised text-foreground"
-                  : "text-fg-muted hover:text-fg-secondary",
+                  : "border border-transparent text-fg-muted hover:text-fg-secondary",
               )}
             >
               {tab.label}
@@ -77,10 +88,17 @@ function LinksToolbar({
           <Input
             value={search}
             onChange={(e) => onSearch(e.target.value)}
-            placeholder="Search name, URL or slug…"
+            placeholder="Search name, URL, or slug"
             aria-label="Search links"
-            className="h-9 w-full pl-9 sm:w-64"
+            className="h-9 w-full pl-9 pr-12 sm:w-72"
           />
+          {/* The ⌘K hint — desktop only, never a dead control. */}
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 select-none items-center rounded border border-border bg-elevated px-1.5 py-0.5 font-mono text-[10px] tracking-[0.04em] text-fg-muted sm:flex"
+          >
+            {mac ? "⌘" : "Ctrl"} K
+          </span>
         </div>
 
         {/* sort */}

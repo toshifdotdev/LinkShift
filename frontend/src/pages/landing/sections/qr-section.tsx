@@ -31,8 +31,8 @@ function QrSection() {
                 <span className="text-fg-muted">It never goes stale.</span>
               </h2>
               <p className="text-pretty mt-5 max-w-md text-[15px] leading-relaxed text-fg-secondary">
-                Every LinkShift link ships with a matching QR code — posters,
-                packaging, screens. When the destination changes, the code follows.
+                Every LinkShift link ships with a matching QR. Posters, packaging,
+                screens. When the destination changes, the code follows.
                 Paper included.
               </p>
             </Reveal>

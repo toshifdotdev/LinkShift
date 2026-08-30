@@ -82,17 +82,20 @@ async function main() {
     await send("Page.navigate", { url: `${APP}/login` });
     await wait(`document.body && document.body.innerText.length > 0`);
     await ev(`localStorage.setItem('ls:access-token', ${JSON.stringify(TOKEN)}); location.href = '${APP}/app/qr'; 'go'`);
-    await wait(`!!document.querySelector('article, [role="dialog"], h1')`, 30000);
-    await sleep(5000);
+    // Wait for the freshly-created shortId to appear in a gallery card.
+    await wait(`!!Array.from(document.querySelectorAll('article')).find(c => c.textContent.includes('${link.shortId}'))`, 30000);
+    await sleep(500);
 
     // Open studio from the gallery for the freshly created link
     const opened = await ev(`(() => { const cards = [...document.querySelectorAll('article')]; const card = cards.find(c => c.textContent.includes('${link.shortId}')); if (!card) return 'no-card'; const btn = [...card.querySelectorAll('button')].find(x => x.innerText.trim().toLowerCase() === 'studio'); if (!btn) return 'no-btn'; btn.click(); return 'clicked'; })()`);
     A("open studio from gallery", opened === "clicked", String(opened));
     await wait(`!!document.querySelector('[role="dialog"]')`, 15000);
+    // Wait for the link picker to populate so the Save QR button enables.
+    await wait(`(() => { const b = [...document.querySelectorAll('button')].find(x => x.innerText.trim().toLowerCase() === 'save qr'); return b && !b.disabled; })()`, 15000);
     await sleep(800);
 
     // Save with the studio defaults (no frame, no logo) — proves the contract.
-    const save = await ev(`(() => { const b=[...document.querySelectorAll('button')].find(x=>x.innerText.trim().toLowerCase()==='generate & save'); if(!b) return 'no-btn'; if(b.disabled) return 'disabled'; b.click(); return 'clicked'; })()`);
+    const save = await ev(`(() => { const b=[...document.querySelectorAll('button')].find(x=>x.innerText.trim().toLowerCase()==='save qr'); if(!b) return 'no-btn'; if(b.disabled) return 'disabled'; b.click(); return 'clicked'; })()`);
     A("generate & save", save === "clicked", String(save));
     await wait(`document.body.innerText.includes('QR code saved')`, 30000);
     await sleep(800);

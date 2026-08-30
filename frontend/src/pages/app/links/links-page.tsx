@@ -1,12 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { deleteLink, listLinks, type ListLinksParams } from "@/api/links";
-import { PageHeader, EmptyState, ErrorState } from "@/components/app/page-primitives";
+import { PageHeader, ErrorState } from "@/components/app/page-primitives";
+import { EditorialEmpty } from "@/components/ui/empty";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToaster } from "@/components/ui/toaster";
+import { FlashSweep } from "@/components/ui/motion";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { CreateLinkDialog } from "./create-link-dialog";
 import { EditLinkDialog } from "./edit-link-dialog";
@@ -29,6 +31,7 @@ function LinksPage() {
   const order = (searchParams.get("order") ?? "desc") as NonNullable<ListLinksParams["order"]>;
 
   const [searchInput, setSearchInput] = useState(search);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const debouncedSearch = useDebouncedValue(searchInput, 300);
 
   /* push debounced search into the URL once it settles */
@@ -62,7 +65,6 @@ function LinksPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<LinkItem | null>(null);
   const [deleting, setDeleting] = useState<LinkItem | null>(null);
-  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   function flashHighlight(id: string) {
     setHighlightId(id);
@@ -72,14 +74,14 @@ function LinksPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteLink(id),
     onSuccess: async () => {
-      toast({ title: "Link deleted", description: "Its QR codes and scan history were removed too.", variant: "success" });
+      toast({ title: "Link deleted", meta: deleting ? `go.linkshift.in/${deleting.shortId}` : undefined, variant: "success" });
       await queryClient.invalidateQueries({ queryKey: ["links"] });
       await queryClient.invalidateQueries({ queryKey: ["stats"] });
       setDeleting(null);
     },
     onError: (err) => {
       toast({
-        title: "Could not delete link",
+        title: "Couldn't delete link",
         description: err instanceof Error ? err.message : "Please try again.",
         variant: "error",
       });
@@ -95,20 +97,20 @@ function LinksPage() {
     flashHighlight(link.id);
     toast({
       title: "Link created",
-      description: `go.linkshift.in/${link.shortId}`,
+      meta: `go.linkshift.in/${link.shortId}`,
       variant: "success",
     });
   }
 
   function handleSaved(link: LinkItem) {
-    toast({ title: "Changes saved", variant: "success" });
+    toast({ title: "Changes saved", meta: `go.linkshift.in/${link.shortId}`, variant: "success" });
     flashHighlight(link.id);
   }
 
   const createButton = (
     <Button size="md" onClick={() => setCreateOpen(true)}>
       <Plus className="size-4" />
-      Create link
+      New link
     </Button>
   );
 
@@ -116,7 +118,7 @@ function LinksPage() {
     <>
       <PageHeader
         title="Links"
-        description="Every short link you own — create, inspect and manage them from one ledger."
+        description="Every short link you own, in one place. Create, inspect, and manage from a single ledger."
         action={createButton}
       />
 
@@ -129,11 +131,10 @@ function LinksPage() {
           onRetry={() => void listQuery.refetch()}
         />
       ) : !hasAnyLinks ? (
-        /* true empty — start of the journey */
-        <EmptyState
-          icon={<Link2 className="size-5" />}
-          title="No links yet"
-          description="LinkShift turns long URLs into precise, trackable short links — with QR codes and analytics attached to each one. Create your first link to begin."
+        <EditorialEmpty
+          marquee="First link"
+          title="Your first link is thirty seconds away."
+          description="LinkShift turns long URLs into trackable short links with matching QR codes. Make your first one below."
           action={createButton}
         />
       ) : (
@@ -157,9 +158,8 @@ function LinksPage() {
           </div>
 
           {links.length === 0 ? (
-            /* filtered-empty — different from true empty */
-            <EmptyState
-              icon={<Link2 className="size-5" />}
+            <EditorialEmpty
+              marquee="Filtered"
               title="No links match"
               description="Nothing matches the current search and filters."
               action={
@@ -176,19 +176,38 @@ function LinksPage() {
               }
             />
           ) : (
-            <LinksTable
-              links={links}
-              loading={false}
-              highlightId={highlightId}
-              onEdit={setEditing}
-              onDelete={setDeleting}
-            />
+            <div className="relative overflow-hidden rounded-xl border border-border bg-surface">
+              <span aria-hidden="true" className="ls-stripe" />
+              <header className="flex items-center justify-between border-b border-border/60 px-5 py-3 sm:px-6">
+                <p className="ls-marquee">Ledger</p>
+                <span className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">
+                  {pagination?.totalRecords ?? 0} total
+                </span>
+              </header>
+              <div className="relative">
+                {highlightId && (
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 top-0 h-px"
+                  >
+                    <FlashSweep trigger={highlightId} className="block h-px" />
+                  </div>
+                )}
+                <LinksTable
+                  links={links}
+                  loading={false}
+                  highlightId={highlightId}
+                  onEdit={setEditing}
+                  onDelete={setDeleting}
+                />
+              </div>
+            </div>
           )}
 
           {pagination && pagination.totalPages > 1 && (
             <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-              <p className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
-                Page {pagination.page} of {pagination.totalPages} · {pagination.totalRecords} links
+              <p className="font-mono text-[10px] tracking-[0.16em] text-fg-muted uppercase">
+                Page {pagination.page} of {pagination.totalPages}. {pagination.totalRecords} links.
               </p>
               <div className="flex gap-2">
                 <Button
@@ -235,9 +254,8 @@ function LinksPage() {
         description={
           deleting ? (
             <>
-              <span className="font-mono text-brand">go.linkshift.in/{deleting.shortId}</span> will
-              stop resolving immediately. Its QR codes and full scan history are permanently removed.
-              This cannot be undone.
+              <span className="font-mono text-brand">go.linkshift.in/{deleting.shortId}</span> stops
+              resolving immediately. Its QR codes and full scan history are removed for good.
             </>
           ) : (
             ""

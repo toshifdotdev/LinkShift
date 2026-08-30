@@ -76,11 +76,11 @@ function SecuritySection() {
         description: "Sign in again with your new password.",
         variant: "success",
       });
-      // The single refresh session was revoked server-side — end the local
-      // session too and land the user on the login screen.
+      // The single refresh session was revoked on the server. End the
+      // local session too and land the user on the login screen.
       logout();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Could not update your password.");
+      setError(err instanceof ApiError ? err.message : "Couldn't update your password.");
       setSubmitting(false);
     }
   };
@@ -107,7 +107,7 @@ function SecuritySection() {
               {user.hasPassword ? (
                 <Badge variant="neutral">Set</Badge>
               ) : (
-                <Badge variant="warning">Not set — Google sign-in</Badge>
+                <Badge variant="warning">Not set. Google sign-in</Badge>
               )}
             </dd>
           </div>
@@ -137,10 +137,10 @@ function SecuritySection() {
           <div className="flex items-start gap-2.5">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand" />
             <div>
-              <p className="text-sm font-medium text-foreground">One active session only</p>
+              <p className="text-sm font-medium text-foreground">One active session</p>
               <p className="mt-0.5 text-[13px] leading-snug text-fg-muted">
                 LinkShift keeps a single, rotating session per account. Changing your password revokes it
-                server-side — signing out everywhere ends this one too.
+                on the server. Signing out everywhere ends this one too.
               </p>
             </div>
           </div>
@@ -177,13 +177,12 @@ function SecuritySection() {
           </Field>
         ) : (
           <p className="text-[13px] leading-snug text-fg-muted">
-            Your Google sign-in has no local password yet. Setting one adds an alternative sign-in method —
-            everything else stays the same.
+            Your Google sign-in has no local password yet. Set one to add email sign-in.
           </p>
         )}
 
         <Field>
-          <FieldLabel htmlFor="security-new">{settingPassword ? "New password" : "New password"}</FieldLabel>
+          <FieldLabel htmlFor="security-new">{settingPassword ? "New password" : "Update password"}</FieldLabel>
           <PasswordInput
             id="security-new"
             autoComplete="new-password"

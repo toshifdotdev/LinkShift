@@ -15,12 +15,14 @@ function escapeHtml(s: string): string {
         .replace(/'/g, "&#39;");
 }
 
-function copyFor(statusCode: number, message: string): { kicker: string; headline: string; note: string } {
+function copyFor(statusCode: number, message: string): { kicker: string; headline: string; note: string; ctaHref: string; ctaLabel: string } {
     if (statusCode === 404) {
         return {
             kicker: "404",
             headline: "This short link doesn't exist.",
             note: "The link may have been removed, or the address typed in doesn't match anything on LinkShift.",
+            ctaHref: "/register",
+            ctaLabel: "Make your own",
         };
     }
     if (statusCode === 410) {
@@ -28,6 +30,8 @@ function copyFor(statusCode: number, message: string): { kicker: string; headlin
             kicker: "410",
             headline: "This short link has expired.",
             note: "It stopped resolving on the date the owner set. Ask them for an updated link.",
+            ctaHref: "/",
+            ctaLabel: "Try again later",
         };
     }
     if (statusCode === 403) {
@@ -35,18 +39,22 @@ function copyFor(statusCode: number, message: string): { kicker: string; headlin
             kicker: "403",
             headline: "This short link is unavailable.",
             note: message || "The link has been paused by its owner, or the destination is not currently reachable.",
+            ctaHref: "/",
+            ctaLabel: "Back to home",
         };
     }
     return {
         kicker: String(statusCode),
         headline: "Something went wrong.",
         note: message || "The link is temporarily unavailable. Please try again in a moment.",
+        ctaHref: "/",
+        ctaLabel: "Back to home",
     };
 }
 
 function renderPublicError(statusCode: number, message: string): string {
     const safe = escapeHtml(message || "");
-    const { kicker, headline, note } = copyFor(statusCode, safe);
+    const { kicker, headline, note, ctaHref, ctaLabel } = copyFor(statusCode, safe);
     return `<!doctype html>
 <html lang="en">
 <head>
@@ -66,8 +74,9 @@ function renderPublicError(statusCode: number, message: string): string {
     display: flex; flex-direction: column;
   }
   .wrap { flex: 1; display: grid; place-items: center; padding: 32px 20px; }
-  .card { width: 100%; max-width: 28rem; }
-  .row { display: flex; align-items: center; gap: 12px; }
+  .card { width: 100%; max-width: 30rem; position: relative; }
+  .stripe { position: absolute; top: 0; left: 0; right: 0; height: 1px; background: #e8590c; opacity: 0.85; }
+  .row { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
   .plate {
     width: 28px; height: 28px; border-radius: 6px; border: 1px solid #262626; background: #111111;
     display: grid; place-items: center; color: #e8590c; flex: 0 0 auto;
@@ -78,23 +87,33 @@ function renderPublicError(statusCode: number, message: string): string {
     font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, monospace;
     color: #e8590c; font-size: 11px; font-weight: 500;
     letter-spacing: 0.18em; text-transform: uppercase;
+    margin: 0 0 12px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .kicker::before {
+    content: ""; height: 1px; width: 20px; background: rgba(232, 89, 12, 0.4);
   }
   .headline {
     font-family: ui-serif, Georgia, "Times New Roman", serif; font-weight: 600;
-    letter-spacing: -0.02em; margin: 14px 0 12px;
-    font-size: clamp(1.6rem, 4.5vw, 2.1rem); line-height: 1.15;
+    letter-spacing: -0.02em; margin: 0 0 12px;
+    font-size: clamp(1.6rem, 4.5vw, 2.1rem); line-height: 1.12;
   }
-  .note { color: #a8a199; font-size: 14px; line-height: 1.55; margin: 0; }
-  .actions { margin-top: 28px; display: flex; gap: 8px; }
+  .note { color: #a8a199; font-size: 14px; line-height: 1.55; margin: 0; max-width: 28rem; }
+  .actions { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px; }
   .btn {
     appearance: none; -webkit-appearance: none; cursor: pointer; text-decoration: none;
     display: inline-flex; align-items: center; justify-content: center;
     height: 36px; padding: 0 16px; border-radius: 6px;
-    font: 600 12px/1 ui-sans-serif, system-ui, sans-serif;
+    font: 600 12px/1 ui-monospace, SFMono-Regular, monospace;
     letter-spacing: 0.08em; text-transform: uppercase;
     border: 1px solid #262626; color: #f5f1eb; background: #111111;
   }
   .btn:hover { border-color: #3a3a3a; background: #161616; }
+  .btn-primary {
+    background: #e8590c; border-color: #9a3d06; color: #ffffff;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+  }
+  .btn-primary:hover { background: #f56d1e; }
   .foot { padding: 20px; text-align: center; color: #6b6560; }
   .foot a { color: #a8a199; text-decoration: none; }
   .foot a:hover { color: #f5f1eb; }
@@ -103,6 +122,7 @@ function renderPublicError(statusCode: number, message: string): string {
 <body>
   <div class="wrap">
     <main class="card" role="main">
+      <span class="stripe" aria-hidden="true"></span>
       <div class="row">
         <span class="plate" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none">
@@ -117,7 +137,7 @@ function renderPublicError(statusCode: number, message: string): string {
       <h1 class="headline">${headline}</h1>
       <p class="note">${note}</p>
       <div class="actions">
-        <a class="btn" href="https://linkshift.in">Back to LinkShift</a>
+        <a class="btn btn-primary" href="${ctaHref}">${ctaLabel}</a>
       </div>
     </main>
   </div>

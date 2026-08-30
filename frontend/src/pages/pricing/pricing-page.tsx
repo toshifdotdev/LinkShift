@@ -30,9 +30,9 @@ const NOTES: Array<[string, string]> = [
   ["UPGRADE NOW", "Upgrades are applied immediately."],
   ["CHANGE AT CYCLE END", "Downgrades and monthly↔yearly switches start next period."],
   ["CANCEL ANYTIME", "Access continues until the end of the paid period."],
-  ["REGIONAL PRICING", "INR / USD detected automatically by region."],
-  ["DEEP LINKING", "Planned Pro capability — in development."],
-  ["ANALYTICS WINDOW", "Lookback capped per plan; older scans stay archived."],
+  ["REGIONAL PRICING", "INR and USD detected by region."],
+  ["DEEP LINKING", "Planned Pro capability. In development."],
+  ["ANALYTICS WINDOW", "Lookback capped per plan. Older scans stay archived."],
 ];
 
 function PricingPage() {

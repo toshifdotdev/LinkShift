@@ -25,9 +25,9 @@ function PricingPreview() {
               </Button>
             </Link>
           </div>
-          <p className="mt-6 border-t border-border pt-5 font-mono text-xs tracking-wide text-fg-muted">
-            MONTHLY & YEARLY BILLING
-          </p>
+            <p className="mt-6 border-t border-border pt-5 font-mono text-xs tracking-[0.16em] text-fg-muted uppercase">
+              Monthly and yearly billing
+            </p>
         </Reveal>
       </Container>
     </section>

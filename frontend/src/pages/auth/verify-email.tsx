@@ -45,8 +45,8 @@ function VerifyEmailPage() {
 
   const title = expired ? "This link has expired" : "Verify your email";
   const description = expired
-    ? "Verification links expire for your security. Enter your email and we'll send a fresh one."
-    : "Open the verification link from your inbox to activate your account — or request a new email below.";
+    ? "Verification links expire for your security. Enter your email. We'll send a fresh one."
+    : "Open the verification link from your inbox to activate your account, or request a new email below.";
 
   return (
     <AuthLayout

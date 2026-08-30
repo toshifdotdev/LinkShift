@@ -2,7 +2,7 @@
 @import 'tw-animate-css';
 
 /* ============================================================
-   INK & EMBER — LinkShift design tokens (locked)
+   INK & EMBER — LinkShift design tokens
    Dark-first. Copper accent used surgically.
    ============================================================ */
 
@@ -26,10 +26,14 @@
   /* Borders */
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-ember: var(--border-ember);
 
   /* Brand */
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-ink: var(--brand-ink);
 
   /* Semantic aliases (shadcn-compatible, kept for existing pages) */
   --color-card: var(--card);
@@ -45,41 +49,53 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-dot: var(--dot);
 
-  /* Radii — precise, slightly sharp */
-  --radius-sm: 4px;   /* tooltips, small chips */
+  /* Radii — scale */
+  --radius-xs: 3px;   /* chips, status dots */
+  --radius-sm: 4px;   /* tooltips */
   --radius-md: 6px;   /* buttons, inputs */
   --radius-lg: 8px;   /* cards, dialogs */
+  --radius-xl: 12px;  /* hero surfaces, signature plates */
+  --radius-2xl: 18px; /* QR frame, large hero */
 }
 
 :root {
   color-scheme: dark;
 
-  /* Surfaces */
-  --background: #0d0d0d;
-  --surface: #111111;
-  --elevated: #161616;
-  --raised: #1c1c1c;
+  /* Surfaces — 6 levels for real hierarchy */
+  --background: #0d0d0d;   /* page canvas */
+  --surface: #111111;      /* card / plate */
+  --elevated: #161616;     /* nested inside a plate */
+  --raised: #1c1c1c;       /* input fields, popovers */
+  --overlay: #0a0a0a;      /* scrim behind modals */
+  --sunken: #080808;       /* empty-state wells */
 
   /* Text */
   --foreground: #f5f1eb;
   --fg-secondary: #a8a199;
   --fg-muted: #6b6560;
 
-  /* Lines */
+  /* Lines — tonal scale */
   --border: #262626;
   --border-strong: #3a3a3a;
-  --input: #262626;
-  --dot: #1e1e1e;
+  --border-subtle: #1f1f1f;
+  --border-ember: rgba(232, 89, 12, 0.35);
 
   /* Ember */
   --brand: #e8590c;
   --brand-hover: #f56d1e;
+  --brand-soft: rgba(232, 89, 12, 0.10);
+  --brand-ink: #f56d1e;
 
   /* Semantic aliases */
   --card: #111111;
@@ -95,8 +111,14 @@
   --accent: #1c1c1c;
   --accent-foreground: #f5f1eb;
   --destructive: #e5484d;
+  --destructive-foreground: #fca5a5;
   --warning: #f59e0b;
+  --warning-foreground: #fcd34d;
   --success: #34d399;
+  --success-foreground: #6ee7b7;
+  --info: #60a5fa;
+  --info-foreground: #93c5fd;
+  --input: #262626;
   --ring: #f56d1e;
 }
 
@@ -186,6 +208,115 @@
 
   .hairline-x {
     background-image: linear-gradient(to bottom, transparent, var(--border-strong), transparent);
+  }
+
+  /* ----- LinkShift signature utilities ----- */
+
+  /* The Plate: bordered rounded surface with one hairline ember rail. The
+     default LinkShift card. */
+  .ls-plate {
+    @apply relative rounded-lg border border-border bg-surface;
+  }
+
+  /* The Mono Marquee: tiny mono-caps editorial label, used at the top of
+     almost every card. The ember hairline is the divider. */
+  .ls-marquee {
+    @apply flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-fg-muted;
+  }
+  .ls-marquee::before {
+    content: "";
+    @apply h-px w-5 bg-brand/60;
+  }
+
+  /* The Ember Stripe: a 2px ember hairline at the top of an active surface. */
+  .ls-stripe {
+    @apply pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-brand;
+  }
+
+  /* Animated ember hairline draw — used on success moments. */
+  .ls-stripe-draw {
+    background: linear-gradient(to right, #e8590c 0%, #e8590c 100%);
+    background-size: 0% 100%;
+    background-repeat: no-repeat;
+    background-position: left center;
+  }
+  .ls-stripe-draw.is-on {
+    animation: ls-stripe-grow 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes ls-stripe-grow {
+    from { background-size: 0% 100%; }
+    to   { background-size: 100% 100%; }
+  }
+
+  /* Press-down feedback — used on primary buttons. */
+  .ls-pressable {
+    transition: transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .ls-pressable:active {
+    transform: translateY(0.5px);
+  }
+
+  /* Slow skeleton pulse — replaces the Tailwind `animate-pulse` for content
+     skeletons so they read as the same component across the app. */
+  .ls-skeleton {
+    @apply rounded bg-raised;
+    animation: ls-pulse 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  @keyframes ls-pulse {
+    0%, 100% { opacity: 0.45; }
+    50%      { opacity: 0.85; }
+  }
+
+  /* Skeleton shimmer (KPI, chart). A 1px ember hairline sweeps L→R. */
+  .ls-skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+  .ls-skeleton-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(232, 89, 12, 0.20) 50%,
+      transparent 100%
+    );
+    transform: translateX(-100%);
+    animation: ls-shimmer 1.6s linear infinite;
+  }
+  @keyframes ls-shimmer {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* The Quiet Reveal: a 6px rise + fade for cards and modals. Used with
+     FadeIn. Honors reduced motion via @media below. */
+  .ls-reveal {
+    animation: ls-reveal 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes ls-reveal {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Subtle attention ping for the live status indicator. */
+  .ls-ping {
+    animation: ls-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+  @keyframes ls-ping {
+    0%   { transform: scale(1);   opacity: 0.7; }
+    70%  { transform: scale(2.5); opacity: 0; }
+    100% { transform: scale(2.5); opacity: 0; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ls-skeleton,
+    .ls-skeleton-shimmer::after,
+    .ls-ping,
+    .ls-reveal {
+      animation: none !important;
+    }
   }
 }
 

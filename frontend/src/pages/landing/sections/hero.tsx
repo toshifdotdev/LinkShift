@@ -108,8 +108,8 @@ function Hero() {
               {...fade(0.64)}
               className="text-pretty mt-6 max-w-md text-base leading-relaxed text-fg-secondary sm:text-lg"
             >
-              LinkShift turns long URLs into precise short links — with QR codes,
-              custom domains and analytics that show you exactly where every click
+              LinkShift turns long URLs into precise short links. Every code ships
+              with QR, custom domains, and analytics that show where every click
               comes from.
             </motion.p>
 

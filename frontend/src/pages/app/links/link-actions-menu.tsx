@@ -26,7 +26,7 @@ function LinkActionsMenu({
     try {
       await navigator.clipboard.writeText(shortUrl(link.shortId));
       setCopied(true);
-      toast({ title: "Short link copied", description: shortUrl(link.shortId), variant: "success" });
+      toast({ title: "Copied", meta: `go.linkshift.in/${link.shortId}`, variant: "success" });
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
       toast({ title: "Copy failed", description: "Your browser blocked clipboard access.", variant: "error" });

@@ -16,41 +16,39 @@ function Footer() {
         <div className="grid gap-10 py-14 md:grid-cols-[1.2fr_1fr] md:gap-8">
           <div>
             <Logo />
-            <p className="mt-4 max-w-xs text-sm leading-relaxed text-fg-muted">
-              Precise link shortening, QR codes and analytics — built for people who
-              care about every click.
-            </p>
-          </div>
-
-          <nav aria-label="Footer" className="md:justify-self-end">
-            <p className="font-mono text-[11px] tracking-[0.16em] text-fg-muted uppercase">
-              Product
-            </p>
-            <ul className="mt-4 grid grid-cols-2 gap-x-10 gap-y-2.5 sm:flex sm:flex-col">
-              {productLinks.map((link) => (
-                <li key={link.label}>
-                  <Link
-                    to={link.href}
-                    className="text-sm text-fg-secondary transition-colors hover:text-foreground"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-
-        <div className="flex flex-col items-start justify-between gap-3 border-t border-border py-6 sm:flex-row sm:items-center">
-          <p className="font-mono text-xs text-fg-muted">© {new Date().getFullYear()} LinkShift</p>
-          <p className="flex items-center gap-2 font-mono text-xs text-fg-muted">
-            <span className="relative flex size-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
-            </span>
-            All systems operational
+          <p className="mt-4 max-w-xs text-sm leading-relaxed text-fg-muted">
+            Precise link shortening, QR codes, and analytics. Built for people who
+            care about every click.
           </p>
         </div>
+
+        <nav aria-label="Footer" className="md:justify-self-end">
+          <p className="ls-marquee">Product</p>
+          <ul className="mt-4 grid grid-cols-2 gap-x-10 gap-y-2.5 sm:flex sm:flex-col">
+            {productLinks.map((link) => (
+              <li key={link.label}>
+                <Link
+                  to={link.href}
+                  className="text-sm text-fg-secondary transition-colors hover:text-foreground"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+
+      <div className="flex flex-col items-start justify-between gap-3 border-t border-border py-6 sm:flex-row sm:items-center">
+        <p className="font-mono text-xs text-fg-muted">© {new Date().getFullYear()} LinkShift</p>
+        <p className="flex items-center gap-2 font-mono text-xs text-fg-muted">
+          <span className="relative flex size-1.5">
+            <span className="absolute inset-0 rounded-full bg-emerald-400/60 ls-ping" />
+            <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
+          </span>
+          Live. Self-healing.
+        </p>
+      </div>
       </Container>
     </footer>
   );

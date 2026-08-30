@@ -6,6 +6,7 @@ const widths = {
   content: "max-w-5xl",
   wide: "max-w-6xl",
   full: "max-w-7xl",
+  marketing: "max-w-[88rem]",
 } as const;
 
 interface ContainerProps extends HTMLAttributes<HTMLDivElement> {

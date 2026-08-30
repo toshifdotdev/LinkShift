@@ -6,6 +6,7 @@ import { listLinks } from "@/api/links";
 import { ApiError } from "@/api/client";
 import { useSession } from "@/auth/session";
 import { getAccessToken } from "@/api/token";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field";
@@ -177,56 +178,101 @@ function QrStudio({
   if (savedQr) {
     return (
       <Dialog open={open} onOpenChange={(o) => !o && close()}>
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle>QR code saved</DialogTitle>
-          <p className="mt-1 text-sm text-fg-secondary">
-            Persisted and live for <span className="font-mono text-brand">{shortUrl(savedQr.shortId)}</span>
-          </p>
+        {/*
+          The Framer Motion page-transition wrapper applies a `transform`
+          to its element, which turns the popup's `position: fixed` into
+          a positioned relative to the wrapper. To force the popup to
+          anchor against the actual viewport, we set every positioning
+          key explicitly. The `position: fixed` with `top/left/right/
+          bottom: 0` makes the popup fill the viewport, then `margin: auto`
+          centers it, and `max-height: calc(100dvh - 2rem)` ensures it
+          can scroll inside the viewport on short / mobile screens.
+        */}
+        <DialogContent
+          style={{
+            position: "fixed",
+            top: "0 !important" as unknown as React.CSSProperties["top"],
+            left: "0 !important" as unknown as React.CSSProperties["left"],
+            right: "0 !important" as unknown as React.CSSProperties["right"],
+            bottom: "0 !important" as unknown as React.CSSProperties["bottom"],
+            margin: "auto",
+            height: "fit-content",
+            maxHeight: "calc(100dvh - 2rem)",
+            maxWidth: "calc(100vw - 2rem)",
+            width: "30rem",
+            overflowY: "auto",
+            transform: "none",
+          }}
+          className="relative overflow-hidden p-5 sm:p-6"
+        >
+          {/* The signature moment: a quiet ember stripe draws across the top. */}
+          <span
+            aria-hidden="true"
+            className="ls-stripe-draw pointer-events-none absolute inset-x-0 top-0 h-px"
+          />
+          {/* The panel is a vertical column capped to the viewport. On tall
+              desktop it sits centered and comfortable. On short / mobile
+              viewports the inner content scrolls inside the capped box so
+              every action stays reachable. */}
+          <div className="flex max-h-[calc(100dvh-2rem)] flex-col items-stretch overflow-y-auto">
+            <div className="flex flex-col items-center pt-3 text-center">
+              <p className="ls-marquee">Saved</p>
+              <DialogTitle className="mt-2.5 text-2xl">QR code saved</DialogTitle>
+              <p className="mt-1.5 max-w-xs text-[13px] leading-snug text-fg-secondary">
+                Live at <span className="font-mono text-foreground">{shortUrl(savedQr.shortId)}</span>.
+                The code matches the preview.
+              </p>
+            </div>
 
-          <div className="mt-5 flex justify-center rounded-lg border border-border bg-surface p-5">
-            <img src={savedQr.imageUrl} alt="Generated QR code" className="max-h-[320px] w-auto max-w-full rounded-md object-contain" />
-          </div>
+            <div className="mt-4 flex shrink-0 justify-center rounded-xl border border-border bg-surface p-4 sm:mt-5 sm:p-5">
+              <img
+                src={savedQr.imageUrl}
+                alt="Generated QR code"
+                className="max-h-[180px] w-auto max-w-full rounded-md object-contain sm:max-h-[200px]"
+              />
+            </div>
 
-          <div className="mt-5 grid gap-2">
-            <Button
-              size="lg"
-              className="w-full"
-              loading={downloading}
-              loadingLabel="Downloading…"
-              onClick={() => {
-                if (!savedLinkId || !savedQr) return;
-                setDownloading(true);
-                downloadQrImage(savedLinkId, savedQr.shortId, getAccessToken() ?? "")
-                  .finally(() => setDownloading(false));
-              }}
-            >
-              Download PNG
-            </Button>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="mt-4 grid shrink-0 gap-2 pb-1 sm:mt-5">
               <Button
-                variant="secondary"
                 size="lg"
+                className="w-full"
+                loading={downloading}
+                loadingLabel="Downloading…"
                 onClick={() => {
-                  setDesign({ ...DEFAULT_CONFIG, frame: "none" });
-                  setSavedQr(null);
+                  if (!savedLinkId || !savedQr) return;
+                  setDownloading(true);
+                  downloadQrImage(savedLinkId, savedQr.shortId, getAccessToken() ?? "")
+                    .finally(() => setDownloading(false));
                 }}
               >
-                <RefreshCcw className="size-4" />
-                New version
+                Download PNG
               </Button>
-              <Button
-                variant="destructive"
-                size="lg"
-                loading={remove.isPending}
-                loadingLabel="Deleting…"
-                onClick={() => void remove.mutateAsync()}
-              >
-                Delete
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  onClick={() => {
+                    setDesign({ ...DEFAULT_CONFIG, frame: "none" });
+                    setSavedQr(null);
+                  }}
+                >
+                  <RefreshCcw className="size-4" />
+                  New version
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="lg"
+                  loading={remove.isPending}
+                  loadingLabel="Deleting…"
+                  onClick={() => void remove.mutateAsync()}
+                >
+                  Delete
+                </Button>
+              </div>
+              <Button variant="ghost" onClick={close}>
+                Done
               </Button>
             </div>
-            <Button variant="ghost" onClick={close}>
-              Done
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -234,20 +280,30 @@ function QrStudio({
   }
 
   /* ---- designer ---- */
+  /* The LinkShift segmented control: a small mono-caps label, an active
+     border in surface-elevated, an ember underline drawn by the active
+     option. The active border is the same editorial "ink plate" used
+     by the buttons. Inactive options are quiet mono labels. */
   const segBtn = (active: boolean) =>
     cn(
-      "relative h-8 cursor-pointer rounded-sm px-2.5 text-[12px] font-medium transition-colors",
+      "relative flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-2.5 font-mono text-[11px] tracking-[0.04em] uppercase transition-colors",
       active
         ? "border border-border-strong bg-raised text-foreground"
-        : "text-fg-muted hover:text-fg-secondary",
+        : "border border-transparent text-fg-muted hover:text-fg-secondary",
     );
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && close()}>
       <DialogContent className="flex h-[100dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:h-auto sm:max-h-[92vh] sm:max-w-4xl sm:rounded-lg">
-        <div className="flex shrink-0 items-center justify-between border-b border-border px-5 py-4">
-          <DialogTitle>QR Studio</DialogTitle>
-        </div>
+        <header className="flex shrink-0 items-end justify-between gap-3 border-b border-border px-5 pt-4 pb-3 sm:px-6">
+          <div>
+            <p className="ls-marquee">QR · 03</p>
+            <DialogTitle className="mt-2 text-xl">QR Studio</DialogTitle>
+          </div>
+          <Badge shape="mark" variant="dim">
+            {user?.plan.name ?? "FREE"}
+          </Badge>
+        </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid gap-6 p-5 lg:grid-cols-[1fr_320px]">
@@ -402,8 +458,8 @@ function QrStudio({
               </div>
               {lowContrast && (
                 <FieldHint>
-                  Contrast ratio {contrast.toFixed(1)}:1 — scanners prefer ≥ 3:1 between code and
-                  background.
+                  Contrast ratio {contrast.toFixed(1)}:1. Scanners prefer 3:1 or higher between code
+                  and background.
                 </FieldHint>
               )}
             </Field>
@@ -529,7 +585,7 @@ function QrStudio({
                   ? "A scan-me bar is composed into the saved QR."
                   : design.frame === "double" || design.frame === "accent"
                     ? "A border is composed into the saved QR."
-                    : "Rendered into the saved QR by the backend."}
+                    : "Saved by the backend as part of the QR."}
               </FieldHint>
             </Field>
 
@@ -679,10 +735,10 @@ function QrStudio({
               <Button
                 disabled={!selectedLink}
                 loading={save.isPending}
-                loadingLabel="Generating…"
+                loadingLabel="Saving…"
                 onClick={() => save.mutate()}
               >
-                Generate & save
+                Save QR
               </Button>
             </div>
           </div>

@@ -79,7 +79,7 @@ function RegisterPage() {
       <AuthLayout
         kicker="Almost there"
         title="Check your inbox"
-        description={`We sent a verification link to ${sentTo}. Click it to activate your account — then log in.`}
+        description={`We sent a verification link to ${sentTo}. Click it to activate your account, then log in.`}
         footer={
           <>
             Already verified?{" "}

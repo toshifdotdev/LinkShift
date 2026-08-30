@@ -58,7 +58,7 @@ function LoginPage() {
       navigate(from, { replace: true });
     } catch (err) {
       setError(
-        err instanceof ApiError ? err.message : "Could not sign in — please try again.",
+        err instanceof ApiError ? err.message : "Couldn't sign in. Please try again.",
       );
       setSubmitting(false);
     }
@@ -97,7 +97,7 @@ function LoginPage() {
           className="mb-5 flex items-start gap-2.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-3 text-[13px] text-emerald-300"
         >
           <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-emerald-400" />
-          Email verified — your account is live. Log in to continue.
+          Email verified. Your account is live. Log in to continue.
         </div>
       )}
 

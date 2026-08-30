@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import { Logo } from "@/components/brand/logo";
 
 /**
- * Shared authentication shell — ink field with the same quiet dot-grid
- * texture as the hero, framed card, editorial type.
+ * Shared authentication shell. The "ink field" with a quiet dot-grid
+ * texture, a single framed card, and editorial type. The "Mono Marquee"
+ * kicker + Fraunces headline + quiet description + form + footer rhythm
+ * is the same rhythm used on every auth page.
  */
 function AuthLayout({
   kicker,
@@ -36,14 +38,12 @@ function AuthLayout({
 
       <div className="relative flex flex-1 items-center justify-center px-5 py-12">
         <div className="w-full max-w-sm">
-          <p className="font-mono text-[11px] font-medium tracking-[0.18em] text-brand uppercase">
-            {kicker}
-          </p>
-          <h1 className="font-display mt-3 text-3xl font-semibold tracking-tight text-foreground">
+          <p className="ls-marquee">{kicker}</p>
+          <h1 className="font-display mt-3.5 text-[clamp(1.6rem,3.2vw,2rem)] leading-[1.08] font-semibold tracking-[-0.015em] text-foreground">
             {title}
           </h1>
           {description && (
-            <p className="text-pretty mt-2 text-sm leading-relaxed text-fg-secondary">
+            <p className="text-pretty mt-2.5 max-w-md text-sm leading-relaxed text-fg-secondary">
               {description}
             </p>
           )}

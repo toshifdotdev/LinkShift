@@ -7,20 +7,21 @@ import { cn } from "@/lib/utils";
  * LinkShift button family.
  * Static design carries the identity: slug typography (mono caps) on ink
  * surfaces with a drawn ember rule on hover. Ghost/link stay editorial
- * Inter for quiet contexts. Size keys come first so variants may override
- * type treatment (twMerge resolves later classes last).
+ * Inter for quiet contexts.
  */
 const buttonVariants = cva(
-  // `ls-btn` carries the shared interaction system (ember rule-draw)
-  "ls-btn relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-md font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out select-none focus-visible:outline-2 focus-visible:outline-ring/70 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-45 active:translate-y-px [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
+  // `ls-btn` carries the shared interaction system (ember rule-draw + press feedback)
+  "ls-btn ls-pressable relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-md font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out select-none focus-visible:outline-2 focus-visible:outline-ring/70 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
   {
     variants: {
       size: {
+        xs: "h-7 gap-1 px-2.5 text-[10.5px]",
         sm: "h-8 gap-1.5 px-3 text-[11px]",
         md: "h-9 gap-2 px-4 text-[11.5px]",
         lg: "h-11 gap-2 px-6 text-xs",
         icon: "size-9",
         "icon-sm": "size-8",
+        "icon-xs": "size-7",
       },
       variant: {
         /* Primary action — ember plate, deep-ember spine, white rule */

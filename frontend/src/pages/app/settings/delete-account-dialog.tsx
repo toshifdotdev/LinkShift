@@ -10,21 +10,22 @@ import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { useToaster } from "@/components/ui/toaster";
 import { devSlow } from "@/lib/dev-delay";
-import { SectionCard } from "./settings-page";
 
 function DangerZoneSection() {
   const [open, setOpen] = useState(false);
 
   return (
-    <SectionCard title="Danger zone" danger>
-      <div className="flex flex-col gap-3">
-        <div className="flex items-start gap-2.5">
-          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+    <div>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-rose-500/10 text-rose-400">
+            <AlertTriangle className="size-3.5" />
+          </span>
           <div>
-            <p className="text-sm font-medium text-foreground">Delete your account</p>
+            <p className="text-[13.5px] font-medium text-foreground">Delete your account</p>
             <p className="mt-0.5 text-[13px] leading-snug text-fg-muted">
               Permanent and irreversible. Any active subscription is cancelled at the payment provider first.
-              To proceed you must type your account email — exact match — so this decision stays deliberate.
+              To proceed you must type your account email exactly.
             </p>
           </div>
         </div>
@@ -40,7 +41,7 @@ function DangerZoneSection() {
           setOpen(next);
         }}
       />
-    </SectionCard>
+    </div>
   );
 }
 

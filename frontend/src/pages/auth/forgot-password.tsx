@@ -35,7 +35,7 @@ function ForgotPasswordPage() {
       <AuthLayout
         kicker="Check your inbox"
         title="Reset link sent"
-        description={`If an account exists for ${email.trim()}, a reset link is on its way. It expires — use it promptly.`}
+        description={`If an account exists for ${email.trim()}, a reset link is on its way. It expires, so use it promptly.`}
         footer={
           <Link
             to="/login"

@@ -1,3 +1,4 @@
+import { Info } from "lucide-react";
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
@@ -31,10 +32,23 @@ function FieldLabel({
   );
 }
 
-function FieldHint({ className, children }: { className?: string; children: ReactNode }) {
+function FieldHint({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <p data-slot="field-hint" className={cn("text-xs text-fg-muted", className)}>
-      {children}
+    <p
+      data-slot="field-hint"
+      className={cn(
+        "flex items-start gap-1.5 text-xs leading-snug text-fg-muted",
+        className,
+      )}
+    >
+      <Info aria-hidden="true" className="mt-0.5 size-3 shrink-0" />
+      <span>{children}</span>
     </p>
   );
 }
@@ -42,7 +56,11 @@ function FieldHint({ className, children }: { className?: string; children: Reac
 function FieldError({ className, children }: { className?: string; children: ReactNode }) {
   if (!children) return null;
   return (
-    <p role="alert" data-slot="field-error" className={cn("text-xs text-destructive", className)}>
+    <p
+      role="alert"
+      data-slot="field-error"
+      className={cn("text-xs text-destructive", className)}
+    >
       {children}
     </p>
   );
