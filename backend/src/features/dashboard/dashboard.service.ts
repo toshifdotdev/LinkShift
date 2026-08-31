@@ -9,6 +9,7 @@ type TopLinks = {
     name: string | null;
     shortId: string;
     clicks: number;
+    domainHost: string;
 }
 
 type DailyStats = {
@@ -102,6 +103,9 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
             id: true,
             name: true,
             shortId: true,
+            domain: {
+                select: { host: true }
+            }
         },
     });
 
@@ -120,6 +124,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
                 name: link.name,
                 shortId: link.shortId,
                 clicks: item._count._all,
+                domainHost: link.domain.host,
             };
         })
         .filter((link): link is TopLinks => link !== null);

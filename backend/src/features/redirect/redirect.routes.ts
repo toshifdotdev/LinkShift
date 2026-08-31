@@ -8,6 +8,8 @@ const router = Router();
 
 router.get("/:shortId", redirectLimiter, validate(redirectParamSchema, "params"), redirect);
 
+router.get("/:shortId/*rest", redirectLimiter, validate(redirectParamSchema, "params"), redirect);
+
 router.post("/:shortId/unlock", unlockLimiter, validate(redirectParamSchema, "params"), validate(unlockSchema, "body"), unlockController);
 
 export default router;

@@ -1,6 +1,7 @@
 import { Link2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import type { LinkItem } from "@/types/api";
 import { LinkActionsMenu } from "./link-actions-menu";
 import { formatDate, hostOf, isExpired } from "./utils";
@@ -103,7 +104,7 @@ function LinksTable({
                   {link.name ?? "Untitled link"}
                 </p>
                 <p className="truncate font-mono text-[11px] tracking-[0.04em]">
-                  <span className="text-fg-muted/70">go.linkshift.in/</span>
+                  <span className="text-fg-muted/70">{link.domainHost || DEFAULT_SHORT_DOMAIN}/</span>
                   <span className="text-foreground">{link.shortId}</span>
                 </p>
               </div>
@@ -150,7 +151,7 @@ function LinksTable({
                   {link.name ?? "Untitled link"}
                 </p>
                 <p className="mt-0.5 truncate font-mono text-[11px]">
-                  <span className="text-fg-muted">go.linkshift.in/</span>
+                  <span className="text-fg-muted">{link.domainHost || DEFAULT_SHORT_DOMAIN}/</span>
                   <span className="text-brand">{link.shortId}</span>
                 </p>
               </div>

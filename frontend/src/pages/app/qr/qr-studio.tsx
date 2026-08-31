@@ -17,7 +17,7 @@ import { LogoCrop } from "./logo-crop";
 import { QR_PRESETS } from "./presets";
 import { cn } from "@/lib/utils";
 import type { QrResponse } from "@/types/api";
-import { shortUrl } from "@/lib/short-url";
+import { shortUrl, DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 
 const DEFAULT_CONFIG: QrConfig = {
   foregroundColor: "#0D0D0D",
@@ -164,7 +164,14 @@ function QrStudio({
   const lowContrast = contrast < 2.5;
 
   function close() {
+    /* Only request the close. The actual state reset happens in
+       `resetAfterClose` (via onOpenChangeComplete) AFTER the exit animation
+       finishes — otherwise the success panel unmounts mid-animation and the
+       dialog appears to vanish abruptly. */
     onOpenChange(false);
+  }
+
+  function resetAfterClose() {
     setSavedQr(null);
     setLinkId(initialLinkId ?? null);
     setDesign({ ...DEFAULT_CONFIG, frame: "none" });
@@ -177,7 +184,11 @@ function QrStudio({
   /* ---- success panel ---- */
   if (savedQr) {
     return (
-      <Dialog open={open} onOpenChange={(o) => !o && close()}>
+      <Dialog
+        open={open}
+        onOpenChange={(o) => !o && close()}
+        onOpenChangeComplete={(o) => !o && resetAfterClose()}
+      >
         {/*
           The Framer Motion page-transition wrapper applies a `transform`
           to its element, which turns the popup's `position: fixed` into
@@ -219,7 +230,7 @@ function QrStudio({
               <p className="ls-marquee">Saved</p>
               <DialogTitle className="mt-2.5 text-2xl">QR code saved</DialogTitle>
               <p className="mt-1.5 max-w-xs text-[13px] leading-snug text-fg-secondary">
-                Live at <span className="font-mono text-foreground">{shortUrl(savedQr.shortId)}</span>.
+                Live at <span className="font-mono text-foreground">{shortUrl(savedQr.shortId, selectedLink?.domainHost)}</span>.
                 The code matches the preview.
               </p>
             </div>
@@ -293,7 +304,11 @@ function QrStudio({
     );
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && close()}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => !o && close()}
+      onOpenChangeComplete={(o) => !o && resetAfterClose()}
+    >
       <DialogContent className="flex h-[100dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:h-auto sm:max-h-[92vh] sm:max-w-4xl sm:rounded-lg">
         <header className="flex shrink-0 items-end justify-between gap-3 border-b border-border px-5 pt-4 pb-3 sm:px-6">
           <div>
@@ -688,7 +703,7 @@ function QrStudio({
                     <QrPreview config={payload} shortId={selectedLink.shortId} frame={design.frame} className="mx-auto max-w-[260px]" />
                   </div>
                   <p className="mt-4 truncate text-center font-mono text-[11px]">
-                    <span className="text-fg-muted">go.linkshift.in/</span>
+                    <span className="text-fg-muted">{selectedLink.domainHost || DEFAULT_SHORT_DOMAIN}/</span>
                     <span className="text-brand">{selectedLink.shortId}</span>
                   </p>
                   {lowContrast && (

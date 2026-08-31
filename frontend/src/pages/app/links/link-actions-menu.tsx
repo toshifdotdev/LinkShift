@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BarChart3, Copy, ExternalLink, MoreHorizontal, Pencil, QrCode, Trash2 } from "lucide-react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { useToaster } from "@/components/ui/toaster";
-import { shortUrl } from "@/lib/short-url";
+import { shortUrl, DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import type { LinkItem } from "@/types/api";
 
 function LinkActionsMenu({
@@ -22,11 +22,13 @@ function LinkActionsMenu({
   const { toast } = useToaster();
   const [copied, setCopied] = useState(false);
 
+  const host = link.domainHost || DEFAULT_SHORT_DOMAIN;
+
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(shortUrl(link.shortId));
+      await navigator.clipboard.writeText(shortUrl(link.shortId, link.domainHost));
       setCopied(true);
-      toast({ title: "Copied", meta: `go.linkshift.in/${link.shortId}`, variant: "success" });
+      toast({ title: "Copied", meta: `${host}/${link.shortId}`, variant: "success" });
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
       toast({ title: "Copy failed", description: "Your browser blocked clipboard access.", variant: "error" });
@@ -61,11 +63,11 @@ function LinkActionsMenu({
         </MenuPrimitive.Trigger>
 
         <MenuPrimitive.Portal>
-          <MenuPrimitive.Positioner align="end" sideOffset={6}>
+          <MenuPrimitive.Positioner align="end" sideOffset={6} className="z-50">
             <MenuPrimitive.Popup className="w-52 rounded-lg border border-border bg-elevated p-1.5 shadow-xl shadow-black/50 animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
               <MenuPrimitive.Item
                 className={itemClass}
-                onClick={() => window.open(shortUrl(link.shortId), "_blank", "noopener")}
+                onClick={() => window.open(shortUrl(link.shortId, link.domainHost), "_blank", "noopener")}
               >
                 <ExternalLink className="size-3.5" />
                 Open short link

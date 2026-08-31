@@ -51,6 +51,8 @@ export interface TopLink {
   name: string | null;
   shortId: string;
   clicks: number;
+  /** Host the link lives on; older cached payloads may omit it. */
+  domainHost?: string;
 }
 
 export interface DashboardStats {
@@ -79,9 +81,11 @@ export interface ActivityItem {
 /**
  * Exact shape returned by the backend link mapper:
  * { id, name, targetUrl (UTM params already appended), shortId, isActive,
- *   expiresAt, createdAt, updatedAt, clicks }
- * NOTE: domainId / stored UTM fields / password-set flag are intentionally
- * NOT returned by the API and must not be invented client-side.
+ *   deepLink, expiresAt, createdAt, updatedAt, clicks, domainId, domainHost }
+ * `domainHost` is the host the link actually lives on (the shared default
+ * domain or a connected custom domain) — use it to render the short URL.
+ * NOTE: stored UTM fields / password-set flag are intentionally NOT returned
+ * by the API and must not be invented client-side.
  */
 export interface LinkItem {
   id: string;
@@ -89,10 +93,13 @@ export interface LinkItem {
   targetUrl: string;
   shortId: string;
   isActive: boolean;
+  deepLink: boolean;
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
   clicks: number;
+  domainId: string;
+  domainHost: string;
 }
 
 export interface LinksPagination {

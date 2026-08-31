@@ -6,6 +6,7 @@ import "./index.css";
 import App from "./App";
 import { ToastProvider } from "@/components/ui/toaster";
 import { SessionProvider } from "@/auth/session";
+import { ThemeProvider } from "@/theme/theme";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,14 +20,16 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <SessionProvider>
-          <ToastProvider>
-            <App />
-          </ToastProvider>
-        </SessionProvider>
-      </BrowserRouter>
-    </QueryClientProvider>
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <SessionProvider>
+            <ToastProvider>
+              <App />
+            </ToastProvider>
+          </SessionProvider>
+        </BrowserRouter>
+      </QueryClientProvider>
+    </ThemeProvider>
   </StrictMode>,
 );

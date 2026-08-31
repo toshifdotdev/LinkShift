@@ -40,6 +40,7 @@ function EditLinkDialog({
   const { user } = useSession();
   const plan = user?.plan.name ?? "FREE";
   const canUseSlug = plan !== "FREE";
+  const canUseDeepLink = plan === "PRO";
 
   /* The parent mounts this component per-edit (keyed by link id), so
      initializers run fresh for every edit session — no seeding effects. */
@@ -52,19 +53,18 @@ function EditLinkDialog({
   const [newPassword, setNewPassword] = useState("");
   const [switchDomain, setSwitchDomain] = useState(false);
   const [domainId, setDomainId] = useState("");
+  const [deepLink, setDeepLink] = useState(link.deepLink ?? false);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
   const domains = useDomains();
 
-  /* The API never returns the link's current domain (see LinkItem note), so
-     until the user opts to switch, fall back to the account's default domain
-     — the same host the previous hardcoded string assumed. Once switching is
-     on, the preview reflects whichever domain is actually selected. */
-  const defaultDomain = domains.data?.find((d) => d.isDefault) ?? domains.data?.[0];
+  /* The API returns the link's domain, so the preview defaults to the host the
+     link actually lives on. Once switching is on and a domain is selected, the
+     preview reflects that selection. */
   const domainHost =
     switchDomain && domainId
       ? domains.data?.find((d) => d.id === domainId)?.host ?? DEFAULT_SHORT_DOMAIN
-      : defaultDomain?.host ?? DEFAULT_SHORT_DOMAIN;
+      : link.domainHost || DEFAULT_SHORT_DOMAIN;
 
   function close() {
     onClose();
@@ -114,6 +114,7 @@ function EditLinkDialog({
       domainId: switchDomain && domainId ? domainId : undefined,
       password:
         passwordChoice === "replace" ? newPassword : passwordChoice === "remove" ? null : undefined,
+      deepLink: canUseDeepLink ? deepLink : undefined,
     });
   }
 
@@ -330,6 +331,46 @@ function EditLinkDialog({
               />
               Link is active. Unchecking pauses all redirects.
             </label>
+
+            {/* deep linking */}
+            <Field>
+              <FieldLabel>
+                Deep linking
+                {!canUseDeepLink && (
+                  <span className="ml-2 inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-brand uppercase">
+                    Pro only
+                  </span>
+                )}
+              </FieldLabel>
+              {canUseDeepLink ? (
+                <>
+                  <label htmlFor="edit-deep-link" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
+                    <input
+                      id="edit-deep-link"
+                      type="checkbox"
+                      checked={deepLink}
+                      onChange={(e) => setDeepLink(e.target.checked)}
+                      className="size-3.5 accent-[#E8590C]"
+                    />
+                    Forward appended paths and query strings to the destination
+                  </label>
+                  <FieldHint>
+                    <span className="font-mono text-[11px]">…/{link.shortId}/products/5?ref=x</span>{" "}
+                    resolves to the same path and query on your destination.
+                  </FieldHint>
+                </>
+              ) : link.deepLink ? (
+                <UpgradeHint
+                  feature="This link has deep linking enabled. Forwarding pauses while you're not on Pro."
+                  requirement="Pro"
+                />
+              ) : (
+                <UpgradeHint
+                  feature="Route visitors to any path on your destination through this short link."
+                  requirement="Pro"
+                />
+              )}
+            </Field>
 
             {backendError && (
               <>

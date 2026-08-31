@@ -87,7 +87,7 @@ export const LIMIT_ROWS: LimitRow[] = [
 ];
 
 /** Feature gates enforced in backend code (billing.service hardcoded checks). */
-export type FlagValue = boolean | "soon";
+export type FlagValue = boolean;
 
 export interface FlagRow {
   label: string;
@@ -108,8 +108,8 @@ export const FLAG_ROWS: FlagRow[] = [
   },
   {
     label: "Deep linking",
-    note: "App-routed short links",
-    values: { FREE: false, STARTER: false, CREATOR: false, PRO: "soon" },
+    note: "Forward appended paths & queries to your destination",
+    values: { FREE: false, STARTER: false, CREATOR: false, PRO: true },
   },
 ];
 

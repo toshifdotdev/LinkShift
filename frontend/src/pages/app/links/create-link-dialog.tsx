@@ -40,6 +40,7 @@ function CreateLinkDialog({
   const plan = user?.plan.name ?? "FREE";
   const canUseSlug = plan !== "FREE";
   const canUseUtm = plan === "CREATOR" || plan === "PRO";
+  const canUseDeepLink = plan === "PRO";
 
   const [destination, setDestination] = useState("");
   const [name, setName] = useState("");
@@ -49,6 +50,7 @@ function CreateLinkDialog({
   const [expiresAt, setExpiresAt] = useState("");
   const [password, setPassword] = useState("");
   const [usePassword, setUsePassword] = useState(false);
+  const [deepLink, setDeepLink] = useState(false);
   const [utm, setUtm] = useState({ source: "", medium: "", campaign: "", term: "", content: "" });
   const [fieldError, setFieldError] = useState<string | null>(null);
 
@@ -72,6 +74,7 @@ function CreateLinkDialog({
     setExpiresAt("");
     setPassword("");
     setUsePassword(false);
+    setDeepLink(false);
     setUtm({ source: "", medium: "", campaign: "", term: "", content: "" });
     setFieldError(null);
   };
@@ -118,6 +121,7 @@ function CreateLinkDialog({
       slug: slug.trim() || undefined,
       expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
       password: usePassword && password ? password : undefined,
+      deepLink: deepLink || undefined,
       utmSource: utm.source.trim() || undefined,
       utmMedium: utm.medium.trim() || undefined,
       utmCampaign: utm.campaign.trim() || undefined,
@@ -214,7 +218,7 @@ function CreateLinkDialog({
               <span className="text-[13px] font-medium text-fg-secondary">
                 Advanced
                 <span className="ml-2 font-mono text-[10px] tracking-[0.12em] text-fg-muted uppercase">
-                  slug · expiry · password · UTM
+                  slug · expiry · password · UTM · deep link
                 </span>
               </span>
               <ChevronDown
@@ -342,6 +346,43 @@ function CreateLinkDialog({
                       <UpgradeHint
                         feature="Tag scans by campaign, source, and medium. Reported in analytics and CSV exports."
                         requirement="Creator or above"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* deep linking */}
+                <div className="rounded-md border border-border p-3.5">
+                  <p className="flex items-center gap-2 text-[13px] font-medium text-fg-secondary">
+                    Deep linking
+                    {!canUseDeepLink && (
+                      <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-[0.16em] text-brand uppercase">
+                        <Lock className="size-2.5" /> Pro only
+                      </span>
+                    )}
+                  </p>
+                  {canUseDeepLink ? (
+                    <div className="mt-3 flex flex-col gap-2">
+                      <label htmlFor="create-deep-link" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
+                        <input
+                          id="create-deep-link"
+                          type="checkbox"
+                          checked={deepLink}
+                          onChange={(e) => setDeepLink(e.target.checked)}
+                          className="size-3.5 accent-[#E8590C]"
+                        />
+                        Forward appended paths and query strings to the destination
+                      </label>
+                      <p className="text-xs text-fg-muted">
+                        <span className="font-mono text-[11px] text-fg-secondary">…/slug/products/5?ref=x</span>{" "}
+                        resolves to the same path and query on your destination.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="mt-2">
+                      <UpgradeHint
+                        feature="Route visitors to any path on your destination through one short link."
+                        requirement="Pro"
                       />
                     </div>
                   )}

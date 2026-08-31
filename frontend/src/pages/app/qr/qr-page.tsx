@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
 import { QrStudio } from "./qr-studio";
 import { cn } from "@/lib/utils";
+import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 
 /* ---- authenticated QR thumbnail (blob-based; <img> can't send headers) ---- */
 function QrThumbnail({ linkId, version }: { linkId: string; version: number }) {
@@ -174,7 +175,7 @@ function QrPage() {
                       {link.name ?? "Untitled link"}
                     </p>
                     <p className="truncate font-mono text-[10px]">
-                      <span className="text-fg-muted">go.linkshift.in/</span>
+                      <span className="text-fg-muted">{link.domainHost || DEFAULT_SHORT_DOMAIN}/</span>
                       <span className="text-brand">{link.shortId}</span>
                     </p>
                   </div>

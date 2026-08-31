@@ -3,8 +3,8 @@ import { prisma } from "../../config"
 import * as bcrypt from 'bcrypt';
 import { AppError } from "../../errors/AppError"
 import { getCache, setCache, linkCacheKey } from "../../utils/cache";
-import { completeTargetUrl } from "../../utils/completeRedirect";
-import { checkRedirectLimit } from "../billing/billing.service";
+import { completeTargetUrl, applyDeepLink } from "../../utils/completeRedirect";
+import { checkRedirectLimit, hasDeepLinkAccess } from "../billing/billing.service";
 
 export type CachedLink = {
     id: string;
@@ -14,6 +14,7 @@ export type CachedLink = {
     domainId: string;
     expiresAt: Date | null;
     passwordHash: string | null;
+    deepLink: boolean;
     utmSource: string | null,
     utmMedium: string | null,
     utmCampaign: string | null,
@@ -44,6 +45,7 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
         const cached = JSON.parse(cachedLink);
         targetUrl = {
         ...cached,
+        deepLink: cached.deepLink ?? false,
         expiresAt: cached.expiresAt
             ? new Date(cached.expiresAt)
             : null,
@@ -85,6 +87,7 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
             isActive: linkWithDomain.isActive,
             expiresAt: linkWithDomain.expiresAt,
             passwordHash: linkWithDomain.passwordHash,
+            deepLink: linkWithDomain.deepLink,
             utmSource: linkWithDomain.utmSource,
             utmMedium: linkWithDomain.utmMedium,
             utmCampaign: linkWithDomain.utmCampaign,
@@ -117,9 +120,14 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
 
     const result = await completeTargetUrl(targetUrl, req);
 
+    let finalUrl = result.targetUrl;
+    if (targetUrl.deepLink && (await hasDeepLinkAccess(targetUrl.userId))) {
+        finalUrl = applyDeepLink(finalUrl, req);
+    }
+
     return {
         requiresPassword : false,
-        targetUrl : result.targetUrl
+        targetUrl : finalUrl
     }
 }
 
@@ -161,6 +169,11 @@ export const unlockService = async(shortId : string, password : string, host : s
 
     const result = await completeTargetUrl(targetUrl, req);
 
-    return result.targetUrl;
+    let finalUrl = result.targetUrl;
+    if (targetUrl.deepLink && (await hasDeepLinkAccess(targetUrl.userId))) {
+        finalUrl = applyDeepLink(finalUrl, req);
+    }
+
+    return finalUrl;
 
 }

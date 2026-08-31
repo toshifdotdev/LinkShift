@@ -4,6 +4,7 @@ import { Menu, MoveRight, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/logo";
+import { ThemeToggle } from "@/components/app/theme-toggle";
 
 const links = [
   { label: "Product", href: "/#product", id: "product" },
@@ -119,6 +120,7 @@ function LandingNavbar() {
         </nav>
 
         <div className="hidden items-center gap-4 md:flex">
+          <ThemeToggle />
           <span aria-hidden="true" className="h-4 w-px bg-border" />
           <Link
             to="/login"
@@ -131,15 +133,18 @@ function LandingNavbar() {
           </Link>
         </div>
 
-        <button
-          type="button"
-          aria-label={open ? "Close menu" : "Open menu"}
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-          className="flex size-9 items-center justify-center rounded-md text-fg-secondary transition-colors hover:bg-elevated hover:text-foreground md:hidden"
-        >
-          {open ? <X className="size-5" /> : <Menu className="size-5" />}
-        </button>
+        <div className="flex items-center gap-1 md:hidden">
+          <ThemeToggle />
+          <button
+            type="button"
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+            className="flex size-9 items-center justify-center rounded-md text-fg-secondary transition-colors hover:bg-elevated hover:text-foreground"
+          >
+            {open ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
+        </div>
       </div>
 
       <div

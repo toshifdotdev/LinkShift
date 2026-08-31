@@ -23,7 +23,7 @@ function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: 
       </MenuPrimitive.Trigger>
 
       <MenuPrimitive.Portal>
-        <MenuPrimitive.Positioner align="end" sideOffset={8}>
+        <MenuPrimitive.Positioner align="end" sideOffset={8} className="z-50">
           <MenuPrimitive.Popup className="relative w-60 overflow-hidden rounded-lg border border-border bg-elevated p-1.5 shadow-2xl shadow-black/60 animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
             {/* The Mono Marquee: a 1px ember hairline drawn across the top of the popover */}
             <span aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-brand/60" />

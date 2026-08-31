@@ -37,6 +37,7 @@ export const createLinkSchema  = z.object({
   utmCampaign: z.string().trim().max(150).optional(),
   utmTerm: z.string().trim().max(100).optional(),
   utmContent: z.string().trim().max(150).optional(),
+  deepLink: z.boolean().optional(),
   }).superRefine((data, ctx) => {
 
       const hasAnyUtm =
@@ -108,13 +109,15 @@ export const updateLinkSchema = z.object({
   utmCampaign: z.string().trim().max(150).nullable().optional(),
   utmTerm: z.string().trim().max(100).nullable().optional(),
   utmContent: z.string().trim().max(150).nullable().optional(),
+  deepLink: z.boolean().optional(),
 
 }).partial().refine((data) => data.name !== undefined || data.targetUrl !== undefined || 
                               data.isActive !== undefined || data.expiresAt !== undefined ||
                               data.password !== undefined || data.slug !== undefined ||
                               data.domainId !== undefined ||  data.utmSource !== undefined ||
                               data.utmMedium !== undefined || data.utmCampaign !== undefined ||
-                              data.utmTerm !== undefined || data.utmContent !== undefined,{
+                              data.utmTerm !== undefined || data.utmContent !== undefined ||
+                              data.deepLink !== undefined,{
   message: "At least one field must be provided.",
 });
 

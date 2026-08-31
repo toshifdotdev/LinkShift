@@ -188,6 +188,18 @@ model Link {
   utmTerm     String?
   utmContent  String?
 
+  // Pro-only: forward the visitor's appended path + query to the destination.
+  deepLink    Boolean @default(false)
+
+  // Pro-only: mobile app deep linking — open the configured app on mobile,
+  // fall back to the web destination otherwise. Per-link app configuration.
+  appDeepLink     Boolean  @default(false)
+  appScheme       String?
+  androidPackage  String?
+  appPath         String?
+  iosStoreUrl     String?
+  androidStoreUrl String?
+
   user   User   @relation(fields: [userId], references: [id])
   qr     Qr[]
   scans  Scan[]

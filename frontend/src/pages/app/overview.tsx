@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { FadeIn, NumberTick } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
+import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import type { AnalyticsDays } from "@/types/api";
 
 const RANGES: Array<{ label: string; value?: AnalyticsDays }> = [
@@ -130,7 +131,7 @@ function rankTone(i: number): string {
   return "bg-fg-muted";
 }
 
-function TopLinks({ data, loading }: { data: { id: string; name: string | null; shortId: string; clicks: number }[]; loading?: boolean }) {
+function TopLinks({ data, loading }: { data: { id: string; name: string | null; shortId: string; clicks: number; domainHost?: string }[]; loading?: boolean }) {
   if (loading) {
     return (
       <div className="px-5 py-4 sm:px-6 sm:py-5">
@@ -184,7 +185,7 @@ function TopLinks({ data, loading }: { data: { id: string; name: string | null; 
               {l.name ?? "Untitled link"}
             </p>
             <p className="truncate font-mono text-[11px] tracking-[0.04em] text-fg-muted">
-              <span className="text-fg-muted/70">go.linkshift.in/</span>
+              <span className="text-fg-muted/70">{l.domainHost || DEFAULT_SHORT_DOMAIN}/</span>
               <span className="text-foreground">{l.shortId}</span>
             </p>
           </div>

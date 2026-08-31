@@ -23,6 +23,7 @@ export interface CreateLinkPayload {
   domainId: string;
   expiresAt?: string;
   password?: string;
+  deepLink?: boolean;
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
@@ -41,6 +42,7 @@ export interface UpdateLinkPayload {
   expiresAt: string | null;
   /** string = set new password, null = remove password, omit = unchanged. */
   password?: string | null;
+  deepLink?: boolean;
 }
 
 export function listLinks(params: ListLinksParams, signal?: AbortSignal) {

@@ -1872,6 +1872,20 @@ export const checkCsvExportAccess = async (userId: string) => {
     }
 };
 
+/* Deep linking is a Pro-tier capability (and any plan above Pro). */
+const DEEP_LINK_PLANS = ["PRO", "ENTERPRISE"];
+
+export const hasDeepLinkAccess = async (userId: string): Promise<boolean> => {
+    const plan = await getUserPlan(userId);
+    return !!plan && DEEP_LINK_PLANS.includes(plan.name);
+};
+
+export const checkDeepLinkAccess = async (userId: string) => {
+    if (!(await hasDeepLinkAccess(userId))) {
+        throw new AppError("Deep linking is available on the Pro plan", 403);
+    }
+};
+
 export const getUsageService = async (userId: string) => {
     // Period semantics identical to the quota guards (checkRedirectLimit /
     // checkQrLimit / checkCustomSlugLimit / checkDestinationLimit): metered on

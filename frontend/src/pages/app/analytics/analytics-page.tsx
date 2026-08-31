@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
 import { FadeIn, NumberTick } from "@/components/ui/motion";
-import { shortUrl } from "@/lib/short-url";
+import { shortUrl, DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import { cn } from "@/lib/utils";
 import { BreakdownPanel } from "./breakdown-panel";
 import { DonutChart } from "./donut-chart";
@@ -233,7 +233,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
                 onRetry={() => void stats.refetch()}
               />
             </div>
-          ) : !statsData || statsData.topLinks.length === 0 ? (
+          ) : !statsData || (statsData.topLinks?.length ?? 0) === 0 ? (
             <div className="px-6 py-10 text-center">
               <p className="font-mono text-[10px] tracking-[0.18em] text-fg-muted uppercase">
                 Empty ledger
@@ -269,7 +269,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
                         {l.name ?? "Untitled link"}
                       </span>
                       <span className="block truncate font-mono text-[11px] tracking-[0.04em]">
-                        <span className="text-fg-muted/70">go.linkshift.in/</span>
+                        <span className="text-fg-muted/70">{l.domainHost || DEFAULT_SHORT_DOMAIN}/</span>
                         <span className="text-foreground">{l.shortId}</span>
                       </span>
                     </span>
@@ -414,9 +414,9 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
 
   const utmRows = a
     ? [
-        ...a.utmSource.filter((u) => u.utmSource).map((u) => ({ label: `source · ${u.utmSource}`, count: u.count })),
-        ...a.utmMedium.filter((u) => u.utmMedium).map((u) => ({ label: `medium · ${u.utmMedium}`, count: u.count })),
-        ...a.utmCampaign.filter((u) => u.utmCampaign).map((u) => ({ label: `campaign · ${u.utmCampaign}`, count: u.count })),
+        ...(a.utmSource ?? []).filter((u) => u.utmSource).map((u) => ({ label: `source · ${u.utmSource}`, count: u.count })),
+        ...(a.utmMedium ?? []).filter((u) => u.utmMedium).map((u) => ({ label: `medium · ${u.utmMedium}`, count: u.count })),
+        ...(a.utmCampaign ?? []).filter((u) => u.utmCampaign).map((u) => ({ label: `campaign · ${u.utmCampaign}`, count: u.count })),
       ]
     : [];
 
@@ -432,7 +432,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
 
       <PageHeader
         title={linkInfo.isPending ? "Link analytics" : (linkInfo.data?.name ?? "Link analytics")}
-        description={linkInfo.data ? shortUrl(linkInfo.data.shortId) : undefined}
+        description={linkInfo.data ? shortUrl(linkInfo.data.shortId, linkInfo.data.domainHost) : undefined}
         action={
           csvLocked ? (
             <span

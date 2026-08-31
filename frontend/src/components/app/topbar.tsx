@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { logout as logoutApi } from "@/api/auth";
 import { useLogout } from "@/auth/session";
 import { UserMenu } from "./user-menu";
+import { ThemeToggle } from "./theme-toggle";
 
 function Topbar({
   title,
@@ -48,7 +49,8 @@ function Topbar({
           </p>
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1.5">
+          <ThemeToggle />
           <UserMenu
             onLogout={() => void handleLogout()}
             onSettings={() => navigate("/app/settings")}

@@ -8,7 +8,7 @@ import { queryData } from './link.query.validation';
 import { deleteCache, linkCacheKey } from '../../utils/cache';
 import { getAvailableShortId } from '../../utils/shortId';
 import { getValidatedDomain } from '../../utils/validate.domain';
-import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit, checkUtmAccess } from '../billing/billing.service';
+import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit, checkUtmAccess, checkDeepLinkAccess } from '../billing/billing.service';
 import { buildUtmUrl } from '../utm/utm.service';
 
 type CreateData = CreateLinkData&{
@@ -41,13 +41,18 @@ export const createLink = async (data : CreateData) => {
         utmMedium, 
         utmCampaign, 
         utmTerm, 
-        utmContent  
+        utmContent,
+        deepLink
     } = data;
 
     await checkLinkLimit(userId);
 
     if (slug) {
         await checkCustomSlugLimit(userId);
+    }
+
+    if (deepLink) {
+        await checkDeepLinkAccess(userId);
     }
 
     const hasAnyUtm =
@@ -91,7 +96,16 @@ export const createLink = async (data : CreateData) => {
                 utmMedium,
                 utmCampaign,
                 utmTerm,
-                utmContent
+                utmContent,
+                deepLink : deepLink ?? false
+            },
+            include: {
+                _count: {
+                    select: { scans : true }
+                },
+                domain: {
+                    select: { id : true, host : true }
+                }
             }
         });
 
@@ -113,7 +127,7 @@ export const createLink = async (data : CreateData) => {
 
     await deleteCache(`dashboard:${userId}`)
 
-    return createdLink;
+    return getLinkMapper(createdLink);
 }
 
 
@@ -167,6 +181,9 @@ export const getLinks = async (data : GetLinksData) => {
         include: {
         _count: {
             select: { scans : true } 
+        },
+        domain: {
+            select: { id : true, host : true }
         }
         },
     }),
@@ -201,6 +218,9 @@ export const getLink = async(id : string, linkId : string) => {
         include : {
             _count : { 
               select : { scans : true }
+            },
+            domain : {
+              select : { id : true, host : true }
             }
         }
     })
@@ -259,6 +279,10 @@ export const updateLink = async(data : UpdateLinkData) => {
 
     if (utmChanged) {
         await checkUtmAccess(data.userId);
+    }
+
+    if (data.deepLink === true) {
+        await checkDeepLinkAccess(data.userId);
     }
 
     const baseTargetUrl =
@@ -342,10 +366,14 @@ export const updateLink = async(data : UpdateLinkData) => {
             utmCampaign: finalUtmCampaign,
             utmTerm: finalUtmTerm,
             utmContent: finalUtmContent,
+            deepLink: data.deepLink ?? existingLink.deepLink,
         },
         include : {
             _count : {
                 select : {scans : true}
+            },
+            domain : {
+                select : { id : true, host : true }
             }
         }
     })

@@ -1,5 +1,12 @@
 
-const SEGMENT_COLORS = ["#E8590C", "#F5F1EB", "#8A8378", "#4A453F", "#B4622D", "#6B6560"];
+const SEGMENT_COLORS = [
+  "var(--chart-1)",
+  "var(--chart-2)",
+  "var(--chart-3)",
+  "var(--chart-4)",
+  "var(--chart-5)",
+  "var(--chart-6)",
+];
 
 interface DonutItem {
   label: string;
@@ -54,7 +61,7 @@ function DonutChart({
             aria-label={`${title} distribution`}
             className="-rotate-90"
           >
-            <circle cx="60" cy="60" r="48" fill="none" stroke="#262626" strokeWidth="16" />
+            <circle cx="60" cy="60" r="48" fill="none" strokeWidth="16" style={{ stroke: "var(--chart-track)" }} />
             {visible.map((item, i) => {
               const fraction = item.count / total;
               /* dash lengths on a 2π·48 circumference */
@@ -69,10 +76,10 @@ function DonutChart({
                   cy="60"
                   r="48"
                   fill="none"
-                  stroke={SEGMENT_COLORS[i % SEGMENT_COLORS.length]}
                   strokeWidth="16"
                   strokeDasharray={dash}
                   strokeDashoffset={offset}
+                  style={{ stroke: SEGMENT_COLORS[i % SEGMENT_COLORS.length] }}
                 />
               );
             })}
@@ -81,13 +88,14 @@ function DonutChart({
               x="60"
               y="56"
               textAnchor="middle"
-              className="fill-white font-mono"
+              className="font-mono"
               fontSize="16"
               fontWeight="600"
+              style={{ fill: "var(--chart-center)" }}
             >
               {total.toLocaleString()}
             </text>
-            <text x="60" y="74" textAnchor="middle" className="fill-[#8A8378] font-mono" fontSize="8" letterSpacing="1.5">
+            <text x="60" y="74" textAnchor="middle" className="font-mono" fontSize="8" letterSpacing="1.5" style={{ fill: "var(--chart-3)" }}>
               TOTAL
             </text>
           </svg>

@@ -6,14 +6,21 @@ import { cn } from "@/lib/utils";
 function Dialog({
   open,
   onOpenChange,
+  onOpenChangeComplete,
   children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Fires after the open/close animation finishes — safe place to reset state. */
+  onOpenChangeComplete?: (open: boolean) => void;
   children: ReactNode;
 }) {
   return (
-    <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+    <DialogPrimitive.Root
+      open={open}
+      onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
+    >
       {children}
     </DialogPrimitive.Root>
   );
@@ -40,13 +47,16 @@ function DialogContent({
 }) {
   return (
     <DialogPrimitive.Portal>
-      <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/70 animate-in fade-in duration-200" />
+      <DialogPrimitive.Backdrop className="fixed inset-0 z-50 bg-black/70 animate-in fade-in duration-200 data-ending-style:animate-out data-ending-style:fade-out" />
       <DialogPrimitive.Popup
         style={style}
         className={cn(
           "fixed top-1/2 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto",
           "rounded-lg border border-border bg-elevated p-6 shadow-2xl shadow-black/50",
           "focus:outline-none animate-in fade-in zoom-in-95 duration-200",
+          /* Base UI holds the popup mounted while it animates out and flags it
+             with `data-ending-style` — ease it back down instead of unmounting. */
+          "data-ending-style:animate-out data-ending-style:fade-out data-ending-style:zoom-out-95",
           className,
         )}
       >

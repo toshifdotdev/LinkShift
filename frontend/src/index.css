@@ -120,6 +120,101 @@
   --info-foreground: #93c5fd;
   --input: #262626;
   --ring: #f56d1e;
+
+  /* Texture */
+  --dot: rgba(245, 241, 235, 0.10);
+  --shadow-color: 0 0% 0%;
+
+  /* Interactive raised-surface states */
+  --raised-hover: #232323;
+  --raised-active: #202020;
+
+  /* Data-viz */
+  --chart-track: #262626;
+  --chart-1: #e8590c;
+  --chart-2: #f5f1eb;
+  --chart-3: #8a8378;
+  --chart-4: #4a453f;
+  --chart-5: #b4622d;
+  --chart-6: #6b6560;
+  --chart-center: #ffffff;
+}
+
+/* ============================================================
+   PORCELAIN & EMBER — the light scheme.
+   A clean, predominantly white canvas with crisp neutral grays
+   and the same copper accent. Premium and sharp, deliberately
+   not a cream wash and not a flat inversion of Ink & Ember.
+   ============================================================ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Surfaces — white, still layered for hierarchy */
+  --background: #f6f6f7;   /* page canvas (soft neutral) */
+  --surface: #ffffff;      /* card / plate */
+  --elevated: #f2f2f3;     /* nested inside a plate */
+  --raised: #ffffff;       /* input fields, popovers */
+  --overlay: #101012;      /* scrim behind modals */
+  --sunken: #efeff0;       /* empty-state wells */
+
+  /* Text — near-black neutral ink */
+  --foreground: #131316;
+  --fg-secondary: #4b4b53;
+  --fg-muted: #6e6e77;
+
+  /* Lines — neutral hairlines */
+  --border: #e5e5e8;
+  --border-strong: #d2d2d7;
+  --border-subtle: #ededf0;
+  --border-ember: rgba(217, 72, 15, 0.40);
+
+  /* Ember — unchanged brand hue, deepened for contrast on white */
+  --brand: #e8590c;
+  --brand-hover: #d9480f;
+  --brand-soft: rgba(232, 89, 12, 0.07);
+  --brand-ink: #c2410c;
+
+  /* Semantic aliases */
+  --card: #ffffff;
+  --card-foreground: #131316;
+  --popover: #ffffff;
+  --popover-foreground: #131316;
+  --primary: #e8590c;
+  --primary-foreground: #ffffff;
+  --secondary: #f2f2f3;
+  --secondary-foreground: #131316;
+  --muted: #f2f2f3;
+  --muted-foreground: #4b4b53;
+  --accent: #efeff1;
+  --accent-foreground: #131316;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --warning: #b45309;
+  --warning-foreground: #92400e;
+  --success: #059669;
+  --success-foreground: #047857;
+  --info: #2563eb;
+  --info-foreground: #1d4ed8;
+  --input: #d6d6db;
+  --ring: #e8590c;
+
+  /* Texture */
+  --dot: rgba(19, 19, 22, 0.08);
+  --shadow-color: 240 5% 12%;
+
+  /* Interactive raised-surface states */
+  --raised-hover: #f7f7f8;
+  --raised-active: #efeff1;
+
+  /* Data-viz */
+  --chart-track: #e9e9ec;
+  --chart-1: #e8590c;
+  --chart-2: #131316;
+  --chart-3: #6e6e77;
+  --chart-4: #d2d2d7;
+  --chart-5: #b4622d;
+  --chart-6: #4b4b53;
+  --chart-center: #131316;
 }
 
 @layer base {

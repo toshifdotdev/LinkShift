@@ -5,6 +5,7 @@ import { FadeIn } from "@/components/ui/motion";
 import { ProfileSection } from "./profile-section";
 import { SecuritySection } from "./security-section";
 import { DangerZoneSection } from "./delete-account-dialog";
+import { AppearanceSection } from "./appearance-section";
 
 /* The settings rail. On desktop a left-rail list of section links. On
    mobile a horizontal scroll of section links. The active link carries
@@ -13,11 +14,12 @@ function SettingsRail({
   active,
   onChange,
 }: {
-  active: "profile" | "security" | "danger";
-  onChange: (next: "profile" | "security" | "danger") => void;
+  active: "profile" | "appearance" | "security" | "danger";
+  onChange: (next: "profile" | "appearance" | "security" | "danger") => void;
 }) {
-  const items: Array<{ key: "profile" | "security" | "danger"; label: string; note?: string }> = [
+  const items: Array<{ key: "profile" | "appearance" | "security" | "danger"; label: string; note?: string }> = [
     { key: "profile", label: "Profile" },
+    { key: "appearance", label: "Appearance" },
     { key: "security", label: "Security" },
     { key: "danger", label: "Danger zone" },
   ];
@@ -94,11 +96,12 @@ function SectionHeading({
 }
 
 function SettingsPage() {
-  const [section, setSection] = useState<"profile" | "security" | "danger">("profile");
+  const [section, setSection] = useState<"profile" | "appearance" | "security" | "danger">("profile");
   const profileRef = useRef<HTMLDivElement>(null);
+  const appearanceRef = useRef<HTMLDivElement>(null);
   const securityRef = useRef<HTMLDivElement>(null);
   const dangerRef = useRef<HTMLDivElement>(null);
-  const refsByKey = { profile: profileRef, security: securityRef, danger: dangerRef };
+  const refsByKey = { profile: profileRef, appearance: appearanceRef, security: securityRef, danger: dangerRef };
 
   useEffect(() => {
     const el = refsByKey[section].current;
@@ -135,6 +138,22 @@ function SettingsPage() {
                 description="The name and avatar that appear across LinkShift, on every comment and link."
               />
               <ProfileSection />
+            </div>
+          </section>
+
+          <section
+            ref={appearanceRef}
+            aria-labelledby="settings-appearance"
+            className="relative overflow-hidden rounded-xl border border-border bg-surface"
+          >
+            <span aria-hidden="true" className="ls-stripe" />
+            <div className="p-5 sm:p-6">
+              <SectionHeading
+                marquee="Appearance"
+                title="Theme"
+                description="Choose how LinkShift looks. Dark is Ink & Ember; light is Paper & Ember. System follows your device."
+              />
+              <AppearanceSection />
             </div>
           </section>
 

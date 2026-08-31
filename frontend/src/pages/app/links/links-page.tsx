@@ -14,6 +14,7 @@ import { CreateLinkDialog } from "./create-link-dialog";
 import { EditLinkDialog } from "./edit-link-dialog";
 import { LinksToolbar } from "./links-toolbar";
 import { LinksTable } from "./links-table";
+import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import type { LinkItem } from "@/types/api";
 
 const PAGE_SIZE = 10;
@@ -74,7 +75,7 @@ function LinksPage() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteLink(id),
     onSuccess: async () => {
-      toast({ title: "Link deleted", meta: deleting ? `go.linkshift.in/${deleting.shortId}` : undefined, variant: "success" });
+      toast({ title: "Link deleted", meta: deleting ? `${deleting.domainHost || DEFAULT_SHORT_DOMAIN}/${deleting.shortId}` : undefined, variant: "success" });
       await queryClient.invalidateQueries({ queryKey: ["links"] });
       await queryClient.invalidateQueries({ queryKey: ["stats"] });
       setDeleting(null);
@@ -97,13 +98,13 @@ function LinksPage() {
     flashHighlight(link.id);
     toast({
       title: "Link created",
-      meta: `go.linkshift.in/${link.shortId}`,
+      meta: `${link.domainHost || DEFAULT_SHORT_DOMAIN}/${link.shortId}`,
       variant: "success",
     });
   }
 
   function handleSaved(link: LinkItem) {
-    toast({ title: "Changes saved", meta: `go.linkshift.in/${link.shortId}`, variant: "success" });
+    toast({ title: "Changes saved", meta: `${link.domainHost || DEFAULT_SHORT_DOMAIN}/${link.shortId}`, variant: "success" });
     flashHighlight(link.id);
   }
 
@@ -254,7 +255,7 @@ function LinksPage() {
         description={
           deleting ? (
             <>
-              <span className="font-mono text-brand">go.linkshift.in/{deleting.shortId}</span> stops
+              <span className="font-mono text-brand">{deleting.domainHost || DEFAULT_SHORT_DOMAIN}/{deleting.shortId}</span> stops
               resolving immediately. Its QR codes and full scan history are removed for good.
             </>
           ) : (
