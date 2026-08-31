@@ -81,7 +81,9 @@ export interface ActivityItem {
 /**
  * Exact shape returned by the backend link mapper:
  * { id, name, targetUrl (UTM params already appended), shortId, isActive,
- *   deepLink, expiresAt, createdAt, updatedAt, clicks, domainId, domainHost }
+ *   deepLink, appDeepLink, appScheme, androidPackage, appPath, iosStoreUrl,
+ *   androidStoreUrl, expiresAt, createdAt, updatedAt, clicks, domainId,
+ *   domainHost }
  * `domainHost` is the host the link actually lives on (the shared default
  * domain or a connected custom domain) — use it to render the short URL.
  * NOTE: stored UTM fields / password-set flag are intentionally NOT returned
@@ -93,7 +95,15 @@ export interface LinkItem {
   targetUrl: string;
   shortId: string;
   isActive: boolean;
+  /** Path forwarding: forward appended paths/queries to the destination. */
   deepLink: boolean;
+  /** Mobile app deep linking: open the configured app on mobile. */
+  appDeepLink: boolean;
+  appScheme: string | null;
+  androidPackage: string | null;
+  appPath: string | null;
+  iosStoreUrl: string | null;
+  androidStoreUrl: string | null;
   expiresAt: string | null;
   createdAt: string;
   updatedAt: string;

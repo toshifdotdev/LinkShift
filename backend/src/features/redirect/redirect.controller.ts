@@ -22,9 +22,16 @@ export const redirect = asyncHandler(async(req : Request, res : Response) => {
         res.status(401).json(result);
         return;
     }
-    res.redirect(result.targetUrl);
 
-    
+    if (result.kind === "interstitial") {
+        res.status(200)
+            .set("Cache-Control", "no-store")
+            .type("html")
+            .send(result.html);
+        return;
+    }
+
+    res.redirect(result.targetUrl);
 })
 
 export const unlockController = asyncHandler(async(req : Request, res : Response) => {

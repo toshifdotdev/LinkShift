@@ -26,6 +26,12 @@ type LinkResponse = {
     domainId: string;
     domainHost: string;
     deepLink: boolean;
+    appDeepLink: boolean;
+    appScheme: string | null;
+    androidPackage: string | null;
+    appPath: string | null;
+    iosStoreUrl: string | null;
+    androidStoreUrl: string | null;
 };
 
 export const getLinkMapper = (link : LinkWithScanCount) : LinkResponse => {
@@ -41,6 +47,12 @@ export const getLinkMapper = (link : LinkWithScanCount) : LinkResponse => {
         clicks: link._count.scans,
         domainId: link.domainId,
         domainHost: link.domain.host,
-        deepLink: link.deepLink
+        deepLink: link.deepLink,
+        appDeepLink: link.appDeepLink,
+        appScheme: link.appScheme,
+        androidPackage: link.androidPackage,
+        appPath: link.appPath,
+        iosStoreUrl: link.iosStoreUrl,
+        androidStoreUrl: link.androidStoreUrl
     }
 }

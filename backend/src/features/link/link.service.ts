@@ -8,7 +8,7 @@ import { queryData } from './link.query.validation';
 import { deleteCache, linkCacheKey } from '../../utils/cache';
 import { getAvailableShortId } from '../../utils/shortId';
 import { getValidatedDomain } from '../../utils/validate.domain';
-import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit, checkUtmAccess, checkDeepLinkAccess } from '../billing/billing.service';
+import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit, checkUtmAccess, checkDeepLinkAccess, checkAppDeepLinkAccess } from '../billing/billing.service';
 import { buildUtmUrl } from '../utm/utm.service';
 
 type CreateData = CreateLinkData&{
@@ -42,7 +42,13 @@ export const createLink = async (data : CreateData) => {
         utmCampaign, 
         utmTerm, 
         utmContent,
-        deepLink
+        deepLink,
+        appDeepLink,
+        appScheme,
+        androidPackage,
+        appPath,
+        iosStoreUrl,
+        androidStoreUrl
     } = data;
 
     await checkLinkLimit(userId);
@@ -53,6 +59,10 @@ export const createLink = async (data : CreateData) => {
 
     if (deepLink) {
         await checkDeepLinkAccess(userId);
+    }
+
+    if (appDeepLink) {
+        await checkAppDeepLinkAccess(userId);
     }
 
     const hasAnyUtm =
@@ -97,7 +107,13 @@ export const createLink = async (data : CreateData) => {
                 utmCampaign,
                 utmTerm,
                 utmContent,
-                deepLink : deepLink ?? false
+                deepLink : deepLink ?? false,
+                appDeepLink: appDeepLink ?? false,
+                appScheme: appDeepLink ? appScheme ?? null : null,
+                androidPackage: appDeepLink ? androidPackage ?? null : null,
+                appPath: appDeepLink ? appPath ?? null : null,
+                iosStoreUrl: appDeepLink ? iosStoreUrl ?? null : null,
+                androidStoreUrl: appDeepLink ? androidStoreUrl ?? null : null
             },
             include: {
                 _count: {
@@ -285,6 +301,21 @@ export const updateLink = async(data : UpdateLinkData) => {
         await checkDeepLinkAccess(data.userId);
     }
 
+    if (data.appDeepLink === true) {
+        await checkAppDeepLinkAccess(data.userId);
+    }
+
+    const finalAppDeepLink = data.appDeepLink ?? existingLink.appDeepLink;
+    const finalAppScheme = data.appScheme !== undefined ? data.appScheme : existingLink.appScheme;
+    const finalAndroidPackage = data.androidPackage !== undefined ? data.androidPackage : existingLink.androidPackage;
+    const finalAppPath = data.appPath !== undefined ? data.appPath : existingLink.appPath;
+    const finalIosStoreUrl = data.iosStoreUrl !== undefined ? data.iosStoreUrl : existingLink.iosStoreUrl;
+    const finalAndroidStoreUrl = data.androidStoreUrl !== undefined ? data.androidStoreUrl : existingLink.androidStoreUrl;
+
+    if (finalAppDeepLink && !finalAppScheme) {
+        throw new AppError("A URI scheme is required to enable mobile app deep linking", 400);
+    }
+
     const baseTargetUrl =
         data.targetUrl !== undefined
             ? data.targetUrl
@@ -367,6 +398,12 @@ export const updateLink = async(data : UpdateLinkData) => {
             utmTerm: finalUtmTerm,
             utmContent: finalUtmContent,
             deepLink: data.deepLink ?? existingLink.deepLink,
+            appDeepLink: finalAppDeepLink,
+            appScheme: finalAppScheme ?? null,
+            androidPackage: finalAndroidPackage ?? null,
+            appPath: finalAppPath ?? null,
+            iosStoreUrl: finalIosStoreUrl ?? null,
+            androidStoreUrl: finalAndroidStoreUrl ?? null,
         },
         include : {
             _count : {

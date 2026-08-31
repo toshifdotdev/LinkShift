@@ -17,6 +17,8 @@ import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import type { LinkItem } from "@/types/api";
 
 const SLUG_RE = /^[a-zA-Z0-9_-]+$/;
+const APP_SCHEME_RE = /^[a-zA-Z][a-zA-Z0-9+.-]*$/;
+const ANDROID_PACKAGE_RE = /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/;
 
 const PASSWORD_RULES = [
   { key: "len", label: "8–64", test: (p: string) => p.length >= 8 && p.length <= 64 },
@@ -51,6 +53,12 @@ function CreateLinkDialog({
   const [password, setPassword] = useState("");
   const [usePassword, setUsePassword] = useState(false);
   const [deepLink, setDeepLink] = useState(false);
+  const [appDeepLink, setAppDeepLink] = useState(false);
+  const [appScheme, setAppScheme] = useState("");
+  const [androidPackage, setAndroidPackage] = useState("");
+  const [appPath, setAppPath] = useState("");
+  const [iosStoreUrl, setIosStoreUrl] = useState("");
+  const [androidStoreUrl, setAndroidStoreUrl] = useState("");
   const [utm, setUtm] = useState({ source: "", medium: "", campaign: "", term: "", content: "" });
   const [fieldError, setFieldError] = useState<string | null>(null);
 
@@ -75,6 +83,12 @@ function CreateLinkDialog({
     setPassword("");
     setUsePassword(false);
     setDeepLink(false);
+    setAppDeepLink(false);
+    setAppScheme("");
+    setAndroidPackage("");
+    setAppPath("");
+    setIosStoreUrl("");
+    setAndroidStoreUrl("");
     setUtm({ source: "", medium: "", campaign: "", term: "", content: "" });
     setFieldError(null);
   };
@@ -113,6 +127,20 @@ function CreateLinkDialog({
       setFieldError("UTM source, medium and campaign are required when tagging a campaign.");
       return;
     }
+    if (appDeepLink) {
+      if (!appScheme.trim()) {
+        setFieldError("A URI scheme is required to enable mobile app deep linking.");
+        return;
+      }
+      if (!APP_SCHEME_RE.test(appScheme.trim())) {
+        setFieldError("App scheme is invalid. Use letters, digits, +, . or -, starting with a letter (e.g. myapp).");
+        return;
+      }
+      if (androidPackage.trim() && !ANDROID_PACKAGE_RE.test(androidPackage.trim())) {
+        setFieldError("Android package looks invalid — expected something like com.example.app.");
+        return;
+      }
+    }
 
     mutation.mutate({
       targetUrl: destination.trim(),
@@ -122,6 +150,12 @@ function CreateLinkDialog({
       expiresAt: expiresAt ? new Date(expiresAt).toISOString() : undefined,
       password: usePassword && password ? password : undefined,
       deepLink: deepLink || undefined,
+      appDeepLink: appDeepLink || undefined,
+      appScheme: appDeepLink ? appScheme.trim() || undefined : undefined,
+      androidPackage: appDeepLink ? androidPackage.trim() || undefined : undefined,
+      appPath: appDeepLink ? appPath.trim() || undefined : undefined,
+      iosStoreUrl: appDeepLink ? iosStoreUrl.trim() || undefined : undefined,
+      androidStoreUrl: appDeepLink ? androidStoreUrl.trim() || undefined : undefined,
       utmSource: utm.source.trim() || undefined,
       utmMedium: utm.medium.trim() || undefined,
       utmCampaign: utm.campaign.trim() || undefined,
@@ -218,7 +252,7 @@ function CreateLinkDialog({
               <span className="text-[13px] font-medium text-fg-secondary">
                 Advanced
                 <span className="ml-2 font-mono text-[10px] tracking-[0.12em] text-fg-muted uppercase">
-                  slug · expiry · password · UTM · deep link
+                  slug · expiry · password · UTM · forwarding · app links
                 </span>
               </span>
               <ChevronDown
@@ -351,10 +385,10 @@ function CreateLinkDialog({
                   )}
                 </div>
 
-                {/* deep linking */}
+                {/* path forwarding */}
                 <div className="rounded-md border border-border p-3.5">
                   <p className="flex items-center gap-2 text-[13px] font-medium text-fg-secondary">
-                    Deep linking
+                    Path forwarding
                     {!canUseDeepLink && (
                       <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-[0.16em] text-brand uppercase">
                         <Lock className="size-2.5" /> Pro only
@@ -382,6 +416,108 @@ function CreateLinkDialog({
                     <div className="mt-2">
                       <UpgradeHint
                         feature="Route visitors to any path on your destination through one short link."
+                        requirement="Pro"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* mobile app deep linking */}
+                <div className="rounded-md border border-border p-3.5">
+                  <p className="flex items-center gap-2 text-[13px] font-medium text-fg-secondary">
+                    Mobile app deep linking
+                    {!canUseDeepLink && (
+                      <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-[0.16em] text-brand uppercase">
+                        <Lock className="size-2.5" /> Pro only
+                      </span>
+                    )}
+                  </p>
+                  {canUseDeepLink ? (
+                    <div className="mt-3 flex flex-col gap-3">
+                      <label htmlFor="create-app-deep-link" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
+                        <input
+                          id="create-app-deep-link"
+                          type="checkbox"
+                          checked={appDeepLink}
+                          onChange={(e) => setAppDeepLink(e.target.checked)}
+                          className="size-3.5 accent-[#E8590C]"
+                        />
+                        Open your app on mobile when it's installed
+                      </label>
+                      {appDeepLink && (
+                        <>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Field>
+                              <FieldLabel htmlFor="create-app-scheme">App URI scheme *</FieldLabel>
+                              <Input
+                                id="create-app-scheme"
+                                value={appScheme}
+                                onChange={(e) => setAppScheme(e.target.value)}
+                                placeholder="myapp"
+                                maxLength={100}
+                              />
+                              <FieldHint>The scheme your app registers, e.g. myapp://</FieldHint>
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="create-android-package">Android package</FieldLabel>
+                              <Input
+                                id="create-android-package"
+                                value={androidPackage}
+                                onChange={(e) => setAndroidPackage(e.target.value)}
+                                placeholder="com.example.app"
+                                maxLength={255}
+                              />
+                              <FieldHint>Enables the native Chrome handoff on Android.</FieldHint>
+                            </Field>
+                          </div>
+                          <Field>
+                            <FieldLabel htmlFor="create-app-path">
+                              In-app path prefix <span className="text-fg-muted">(optional)</span>
+                            </FieldLabel>
+                            <Input
+                              id="create-app-path"
+                              value={appPath}
+                              onChange={(e) => setAppPath(e.target.value)}
+                              placeholder="content/home"
+                              maxLength={1024}
+                            />
+                            <FieldHint>Placed before any path the visitor appends.</FieldHint>
+                          </Field>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <Field>
+                              <FieldLabel htmlFor="create-ios-store">
+                                App Store URL <span className="text-fg-muted">(optional)</span>
+                              </FieldLabel>
+                              <Input
+                                id="create-ios-store"
+                                value={iosStoreUrl}
+                                onChange={(e) => setIosStoreUrl(e.target.value)}
+                                placeholder="https://apps.apple.com/…"
+                              />
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="create-android-store">
+                                Play Store URL <span className="text-fg-muted">(optional)</span>
+                              </FieldLabel>
+                              <Input
+                                id="create-android-store"
+                                value={androidStoreUrl}
+                                onChange={(e) => setAndroidStoreUrl(e.target.value)}
+                                placeholder="https://play.google.com/…"
+                              />
+                            </Field>
+                          </div>
+                          <p className="text-xs text-fg-muted">
+                            Mobile visitors go to the app when it's installed and to your
+                            destination otherwise. Desktop always goes to the destination.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="mt-2">
+                      <UpgradeHint
+                        feature="Send mobile visitors straight into your app — with a web fallback when it isn't installed."
                         requirement="Pro"
                       />
                     </div>

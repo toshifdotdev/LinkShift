@@ -1882,7 +1882,19 @@ export const hasDeepLinkAccess = async (userId: string): Promise<boolean> => {
 
 export const checkDeepLinkAccess = async (userId: string) => {
     if (!(await hasDeepLinkAccess(userId))) {
-        throw new AppError("Deep linking is available on the Pro plan", 403);
+        throw new AppError("Path forwarding is available on the Pro plan", 403);
+    }
+};
+
+/* Mobile app deep linking is a separate Pro-tier capability. */
+export const hasAppDeepLinkAccess = async (userId: string): Promise<boolean> => {
+    const plan = await getUserPlan(userId);
+    return !!plan && DEEP_LINK_PLANS.includes(plan.name);
+};
+
+export const checkAppDeepLinkAccess = async (userId: string) => {
+    if (!(await hasAppDeepLinkAccess(userId))) {
+        throw new AppError("Mobile app deep linking is available on the Pro plan", 403);
     }
 };
 

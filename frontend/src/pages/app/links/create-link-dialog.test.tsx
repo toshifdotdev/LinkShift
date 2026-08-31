@@ -14,6 +14,12 @@ const createdLink = vi.hoisted(() => ({
   shortId: "abc123",
   isActive: true,
   deepLink: false,
+  appDeepLink: false,
+  appScheme: null,
+  androidPackage: null,
+  appPath: null,
+  iosStoreUrl: null,
+  androidStoreUrl: null,
   expiresAt: null,
   createdAt: "",
   updatedAt: "",
@@ -85,7 +91,7 @@ describe("CreateLinkDialog short-link preview", () => {
   });
 });
 
-describe("CreateLinkDialog deep linking (Pro-gated)", () => {
+describe("CreateLinkDialog path forwarding (Pro-gated)", () => {
   afterEach(() => {
     planState.plan = "PRO";
   });
@@ -127,6 +133,63 @@ describe("CreateLinkDialog deep linking (Pro-gated)", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByText(/Route visitors to any path on your destination/i),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("CreateLinkDialog mobile app deep linking (Pro-gated)", () => {
+  afterEach(() => {
+    planState.plan = "PRO";
+  });
+
+  async function openAdvancedWithDestination() {
+    renderDialog();
+    const select = await screen.findByLabelText("Domain");
+    await waitFor(() => expect(select).toHaveValue("d1"));
+    fireEvent.change(screen.getByLabelText("Destination URL"), {
+      target: { value: "https://example.com/app" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Advanced/ }));
+  }
+
+  it("PRO: enabling the toggle reveals config inputs; submitting sends the app config", async () => {
+    await openAdvancedWithDestination();
+    expect(screen.queryByLabelText("App URI scheme *")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByLabelText("Open your app on mobile when it's installed"));
+    fireEvent.change(screen.getByLabelText("App URI scheme *"), { target: { value: "myapp" } });
+    fireEvent.change(screen.getByLabelText("Android package"), {
+      target: { value: "com.example.app" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create link" }));
+    await waitFor(() => expect(createLink).toHaveBeenCalled());
+    const payload = vi.mocked(createLink).mock.calls.at(-1)?.[0];
+    expect(payload?.appDeepLink).toBe(true);
+    expect(payload?.appScheme).toBe("myapp");
+    expect(payload?.androidPackage).toBe("com.example.app");
+  });
+
+  it("PRO: blocks submit when the feature is on but the scheme is missing", async () => {
+    await openAdvancedWithDestination();
+    fireEvent.click(screen.getByLabelText("Open your app on mobile when it's installed"));
+    const callsBefore = vi.mocked(createLink).mock.calls.length;
+
+    fireEvent.click(screen.getByRole("button", { name: "Create link" }));
+    await waitFor(() =>
+      expect(screen.getByText(/A URI scheme is required/i)).toBeInTheDocument(),
+    );
+    expect(vi.mocked(createLink).mock.calls.length).toBe(callsBefore);
+  });
+
+  it("CREATOR: shows an upgrade hint instead of the app config", async () => {
+    planState.plan = "CREATOR";
+    await openAdvancedWithDestination();
+    expect(
+      screen.queryByLabelText("Open your app on mobile when it's installed"),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Send mobile visitors straight into your app/i),
     ).toBeInTheDocument();
   });
 });

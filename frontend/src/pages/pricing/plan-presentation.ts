@@ -107,8 +107,13 @@ export const FLAG_ROWS: FlagRow[] = [
     values: { FREE: false, STARTER: false, CREATOR: true, PRO: true },
   },
   {
-    label: "Deep linking",
+    label: "Path forwarding",
     note: "Forward appended paths & queries to your destination",
+    values: { FREE: false, STARTER: false, CREATOR: false, PRO: true },
+  },
+  {
+    label: "Mobile app deep linking",
+    note: "Open your app on mobile, with a web fallback when it isn't installed",
     values: { FREE: false, STARTER: false, CREATOR: false, PRO: true },
   },
 ];

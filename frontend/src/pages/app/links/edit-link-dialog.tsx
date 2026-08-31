@@ -17,6 +17,8 @@ import { toLocalInputValue, fromLocalInputValue } from "./utils";
 import type { LinkItem } from "@/types/api";
 
 const SLUG_RE = /^[a-zA-Z0-9_-]+$/;
+const APP_SCHEME_RE = /^[a-zA-Z][a-zA-Z0-9+.-]*$/;
+const ANDROID_PACKAGE_RE = /^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/;
 const PASSWORD_RULES = [
   { key: "len", label: "8–64", test: (p: string) => p.length >= 8 && p.length <= 64 },
   { key: "lower", label: "a–z", test: (p: string) => /[a-z]/.test(p) },
@@ -54,6 +56,12 @@ function EditLinkDialog({
   const [switchDomain, setSwitchDomain] = useState(false);
   const [domainId, setDomainId] = useState("");
   const [deepLink, setDeepLink] = useState(link.deepLink ?? false);
+  const [appDeepLink, setAppDeepLink] = useState(link.appDeepLink ?? false);
+  const [appScheme, setAppScheme] = useState(link.appScheme ?? "");
+  const [androidPackage, setAndroidPackage] = useState(link.androidPackage ?? "");
+  const [appPath, setAppPath] = useState(link.appPath ?? "");
+  const [iosStoreUrl, setIosStoreUrl] = useState(link.iosStoreUrl ?? "");
+  const [androidStoreUrl, setAndroidStoreUrl] = useState(link.androidStoreUrl ?? "");
   const [fieldError, setFieldError] = useState<string | null>(null);
 
   const domains = useDomains();
@@ -103,6 +111,20 @@ function EditLinkDialog({
       setFieldError("New password does not meet all requirements.");
       return;
     }
+    if (canUseDeepLink && appDeepLink) {
+      if (!appScheme.trim()) {
+        setFieldError("A URI scheme is required to enable mobile app deep linking.");
+        return;
+      }
+      if (!APP_SCHEME_RE.test(appScheme.trim())) {
+        setFieldError("App scheme is invalid. Use letters, digits, +, . or -, starting with a letter (e.g. myapp).");
+        return;
+      }
+      if (androidPackage.trim() && !ANDROID_PACKAGE_RE.test(androidPackage.trim())) {
+        setFieldError("Android package looks invalid — expected something like com.example.app.");
+        return;
+      }
+    }
 
     void mutation.mutateAsync({
       /* always sent — the backend clears expiry when it is omitted */
@@ -115,6 +137,13 @@ function EditLinkDialog({
       password:
         passwordChoice === "replace" ? newPassword : passwordChoice === "remove" ? null : undefined,
       deepLink: canUseDeepLink ? deepLink : undefined,
+      appDeepLink: canUseDeepLink ? appDeepLink : undefined,
+      /* turning the feature off clears stored config, like create does */
+      appScheme: canUseDeepLink ? (appDeepLink ? appScheme.trim() || null : null) : undefined,
+      androidPackage: canUseDeepLink ? (appDeepLink ? androidPackage.trim() || null : null) : undefined,
+      appPath: canUseDeepLink ? (appDeepLink ? appPath.trim() || null : null) : undefined,
+      iosStoreUrl: canUseDeepLink ? (appDeepLink ? iosStoreUrl.trim() || null : null) : undefined,
+      androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null : null) : undefined,
     });
   }
 
@@ -332,10 +361,10 @@ function EditLinkDialog({
               Link is active. Unchecking pauses all redirects.
             </label>
 
-            {/* deep linking */}
+            {/* path forwarding */}
             <Field>
               <FieldLabel>
-                Deep linking
+                Path forwarding
                 {!canUseDeepLink && (
                   <span className="ml-2 inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-brand uppercase">
                     Pro only
@@ -361,12 +390,117 @@ function EditLinkDialog({
                 </>
               ) : link.deepLink ? (
                 <UpgradeHint
-                  feature="This link has deep linking enabled. Forwarding pauses while you're not on Pro."
+                  feature="This link has path forwarding enabled. Forwarding pauses while you're not on Pro."
                   requirement="Pro"
                 />
               ) : (
                 <UpgradeHint
                   feature="Route visitors to any path on your destination through this short link."
+                  requirement="Pro"
+                />
+              )}
+            </Field>
+
+            {/* mobile app deep linking */}
+            <Field>
+              <FieldLabel>
+                Mobile app deep linking
+                {!canUseDeepLink && (
+                  <span className="ml-2 inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-brand uppercase">
+                    Pro only
+                  </span>
+                )}
+              </FieldLabel>
+              {canUseDeepLink ? (
+                <div className="flex flex-col gap-3">
+                  <label htmlFor="edit-app-deep-link" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
+                    <input
+                      id="edit-app-deep-link"
+                      type="checkbox"
+                      checked={appDeepLink}
+                      onChange={(e) => setAppDeepLink(e.target.checked)}
+                      className="size-3.5 accent-[#E8590C]"
+                    />
+                    Open your app on mobile when it's installed
+                  </label>
+                  {appDeepLink && (
+                    <>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Field>
+                          <FieldLabel htmlFor="edit-app-scheme">App URI scheme *</FieldLabel>
+                          <Input
+                            id="edit-app-scheme"
+                            value={appScheme}
+                            onChange={(e) => setAppScheme(e.target.value)}
+                            placeholder="myapp"
+                            maxLength={100}
+                          />
+                          <FieldHint>The scheme your app registers, e.g. myapp://</FieldHint>
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="edit-android-package">Android package</FieldLabel>
+                          <Input
+                            id="edit-android-package"
+                            value={androidPackage}
+                            onChange={(e) => setAndroidPackage(e.target.value)}
+                            placeholder="com.example.app"
+                            maxLength={255}
+                          />
+                          <FieldHint>Enables the native Chrome handoff on Android.</FieldHint>
+                        </Field>
+                      </div>
+                      <Field>
+                        <FieldLabel htmlFor="edit-app-path">
+                          In-app path prefix <span className="text-fg-muted">(optional)</span>
+                        </FieldLabel>
+                        <Input
+                          id="edit-app-path"
+                          value={appPath}
+                          onChange={(e) => setAppPath(e.target.value)}
+                          placeholder="content/home"
+                          maxLength={1024}
+                        />
+                        <FieldHint>Placed before any path the visitor appends.</FieldHint>
+                      </Field>
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <Field>
+                          <FieldLabel htmlFor="edit-ios-store">
+                            App Store URL <span className="text-fg-muted">(optional)</span>
+                          </FieldLabel>
+                          <Input
+                            id="edit-ios-store"
+                            value={iosStoreUrl}
+                            onChange={(e) => setIosStoreUrl(e.target.value)}
+                            placeholder="https://apps.apple.com/…"
+                          />
+                        </Field>
+                        <Field>
+                          <FieldLabel htmlFor="edit-android-store">
+                            Play Store URL <span className="text-fg-muted">(optional)</span>
+                          </FieldLabel>
+                          <Input
+                            id="edit-android-store"
+                            value={androidStoreUrl}
+                            onChange={(e) => setAndroidStoreUrl(e.target.value)}
+                            placeholder="https://play.google.com/…"
+                          />
+                        </Field>
+                      </div>
+                      <p className="text-xs text-fg-muted">
+                        Mobile visitors go to the app when it's installed and to your
+                        destination otherwise. Desktop always goes to the destination.
+                      </p>
+                    </>
+                  )}
+                </div>
+              ) : link.appDeepLink ? (
+                <UpgradeHint
+                  feature="This link opens an app on mobile. App deep linking pauses while you're not on Pro."
+                  requirement="Pro"
+                />
+              ) : (
+                <UpgradeHint
+                  feature="Send mobile visitors straight into your app — with a web fallback when it isn't installed."
                   requirement="Pro"
                 />
               )}

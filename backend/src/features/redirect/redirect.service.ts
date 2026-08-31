@@ -4,7 +4,17 @@ import * as bcrypt from 'bcrypt';
 import { AppError } from "../../errors/AppError"
 import { getCache, setCache, linkCacheKey } from "../../utils/cache";
 import { completeTargetUrl, applyDeepLink } from "../../utils/completeRedirect";
-import { checkRedirectLimit, hasDeepLinkAccess } from "../billing/billing.service";
+import { checkRedirectLimit, hasDeepLinkAccess, hasAppDeepLinkAccess } from "../billing/billing.service";
+import {
+    AppDeepLinkConfig,
+    buildAppUrl,
+    buildIntentUrl,
+    detectMobilePlatform,
+    extractQuery,
+    extractRest,
+    isAndroidChromium,
+    renderAppInterstitial,
+} from "../../utils/appDeepLink";
 
 export type CachedLink = {
     id: string;
@@ -15,6 +25,12 @@ export type CachedLink = {
     expiresAt: Date | null;
     passwordHash: string | null;
     deepLink: boolean;
+    appDeepLink: boolean;
+    appScheme: string | null;
+    androidPackage: string | null;
+    appPath: string | null;
+    iosStoreUrl: string | null;
+    androidStoreUrl: string | null;
     utmSource: string | null,
     utmMedium: string | null,
     utmCampaign: string | null,
@@ -25,7 +41,13 @@ export type CachedLink = {
 type RedirectResult =
     | {
         requiresPassword: false;
+        kind: "redirect";
         targetUrl: string;
+    }
+    | {
+        requiresPassword: false;
+        kind: "interstitial";
+        html: string;
     }
     | {
         requiresPassword: true;
@@ -46,6 +68,12 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
         targetUrl = {
         ...cached,
         deepLink: cached.deepLink ?? false,
+        appDeepLink: cached.appDeepLink ?? false,
+        appScheme: cached.appScheme ?? null,
+        androidPackage: cached.androidPackage ?? null,
+        appPath: cached.appPath ?? null,
+        iosStoreUrl: cached.iosStoreUrl ?? null,
+        androidStoreUrl: cached.androidStoreUrl ?? null,
         expiresAt: cached.expiresAt
             ? new Date(cached.expiresAt)
             : null,
@@ -88,6 +116,12 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
             expiresAt: linkWithDomain.expiresAt,
             passwordHash: linkWithDomain.passwordHash,
             deepLink: linkWithDomain.deepLink,
+            appDeepLink: linkWithDomain.appDeepLink,
+            appScheme: linkWithDomain.appScheme,
+            androidPackage: linkWithDomain.androidPackage,
+            appPath: linkWithDomain.appPath,
+            iosStoreUrl: linkWithDomain.iosStoreUrl,
+            androidStoreUrl: linkWithDomain.androidStoreUrl,
             utmSource: linkWithDomain.utmSource,
             utmMedium: linkWithDomain.utmMedium,
             utmCampaign: linkWithDomain.utmCampaign,
@@ -125,8 +159,52 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
         finalUrl = applyDeepLink(finalUrl, req);
     }
 
+    if (
+        targetUrl.appDeepLink &&
+        targetUrl.appScheme &&
+        (await hasAppDeepLinkAccess(targetUrl.userId))
+    ) {
+        const userAgent = req.headers["user-agent"] ?? "";
+        const platform = detectMobilePlatform(userAgent);
+
+        if (platform) {
+            const cfg: AppDeepLinkConfig = {
+                appScheme: targetUrl.appScheme,
+                androidPackage: targetUrl.androidPackage,
+                appPath: targetUrl.appPath,
+                iosStoreUrl: targetUrl.iosStoreUrl,
+                androidStoreUrl: targetUrl.androidStoreUrl,
+            };
+            const rest = extractRest(req.params as Record<string, unknown>);
+            const query = extractQuery(req.url ?? "");
+
+            /* Chromium-based Android browsers resolve intent:// natively:
+               they open the app when installed, otherwise they follow the
+               embedded browser_fallback_url without a round trip. */
+            if (platform === "android" && isAndroidChromium(userAgent) && cfg.androidPackage) {
+                return {
+                    requiresPassword: false,
+                    kind: "redirect",
+                    targetUrl: buildIntentUrl(cfg, rest, query, finalUrl),
+                };
+            }
+
+            return {
+                requiresPassword: false,
+                kind: "interstitial",
+                html: renderAppInterstitial({
+                    platform,
+                    appUrl: buildAppUrl(cfg, rest, query),
+                    fallbackUrl: finalUrl,
+                    storeUrl: platform === "ios" ? cfg.iosStoreUrl : cfg.androidStoreUrl,
+                }),
+            };
+        }
+    }
+
     return {
         requiresPassword : false,
+        kind: "redirect",
         targetUrl : finalUrl
     }
 }

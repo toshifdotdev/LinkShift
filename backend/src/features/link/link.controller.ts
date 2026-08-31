@@ -14,7 +14,7 @@ type linkIdParams = {
 export const createLink = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const validated = req.validated!;
 
-    const { targetUrl, name, expiresAt, password, slug, domainId, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, deepLink } = validated.body as CreateLinkData;
+    const { targetUrl, name, expiresAt, password, slug, domainId, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, deepLink, appDeepLink, appScheme, androidPackage, appPath, iosStoreUrl, androidStoreUrl } = validated.body as CreateLinkData;
 
     const auth = req.auth;
 
@@ -35,7 +35,13 @@ export const createLink = asyncHandler(async(req : Request, res : Response, next
                                 utmCampaign,
                                 utmTerm,
                                 utmContent,
-                                deepLink
+                                deepLink,
+                                appDeepLink,
+                                appScheme,
+                                androidPackage,
+                                appPath,
+                                iosStoreUrl,
+                                androidStoreUrl
                             });
     
     await deleteCache(`dashboard:${auth.id}`);
@@ -97,7 +103,7 @@ export const updateLink = asyncHandler(async(req : Request, res : Response, next
     if (!auth) {
         return next(new AppError("Unauthorized", 401));
     }
-    const { name, isActive, targetUrl, expiresAt, password, domainId, slug, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, deepLink } = body;
+    const { name, isActive, targetUrl, expiresAt, password, domainId, slug, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, deepLink, appDeepLink, appScheme, androidPackage, appPath, iosStoreUrl, androidStoreUrl } = body;
     const { id } = params;
 
     const updatedLink = await updateLinkService(
@@ -116,7 +122,13 @@ export const updateLink = asyncHandler(async(req : Request, res : Response, next
         utmCampaign,
         utmTerm,
         utmContent,
-        deepLink
+        deepLink,
+        appDeepLink,
+        appScheme,
+        androidPackage,
+        appPath,
+        iosStoreUrl,
+        androidStoreUrl
         });
 
     await deleteCache(`dashboard:${auth.id}`)

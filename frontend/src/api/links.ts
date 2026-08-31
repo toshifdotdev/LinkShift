@@ -24,6 +24,12 @@ export interface CreateLinkPayload {
   expiresAt?: string;
   password?: string;
   deepLink?: boolean;
+  appDeepLink?: boolean;
+  appScheme?: string;
+  androidPackage?: string;
+  appPath?: string;
+  iosStoreUrl?: string;
+  androidStoreUrl?: string;
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
@@ -43,6 +49,13 @@ export interface UpdateLinkPayload {
   /** string = set new password, null = remove password, omit = unchanged. */
   password?: string | null;
   deepLink?: boolean;
+  /** null clears the stored value, omit leaves it unchanged. */
+  appDeepLink?: boolean;
+  appScheme?: string | null;
+  androidPackage?: string | null;
+  appPath?: string | null;
+  iosStoreUrl?: string | null;
+  androidStoreUrl?: string | null;
 }
 
 export function listLinks(params: ListLinksParams, signal?: AbortSignal) {
