@@ -45,29 +45,6 @@ function useActiveSection(): string | null {
   return active;
 }
 
-/**
- * Navbar-only CTA: a framed ember plate. Copper hairline frame over a
- * dark ember-tinted surface, slug typography, and an arrow that eases
- * forward on hover. Distinct from the solid site-wide primary while
- * speaking the same Ink & Ember language.
- */
-function NavbarCta() {
-  return (
-    <span className="group/cta relative inline-flex h-8 cursor-pointer items-center gap-2 overflow-hidden rounded-md border border-brand/40 bg-brand/[0.09] px-3 font-mono text-[11px] font-medium uppercase tracking-[0.08em] text-foreground transition-[background-color,border-color,box-shadow] duration-200 hover:border-brand/75 hover:bg-brand/[0.16] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring/70">
-      {/* lower ember rule, drawn on hover */}
-      <span
-        aria-hidden="true"
-        className="absolute right-2.5 bottom-[5px] left-3 h-px origin-left scale-x-0 bg-brand/80 transition-transform duration-300 ease-out group-hover/cta:scale-x-100"
-      />
-      Get started
-      <MoveRight
-        className="size-3.5 text-brand transition-transform duration-200 ease-out group-hover/cta:translate-x-0.5"
-        aria-hidden="true"
-      />
-    </span>
-  );
-}
-
 function LandingNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
@@ -129,7 +106,17 @@ function LandingNavbar() {
             Log in
           </Link>
           <Link to="/register">
-            <NavbarCta />
+            <Button
+              size="sm"
+              variant="outline"
+              className="group/cta border-brand/40 bg-brand/[0.09] hover:border-brand/75 hover:bg-brand/[0.16]"
+            >
+              Get started
+              <MoveRight
+                className="size-3.5 text-brand transition-transform duration-200 ease-out group-hover/cta:translate-x-0.5"
+                aria-hidden="true"
+              />
+            </Button>
           </Link>
         </div>
 

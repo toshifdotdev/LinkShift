@@ -6,11 +6,14 @@ import { listLinks } from "@/api/links";
 import { ApiError } from "@/api/client";
 import { useSession } from "@/auth/session";
 import { getAccessToken } from "@/api/token";
-import { Badge } from "@/components/ui/badge";
+import type { VariantProps } from "class-variance-authority";
 import { Button } from "@/components/ui/button";
+import { CodeChip } from "@/components/ui/code-chip";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { Lamp, lampVariants } from "@/components/ui/lamp";
+import { Segmented } from "@/components/ui/segmented";
 import { UpgradeHint } from "@/pages/app/links/upgrade-hint";
 import { QrPreview } from "./qr-preview";
 import { LogoCrop } from "./logo-crop";
@@ -48,6 +51,17 @@ const EYE_BALLS = [
   { value: "dot", label: "Dot" },
 ] as const;
 
+type FrameStyle = "none" | "clean" | "double" | "accent" | "label" | "branded";
+
+const FRAMES: Array<[FrameStyle, string]> = [
+  ["none", "None"],
+  ["clean", "Clean"],
+  ["double", "Double"],
+  ["accent", "Accent"],
+  ["label", "Scan me"],
+  ["branded", "Branded"],
+];
+
 /** relative luminance contrast ratio — warns below scannable comfort */
 function contrastRatio(hexA: string, hexB: string): number {
   const lum = (hex: string) => {
@@ -62,6 +76,14 @@ function contrastRatio(hexA: string, hexB: string): number {
   const l1 = lum(hexA);
   const l2 = lum(hexB);
   return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+}
+
+type LampTone = VariantProps<typeof lampVariants>["tone"];
+
+function planTone(planName: string): LampTone {
+  if (planName === "PRO") return "ember";
+  if (planName === "CREATOR") return "neutral";
+  return "dim";
 }
 
 function QrStudio({
@@ -103,7 +125,7 @@ function QrStudio({
   const canBrand = plan === "CREATOR" || plan === "PRO";
 
   /* ONE canonical design object — drives preview, payload, and save. */
-  type StudioDesign = QrConfig & { frame: "none" | "clean" | "double" | "accent" | "label" | "branded" };
+  type StudioDesign = QrConfig & { frame: FrameStyle };
   const [design, setDesign] = useState<StudioDesign>({ ...DEFAULT_CONFIG, frame: "none" });
   const [logo, setLogo] = useState<{ url: string; publicId: string } | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -291,18 +313,6 @@ function QrStudio({
   }
 
   /* ---- designer ---- */
-  /* The LinkShift segmented control: a small mono-caps label, an active
-     border in surface-elevated, an ember underline drawn by the active
-     option. The active border is the same editorial "ink plate" used
-     by the buttons. Inactive options are quiet mono labels. */
-  const segBtn = (active: boolean) =>
-    cn(
-      "relative flex h-8 cursor-pointer items-center gap-1.5 rounded-md px-2.5 font-mono text-[11px] tracking-[0.04em] uppercase transition-colors",
-      active
-        ? "border border-border-strong bg-raised text-foreground"
-        : "border border-transparent text-fg-muted hover:text-fg-secondary",
-    );
-
   return (
     <Dialog
       open={open}
@@ -315,9 +325,7 @@ function QrStudio({
             <p className="ls-marquee">QR · 03</p>
             <DialogTitle className="mt-2 text-xl">QR Studio</DialogTitle>
           </div>
-          <Badge shape="mark" variant="dim">
-            {user?.plan.name ?? "FREE"}
-          </Badge>
+          <Lamp tone={planTone(plan)}>{plan}</Lamp>
         </header>
 
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -415,7 +423,7 @@ function QrStudio({
                         locked
                           ? "border-border opacity-60"
                           : active
-                            ? "border-brand/60 bg-brand/[0.06]"
+                            ? "border-brand bg-brand-soft"
                             : "border-border hover:border-border-strong",
                       )}
                       aria-pressed={active}
@@ -426,9 +434,9 @@ function QrStudio({
                         pattern={p.config.pattern}
                         frame={p.frame ?? "none"}
                       />
-                      <span className="mt-1.5 block text-center text-[10px] text-fg-secondary">
+                      <span className="mt-1.5 flex items-center justify-center gap-1 text-center text-[10px] text-fg-secondary">
                         {p.name}
-                        {locked && <span className="ml-1 text-brand">🔒</span>}
+                        {locked && <Lock className="size-2.5 text-brand" aria-hidden="true" />}
                       </span>
                     </button>
                   );
@@ -449,7 +457,7 @@ function QrStudio({
                     aria-label="Foreground color"
                   />
                   <span className="min-w-0">
-                    <span className="block text-[10px] text-fg-muted uppercase">Code</span>
+                    <span className="block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Code</span>
                     <span className="block font-mono text-[11px] text-foreground">
                       {design.foregroundColor}
                     </span>
@@ -464,7 +472,7 @@ function QrStudio({
                     aria-label="Background color"
                   />
                   <span className="min-w-0">
-                    <span className="block text-[10px] text-fg-muted uppercase">Background</span>
+                    <span className="block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Background</span>
                     <span className="block font-mono text-[11px] text-foreground">
                       {design.backgroundColor}
                     </span>
@@ -482,60 +490,58 @@ function QrStudio({
             {/* pattern */}
             <Field>
               <FieldLabel>Pattern</FieldLabel>
-              <div role="radiogroup" aria-label="Pattern style" className="flex flex-wrap gap-2">
-                {PATTERNS.map((p) => (
-                  <button
-                    key={p.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={design.pattern === p.value}
-                    onClick={() => setDesign((d) => ({ ...d, pattern: p.value }))}
-                    className={segBtn(design.pattern === p.value)}
-                  >
-                    <PatternGlyph kind={p.value} active={design.pattern === p.value} />
-                    {p.label}
-                  </button>
-                ))}
-              </div>
+              <Segmented
+                ariaLabel="Pattern style"
+                value={design.pattern}
+                onValueChange={(v) => setDesign((d) => ({ ...d, pattern: v as QrConfig["pattern"] }))}
+                options={PATTERNS.map((p) => ({
+                  value: p.value,
+                  label: (
+                    <>
+                      <PatternGlyph kind={p.value} active={design.pattern === p.value} />
+                      <span>{p.label}</span>
+                    </>
+                  ),
+                }))}
+                className="flex flex-wrap"
+              />
             </Field>
 
             {/* eyes */}
             <div className="grid gap-4 sm:grid-cols-2">
               <Field>
                 <FieldLabel>Corner style</FieldLabel>
-                <div role="radiogroup" aria-label="Corner square style" className="flex flex-wrap gap-2">
-                  {EYE_STYLES.map((p) => (
-                    <button
-                      key={p.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={design.eyeStyle === p.value}
-                      onClick={() => setDesign((d) => ({ ...d, eyeStyle: p.value }))}
-                      className={segBtn(design.eyeStyle === p.value)}
-                    >
-                      <EyeGlyph kind={p.value} active={design.eyeStyle === p.value} />
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
+                <Segmented
+                  ariaLabel="Corner square style"
+                  value={design.eyeStyle}
+                  onValueChange={(v) => setDesign((d) => ({ ...d, eyeStyle: v as QrConfig["eyeStyle"] }))}
+                  options={EYE_STYLES.map((p) => ({
+                    value: p.value,
+                    label: (
+                      <>
+                        <EyeGlyph kind={p.value} active={design.eyeStyle === p.value} />
+                        <span>{p.label}</span>
+                      </>
+                    ),
+                  }))}
+                />
               </Field>
               <Field>
                 <FieldLabel>Eye center</FieldLabel>
-                <div role="radiogroup" aria-label="Eye ball style" className="flex gap-2">
-                  {EYE_BALLS.map((p) => (
-                    <button
-                      key={p.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={design.eyeBallStyle === p.value}
-                      onClick={() => setDesign((d) => ({ ...d, eyeBallStyle: p.value }))}
-                      className={segBtn(design.eyeBallStyle === p.value)}
-                    >
-                      <EyeBallGlyph kind={p.value} active={design.eyeBallStyle === p.value} />
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
+                <Segmented
+                  ariaLabel="Eye ball style"
+                  value={design.eyeBallStyle}
+                  onValueChange={(v) => setDesign((d) => ({ ...d, eyeBallStyle: v as QrConfig["eyeBallStyle"] }))}
+                  options={EYE_BALLS.map((p) => ({
+                    value: p.value,
+                    label: (
+                      <>
+                        <EyeBallGlyph kind={p.value} active={design.eyeBallStyle === p.value} />
+                        <span>{p.label}</span>
+                      </>
+                    ),
+                  }))}
+                />
               </Field>
             </div>
 
@@ -549,7 +555,7 @@ function QrStudio({
                 max={6}
                 value={design.margin}
                 onChange={(e) => setDesign((d) => ({ ...d, margin: Number(e.target.value) }))}
-                className="w-full accent-[#E8590C]"
+                className="w-full accent-brand"
               />
               <FieldHint>{design.margin} modules of silence around the code.</FieldHint>
             </Field>
@@ -564,37 +570,33 @@ function QrStudio({
                   </span>
                 )}
               </FieldLabel>
-              <div role="radiogroup" aria-label="Frame style" className="flex flex-wrap gap-2">
-                {([
-                  ["none", "None"],
-                  ["clean", "Clean"],
-                  ["double", "Double"],
-                  ["accent", "Accent"],
-                  ["label", "Scan me"],
-                  ["branded", "Branded"],
-                ] as Array<["none" | "clean" | "double" | "accent" | "label" | "branded", string]>).map(([value, label]) => {
-                  const locked = value !== "none" && !canBrand;
-                  return (
-                    <button
-                      key={value}
-                      type="button"
-                      role="radio"
-                      aria-checked={design.frame === value}
-                      onClick={() => {
-                        if (locked) {
-                          setLockMsg("QR frames — Creator and Pro plans only.");
-                          return;
-                        }
-                        setLockMsg(null);
-                        setDesign((d) => ({ ...d, frame: value }));
-                      }}
-                      className={segBtn(design.frame === value)}
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
+              {/* Locked frames stay clickable — the controlled value keeps the
+                  thumb put while the click surfaces the upgrade path. */}
+              <Segmented
+                ariaLabel="Frame style"
+                value={design.frame}
+                onValueChange={(v) => {
+                  const frame = v as FrameStyle;
+                  if (frame !== "none" && !canBrand) {
+                    setLockMsg("QR frames — Creator and Pro plans only.");
+                    return;
+                  }
+                  setLockMsg(null);
+                  setDesign((d) => ({ ...d, frame }));
+                }}
+                options={FRAMES.map(([value, label]) => ({
+                  value,
+                  label: (
+                    <>
+                      {value !== "none" && !canBrand && (
+                        <Lock className="size-3 text-brand" aria-hidden="true" />
+                      )}
+                      <span>{label}</span>
+                    </>
+                  ),
+                }))}
+                className="flex flex-wrap"
+              />
               <FieldHint>
                 {design.frame === "label" || design.frame === "branded"
                   ? "A scan-me bar is composed into the saved QR."
@@ -651,7 +653,7 @@ function QrStudio({
                   className="flex w-full cursor-pointer items-center gap-3 rounded-md border border-dashed border-border px-3.5 py-3 text-left transition-colors hover:border-border-strong disabled:opacity-50"
                 >
                   {uploadingLogo ? (
-                    <RefreshCcw className="size-4 animate-spin text-fg-muted" />
+                    <RefreshCcw className="size-4 motion-safe:animate-spin motion-reduce:animate-none text-fg-muted" />
                   ) : (
                     <ImagePlus className="size-4 text-fg-muted" />
                   )}
@@ -693,21 +695,20 @@ function QrStudio({
 
           {/* preview column */}
           <div className="lg:sticky lg:top-0 lg:self-start">
-            <div className="rounded-lg border border-border bg-surface p-5">
-              <p className="mb-4 font-mono text-[10px] tracking-[0.18em] text-fg-muted uppercase">
-                Live preview
-              </p>
+            <div className="ls-plate p-5">
+              <p className="ls-marquee mb-4">Live preview</p>
               {selectedLink ? (
                 <>
                   <div className="rounded-md bg-background p-4">
                     <QrPreview config={payload} shortId={selectedLink.shortId} frame={design.frame} className="mx-auto max-w-[260px]" />
                   </div>
-                  <p className="mt-4 truncate text-center font-mono text-[11px]">
-                    <span className="text-fg-muted">{selectedLink.domainHost || DEFAULT_SHORT_DOMAIN}/</span>
-                    <span className="text-brand">{selectedLink.shortId}</span>
-                  </p>
+                  <div className="mt-4 flex justify-center">
+                    <CodeChip truncate prefix={`${selectedLink.domainHost || DEFAULT_SHORT_DOMAIN}/`}>
+                      {selectedLink.shortId}
+                    </CodeChip>
+                  </div>
                   {lowContrast && (
-                    <p className="mt-2 text-center text-[11px] text-amber-300/90">
+                    <p className="mt-2 text-center text-[11px] text-warning">
                       Low contrast — scanners may struggle.
                     </p>
                   )}

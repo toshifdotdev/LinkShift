@@ -1,7 +1,17 @@
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { LogOut, Settings } from "lucide-react";
+import type { VariantProps } from "class-variance-authority";
 import { useSession } from "@/auth/session";
 import { Avatar } from "./avatar";
+import { Lamp, lampVariants } from "@/components/ui/lamp";
+
+type LampTone = VariantProps<typeof lampVariants>["tone"];
+
+function planTone(planName: string): LampTone {
+  if (planName === "PRO") return "ember";
+  if (planName === "CREATOR") return "neutral";
+  return "dim";
+}
 
 const itemClass =
   "flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-fg-secondary outline-none transition-colors data-[highlighted]:bg-raised data-[highlighted]:text-foreground";
@@ -24,7 +34,7 @@ function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: 
 
       <MenuPrimitive.Portal>
         <MenuPrimitive.Positioner align="end" sideOffset={8} className="z-50">
-          <MenuPrimitive.Popup className="relative w-60 overflow-hidden rounded-lg border border-border bg-elevated p-1.5 shadow-2xl shadow-black/60 animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
+          <MenuPrimitive.Popup className="relative w-60 overflow-hidden rounded-lg border border-border bg-elevated p-1.5 shadow-lift animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
             {/* The Mono Marquee: a 1px ember hairline drawn across the top of the popover */}
             <span aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-brand/60" />
             <div className="border-b border-border px-3 pt-4 pb-2.5">
@@ -32,9 +42,8 @@ function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: 
               <p className="truncate font-mono text-[10px] tracking-[0.12em] text-fg-muted">
                 {user?.email}
               </p>
-              <p className="mt-2 inline-flex font-mono text-[9px] tracking-[0.18em] text-fg-muted uppercase">
-                <span className="mr-1.5 size-1 rounded-full bg-brand/80" aria-hidden="true" />
-                {plan}
+              <p className="mt-2">
+                <Lamp tone={planTone(plan)}>{plan}</Lamp>
               </p>
             </div>
             <MenuPrimitive.Item className={itemClass} onClick={onSettings}>
@@ -43,7 +52,7 @@ function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: 
             </MenuPrimitive.Item>
             <MenuPrimitive.Item
               className={
-                "flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-fg-secondary outline-none transition-colors data-[highlighted]:bg-raised data-[highlighted]:text-rose-300"
+                "flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-fg-secondary outline-none transition-colors data-[highlighted]:bg-raised data-[highlighted]:text-destructive"
               }
               onClick={onLogout}
             >

@@ -255,8 +255,7 @@ function AvatarCropDialog({
                   value={zoom}
                   disabled={!ready || busy}
                   onChange={(e) => handleZoomChange(Number(e.target.value))}
-                  className="h-5 w-full cursor-pointer disabled:cursor-not-allowed disabled:opacity-45"
-                  style={{ accentColor: "var(--brand)" }}
+                  className="h-5 w-full cursor-pointer accent-brand disabled:cursor-not-allowed disabled:opacity-45"
                 />
               </div>
 

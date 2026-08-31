@@ -48,7 +48,7 @@ function LinkActionsMenu({
         className="flex size-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-elevated hover:text-foreground"
       >
         {copied ? (
-          <span className="font-mono text-[9px] tracking-wide text-emerald-400 uppercase">Copied</span>
+          <span className="font-mono text-[9px] tracking-wide text-success uppercase">Copied</span>
         ) : (
           <Copy className="size-4" />
         )}
@@ -64,7 +64,7 @@ function LinkActionsMenu({
 
         <MenuPrimitive.Portal>
           <MenuPrimitive.Positioner align="end" sideOffset={6} className="z-50">
-            <MenuPrimitive.Popup className="w-52 rounded-lg border border-border bg-elevated p-1.5 shadow-xl shadow-black/50 animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
+            <MenuPrimitive.Popup className="w-52 rounded-lg border border-border bg-elevated p-1.5 shadow-lift animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
               <MenuPrimitive.Item
                 className={itemClass}
                 onClick={() => window.open(shortUrl(link.shortId, link.domainHost), "_blank", "noopener")}

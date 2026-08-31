@@ -9,12 +9,14 @@ import { useSession } from "@/auth/session";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Skeleton } from "@/components/ui/skeleton";
 
-function usePageTitle(): string {
+function useActiveNav() {
   const location = useLocation();
-  const match = [...APP_NAV]
-    .sort((a, b) => b.to.length - a.to.length)
-    .find((n) => location.pathname === n.to || location.pathname.startsWith(n.to + "/"));
-  return match?.label ?? "Overview";
+  return (
+    [...APP_NAV]
+      .sort((a, b) => b.to.length - a.to.length)
+      .find((n) => location.pathname === n.to || location.pathname.startsWith(n.to + "/")) ??
+    APP_NAV[0]
+  );
 }
 
 function AppLayout() {
@@ -31,7 +33,7 @@ function AppLayout() {
       <MobileNav open={navOpen} onClose={() => setNavOpen(false)} />
       <div className="lg:pl-64">
         <Topbar
-          title={usePageTitle()}
+          nav={useActiveNav()}
           navOpen={navOpen}
           onOpenNav={() => setNavOpen(true)}
         />
@@ -41,7 +43,7 @@ function AppLayout() {
               key={location.pathname}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
+              transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
             >
               <Outlet context={{ user }} />
             </motion.div>

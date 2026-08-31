@@ -183,7 +183,7 @@ function RegisterPage() {
                 className={cn(
                   "rounded-full border px-2 py-0.5 font-mono text-[9px] tracking-wide uppercase transition-colors duration-200",
                   r.ok
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                    ? "border-success/30 bg-success-soft text-success"
                     : "border-border bg-elevated text-fg-muted",
                 )}
               >

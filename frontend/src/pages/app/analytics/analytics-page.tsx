@@ -1,17 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Download, Link2, Lock, Search } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Download, Link2, Lock, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { getActivity, getLinkAnalytics, getLinkCharts, getStats, exportLinkCsv } from "@/api/dashboard";
 import type { AnalyticsDays } from "@/types/api";
 import { getLink, listLinks } from "@/api/links";
 import { useSession } from "@/auth/session";
-import { ErrorState, PageHeader } from "@/components/app/page-primitives";
 import { Button } from "@/components/ui/button";
+import { CodeChip } from "@/components/ui/code-chip";
+import { EmptyState, ErrorState } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
+import { KpiCell } from "@/components/ui/kpi-cell";
+import { RouteStrip } from "@/components/ui/route-strip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
-import { FadeIn, NumberTick } from "@/components/ui/motion";
+import { FadeIn } from "@/components/ui/motion";
 import { shortUrl, DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import { cn } from "@/lib/utils";
 import { BreakdownPanel } from "./breakdown-panel";
@@ -21,61 +24,23 @@ import { RANGE_OPTIONS, RangeSelect, planRank, rangeLocked } from "./range-selec
 
 /* ---------- shared bits ---------- */
 
-function KpiCell({
-  label,
-  value,
-  accent,
-  loading,
-}: {
-  label: string;
-  value: number;
-  accent?: boolean;
-  loading?: boolean;
-}) {
-  return (
-    <div className="relative flex flex-1 flex-col gap-2 px-1">
-      <p className="ls-marquee">
-        <span>{label}</span>
-      </p>
-      {loading ? (
-        <Skeleton variant="kpi" className="mt-1" />
-      ) : (
-        <NumberTick
-          value={value}
-          active={true}
-          duration={700}
-          className={cn(
-            "font-display text-3xl leading-none font-medium tracking-[-0.02em] tabular-nums",
-            accent ? "text-brand" : "text-foreground",
-          )}
-        />
-      )}
-    </div>
-  );
-}
-
 function LockedRangeBanner({ days, minPlan }: { days: number; minPlan: string }) {
   const label = RANGE_OPTIONS.find((r) => r.days === days)?.label ?? `${days}d`;
   const planLabel = minPlan === "STARTER" ? "Starter" : minPlan === "CREATOR" ? "Creator" : "Pro";
   return (
-    <section className="relative overflow-hidden rounded-xl border border-brand/25 bg-brand/[0.05] p-8 text-center sm:p-10">
-      <span aria-hidden="true" className="ls-stripe" />
-      <span className="mx-auto flex size-10 items-center justify-center rounded-lg border border-brand/30 bg-brand/10 text-brand">
-        <Lock className="size-4" />
-      </span>
-      <p className="mt-4 font-display text-lg font-medium tracking-tight text-foreground">
-        {label} of history. Available on {planLabel}.
-      </p>
-      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-fg-secondary">
-        Your current plan keeps a shorter window. Upgrade to unlock {label} of history across every link.
-      </p>
-      <Link
-        to="/pricing"
-        className="mt-5 inline-flex h-9 items-center rounded-md border border-brand/40 bg-brand/[0.09] px-4 font-mono text-[11px] font-medium tracking-[0.08em] text-foreground uppercase transition-colors hover:border-brand/75 hover:bg-brand/[0.16]"
-      >
-        View plans
-      </Link>
-    </section>
+    <EmptyState
+      marquee="Plan gate"
+      title={`${label} of history lives on ${planLabel}.`}
+      description="Your current plan keeps a shorter window. Upgrade to unlock the full archive across every link."
+      action={
+        <Link to="/pricing">
+          <Button variant="secondary" size="md">
+            <ArrowUpRight className="size-4" />
+            View plans
+          </Button>
+        </Link>
+      }
+    />
   );
 }
 
@@ -111,54 +76,35 @@ function AccountView({ days }: { days: AnalyticsDays }) {
     <>
       <section
         aria-label="Headline numbers"
-        className="relative overflow-hidden rounded-xl border border-border bg-surface"
+        className="ls-plate relative overflow-hidden"
       >
         <span aria-hidden="true" className="ls-stripe" />
-        <header className="flex items-center justify-between border-b border-border/60 px-5 py-3 sm:px-6">
+        <header className="flex items-center justify-between border-b border-border-subtle px-5 py-3 sm:px-6">
           <p className="ls-marquee">Headline</p>
           <span className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">
             {days}D window
           </span>
         </header>
-        <div className="grid grid-cols-2 divide-x divide-border/60 sm:grid-cols-4">
-          <div className="flex flex-col gap-2 px-4 py-5 sm:px-5 sm:py-6">
-            <p className="ls-marquee">Clicks</p>
-            <NumberTick
-              value={statsData?.totalScans ?? 0}
-              className="font-display text-3xl leading-none font-medium tracking-[-0.02em] tabular-nums text-brand"
-            />
-          </div>
-          <div className="flex flex-col gap-2 px-4 py-5 sm:px-5 sm:py-6">
-            <p className="ls-marquee">Total links</p>
-            <NumberTick
-              value={statsData?.totalLinks ?? 0}
-              className="font-display text-3xl leading-none font-medium tracking-[-0.02em] tabular-nums text-foreground"
-            />
-          </div>
-          <div className="flex flex-col gap-2 px-4 py-5 sm:px-5 sm:py-6">
-            <p className="ls-marquee">Active</p>
-            <NumberTick
-              value={statsData?.activeLinks ?? 0}
-              className="font-display text-3xl leading-none font-medium tracking-[-0.02em] tabular-nums text-foreground"
-            />
-          </div>
-          <div className="flex flex-col gap-2 px-4 py-5 sm:px-5 sm:py-6">
-            <p className="ls-marquee">Inactive</p>
-            <NumberTick
-              value={statsData?.inactiveLinks ?? 0}
-              className="font-display text-3xl leading-none font-medium tracking-[-0.02em] tabular-nums text-foreground"
-            />
-          </div>
+        <div className="grid grid-cols-2 divide-x divide-border-subtle sm:grid-cols-4">
+          <KpiCell
+            label="Clicks"
+            value={statsData?.totalScans ?? 0}
+            valueClassName="text-brand"
+            className="px-4 py-5 sm:px-5 sm:py-6"
+          />
+          <KpiCell label="Total links" value={statsData?.totalLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
+          <KpiCell label="Active" value={statsData?.activeLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
+          <KpiCell label="Inactive" value={statsData?.inactiveLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
         </div>
       </section>
 
       {/* link drill-down — per-link time series & breakdowns live in the workspace */}
       <section
         aria-label="Pick a link"
-        className="mt-6 relative overflow-hidden rounded-xl border border-border bg-surface"
+        className="mt-6 ls-plate relative overflow-hidden"
       >
         <span aria-hidden="true" className="ls-stripe" />
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 px-5 py-3 sm:px-6">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border-subtle px-5 py-3 sm:px-6">
           <p className="ls-marquee">Pick a link</p>
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-fg-muted" aria-hidden="true" />
@@ -206,10 +152,10 @@ function AccountView({ days }: { days: AnalyticsDays }) {
         {/* top links — click opens the link workspace */}
         <section
           aria-label="Top links"
-          className="relative overflow-hidden rounded-xl border border-border bg-surface"
+          className="ls-plate relative overflow-hidden"
         >
           <span aria-hidden="true" className="ls-stripe" />
-          <header className="flex items-center justify-between border-b border-border/60 px-5 py-3 sm:px-6">
+          <header className="flex items-center justify-between border-b border-border-subtle px-5 py-3 sm:px-6">
             <p className="ls-marquee">Top links</p>
             <span className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">
               {days}D window
@@ -234,19 +180,14 @@ function AccountView({ days }: { days: AnalyticsDays }) {
               />
             </div>
           ) : !statsData || (statsData.topLinks?.length ?? 0) === 0 ? (
-            <div className="px-6 py-10 text-center">
-              <p className="font-mono text-[10px] tracking-[0.18em] text-fg-muted uppercase">
-                Empty ledger
-              </p>
-              <p className="mt-3 font-display text-[15px] font-medium tracking-tight text-foreground">
-                No clicks in this window.
-              </p>
-              <p className="mx-auto mt-2 max-w-xs text-[13px] leading-snug text-fg-muted">
-                Share a link. Your best performers rank here.
-              </p>
-            </div>
+            <EmptyState
+              marquee="Empty ledger"
+              title="No clicks in this window."
+              description="Share a link. Your best performers rank here."
+              className="border-none bg-transparent py-12"
+            />
           ) : (
-            <ol className="divide-y divide-border/60">
+            <ol className="divide-y divide-border-subtle">
               {statsData.topLinks.map((l, i) => (
                 <li key={l.id}>
                   <button
@@ -257,24 +198,23 @@ function AccountView({ days }: { days: AnalyticsDays }) {
                     <span
                       aria-hidden="true"
                       className={cn(
-                        "size-1.5 shrink-0 rotate-45 rounded-[1px] transition-transform group-hover:scale-150",
-                        i === 0 ? "bg-brand" : i === 1 ? "bg-amber-400" : i === 2 ? "bg-emerald-400" : "bg-fg-muted",
+                        "size-1.5 shrink-0 rotate-45 rounded-[1px]",
+                        i === 0 ? "bg-brand" : "bg-fg-muted/60",
                       )}
                     />
                     <span className="font-mono text-[10px] tracking-[0.16em] text-fg-muted tabular-nums">
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13.5px] font-medium text-foreground">
+                      <span className="block truncate text-[13px] font-medium text-foreground">
                         {l.name ?? "Untitled link"}
                       </span>
-                      <span className="block truncate font-mono text-[11px] tracking-[0.04em]">
-                        <span className="text-fg-muted/70">{l.domainHost || DEFAULT_SHORT_DOMAIN}/</span>
-                        <span className="text-foreground">{l.shortId}</span>
-                      </span>
+                      <CodeChip truncate prefix={`${l.domainHost || DEFAULT_SHORT_DOMAIN}/`} className="mt-1">
+                        {l.shortId}
+                      </CodeChip>
                     </span>
-                    <span className="shrink-0 text-right font-mono text-sm tabular-nums">
-                      <span className="text-foreground">{l.clicks.toLocaleString()}</span>
+                    <span className="shrink-0 text-right font-mono text-sm text-foreground tabular-nums">
+                      {l.clicks.toLocaleString()}
                       <span className="ml-1.5 text-[10px] tracking-[0.14em] text-fg-muted uppercase">clicks</span>
                     </span>
                   </button>
@@ -287,14 +227,14 @@ function AccountView({ days }: { days: AnalyticsDays }) {
         {/* recent activity */}
         <section
           aria-label="Activity"
-          className="relative overflow-hidden rounded-xl border border-border bg-surface"
+          className="ls-plate relative overflow-hidden"
         >
           <span aria-hidden="true" className="ls-stripe" />
-          <header className="flex items-center justify-between border-b border-border/60 px-5 py-3 sm:px-6">
+          <header className="flex items-center justify-between border-b border-border-subtle px-5 py-3 sm:px-6">
             <p className="ls-marquee">Activity</p>
             <span aria-hidden="true" className="relative flex size-1.5">
-              <span className="absolute inset-0 rounded-full bg-emerald-400/60 ls-ping" />
-              <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
+              <span className="ls-ping absolute inset-0 rounded-full bg-success/60" />
+              <span className="relative inline-flex size-1.5 rounded-full bg-success" />
             </span>
           </header>
           {activity.isPending ? (
@@ -319,24 +259,19 @@ function AccountView({ days }: { days: AnalyticsDays }) {
               />
             </div>
           ) : !activity.data || activity.data.length === 0 ? (
-            <div className="px-6 py-10 text-center">
-              <p className="font-mono text-[10px] tracking-[0.18em] text-fg-muted uppercase">
-                Quiet
-              </p>
-              <p className="mt-3 font-display text-[15px] font-medium tracking-tight text-foreground">
-                No scans yet.
-              </p>
-              <p className="mx-auto mt-2 max-w-xs text-[13px] leading-snug text-fg-muted">
-                Every scan lands here the moment it happens.
-              </p>
-            </div>
+            <EmptyState
+              marquee="Quiet"
+              title="No scans yet."
+              description="Every scan lands here the moment it happens."
+              className="border-none bg-transparent py-12"
+            />
           ) : (
-            <ol className="divide-y divide-border/60">
+            <ol className="divide-y divide-border-subtle">
               {activity.data.map((a, i) => (
-                <li key={`${a.shortId}-${a.scannedAt}-${i}`} className="group flex items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50 sm:px-6">
+                <li key={`${a.shortId}-${a.scannedAt}-${i}`} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50 sm:px-6">
                   <span aria-hidden="true" className="relative flex size-1.5 shrink-0">
-                    <span className="absolute inset-0 rounded-full bg-emerald-400/60 ls-ping" />
-                    <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
+                    <span className="ls-ping absolute inset-0 rounded-full bg-success/60" />
+                    <span className="relative inline-flex size-1.5 rounded-full bg-success" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-[13px] text-foreground">
@@ -430,7 +365,8 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
         <ArrowLeft className="size-3" /> All analytics
       </button>
 
-      <PageHeader
+      <RouteStrip
+        label="Analytics"
         title={linkInfo.isPending ? "Link analytics" : (linkInfo.data?.name ?? "Link analytics")}
         description={linkInfo.data ? shortUrl(linkInfo.data.shortId, linkInfo.data.domainHost) : undefined}
         action={
@@ -458,28 +394,34 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
 
       <section
         aria-label="Total clicks"
-        className="relative overflow-hidden rounded-xl border border-border bg-surface"
+        className="ls-plate relative overflow-hidden"
       >
         <span aria-hidden="true" className="ls-stripe" />
-        <header className="flex items-center justify-between border-b border-border/60 px-5 py-3 sm:px-6">
+        <header className="flex items-center justify-between border-b border-border-subtle px-5 py-3 sm:px-6">
           <p className="ls-marquee">Clicks</p>
           <span className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">
             {days}D window
           </span>
         </header>
         <div className="px-4 py-5 sm:px-5 sm:py-6">
-          <KpiCell
-            label="Total clicks"
-            value={a?.totalClicks ?? 0}
-            accent
-            loading={analytics.isPending}
-          />
+          {analytics.isPending ? (
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-3 w-24" />
+              <Skeleton className="mt-1 h-7 w-20" />
+            </div>
+          ) : (
+            <KpiCell
+              label="Total clicks"
+              value={a?.totalClicks ?? 0}
+              valueClassName="text-brand"
+            />
+          )}
         </div>
       </section>
 
       <section
         aria-label="Clicks over time"
-        className="mt-6 relative overflow-hidden rounded-xl border border-border bg-surface p-5"
+        className="mt-6 ls-plate relative overflow-hidden p-5"
       >
         <header className="mb-5 flex items-center justify-between">
           <p className="ls-marquee">Clicks over time</p>
@@ -587,9 +529,10 @@ function AnalyticsPage() {
 
   return (
     <FadeIn>
-      <PageHeader
-        title="Analytics"
-        description="What happens after every link is shared."
+      <RouteStrip
+        index="04"
+        label="Analytics"
+        title="What happens after every link is shared."
         action={
           <RangeSelect
             value={validRange}

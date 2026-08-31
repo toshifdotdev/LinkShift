@@ -6,9 +6,10 @@ import { useSession } from "@/auth/session";
 import { useDomains } from "@/hooks/use-domains";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { EditorialEmpty } from "@/components/ui/empty";
-import { ErrorState, PageHeader } from "@/components/app/page-primitives";
-import { Badge } from "@/components/ui/badge";
+import { EmptyState, ErrorState } from "@/components/ui/empty";
+import { Banner } from "@/components/ui/banner";
+import { Lamp } from "@/components/ui/lamp";
+import { RouteStrip } from "@/components/ui/route-strip";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -204,9 +205,7 @@ function DomainRowCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2.5">
             <p className="truncate font-mono text-sm text-foreground">{domain.host}</p>
-            <Badge shape="mark" variant={domain.verified ? "success" : "warning"}>
-              {domain.verified ? "Verified" : "Pending DNS"}
-            </Badge>
+            {domain.verified ? <Lamp tone="success">Verified</Lamp> : <Lamp tone="warning">Pending DNS</Lamp>}
           </div>
           <p className="mt-0.5 font-mono text-[10px] tracking-[0.12em] text-fg-muted">
             Added {new Date(domain.createdAt).toLocaleDateString()}
@@ -230,7 +229,7 @@ function DomainRowCard({
             type="button"
             aria-label={`Remove ${domain.host}`}
             onClick={onDelete}
-            className="flex size-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-elevated hover:text-rose-400"
+            className="flex size-8 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-elevated hover:text-destructive"
           >
             <Trash2 className="size-4" />
           </button>
@@ -316,18 +315,20 @@ function DomainsPage() {
 
   return (
     <FadeIn>
-      <PageHeader
-        title="Domains"
-        description="Put your brand on every short link. Connect a domain, verify it in DNS, and use it anywhere."
+      <RouteStrip
+        index="05"
+        label="Domains"
+        title="Your brand, on every hop."
+        description="Connect a domain, verify it in DNS, and put it on any link you own."
         action={addControl}
       />
 
       <section
         aria-label="Custom domains ledger"
-        className="relative overflow-hidden rounded-xl border border-border bg-surface"
+        className="relative mt-8 overflow-hidden rounded-xl border border-border bg-surface"
       >
         <span aria-hidden="true" className="ls-stripe" />
-        <header className="flex items-center justify-between border-b border-border/60 px-5 py-3 sm:px-6">
+        <header className="flex items-center justify-between border-b border-border-subtle px-5 py-3 sm:px-6">
           <p className="ls-marquee">Custom domains</p>
           <span className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">
             {cap === null
@@ -372,7 +373,7 @@ function DomainsPage() {
               {/* user domains */}
               {own.length === 0 ? (
                 cap === 0 ? (
-                  <EditorialEmpty
+                  <EmptyState
                     marquee="Custom domains"
                     title="Custom domains live on paid plans"
                     description="Add your brand to every short link. Unlock with Starter, then add your domain."
@@ -386,7 +387,7 @@ function DomainsPage() {
                     }
                   />
                 ) : (
-                  <EditorialEmpty
+                  <EmptyState
                     marquee="Custom domains"
                     title="No custom domains yet"
                     description="Connect a domain you own. Every short link can carry your brand instead of ours."
@@ -408,16 +409,21 @@ function DomainsPage() {
               )}
 
               {atCap && (
-                <p className="mt-4 flex items-center gap-2 rounded-md border border-brand/25 bg-brand/[0.05] px-3.5 py-2.5 text-xs text-fg-secondary">
-                  <span className="size-1.5 rounded-full bg-brand" aria-hidden="true" />
-                  You've used all {cap} custom domain{cap === 1 ? "" : "s"} on {plan.charAt(0) + plan.slice(1).toLowerCase()}.
-                  <a
-                    href="/pricing"
-                    className="ml-auto font-mono text-[10px] tracking-[0.14em] text-brand uppercase hover:text-brand-hover"
+                <div className="mt-4">
+                  <Banner
+                    tone="warning"
+                    action={
+                      <a
+                        href="/pricing"
+                        className="font-mono text-[10px] tracking-[0.14em] text-brand uppercase hover:text-brand-hover"
+                      >
+                        Upgrade
+                      </a>
+                    }
                   >
-                    Upgrade
-                  </a>
-                </p>
+                    You've used all {cap} custom domain{cap === 1 ? "" : "s"} on {plan.charAt(0) + plan.slice(1).toLowerCase()}.
+                  </Banner>
+                </div>
               )}
             </>
           )}

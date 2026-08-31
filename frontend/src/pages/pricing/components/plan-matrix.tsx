@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useSession } from "@/auth/session";
 import { AnimatePresence, motion } from "framer-motion";
-import { Badge } from "@/components/ui/badge";
+import { Lamp } from "@/components/ui/lamp";
 import { Button } from "@/components/ui/button";
 import type { ApiPlan, ApiSubscription, BillingCycle, Currency } from "@/api/billing";
 import {
@@ -219,10 +219,10 @@ function PlanHeaderCell({
         <h2 className="font-display text-xl font-semibold tracking-tight">
           {plan.name.charAt(0) + plan.name.slice(1).toLowerCase()}
         </h2>
-        {featured && <Badge variant="ember">Popular</Badge>}
-        {isCurrent && <Badge variant="success">Current</Badge>}
+        {featured && <Lamp tone="ember">Popular</Lamp>}
+        {isCurrent && <Lamp tone="success">Current</Lamp>}
         {subscription?.status === "AUTHORIZATION_PENDING" &&
-          subscription.plan?.name === plan.name && <Badge variant="neutral">Setup pending</Badge>}
+          subscription.plan?.name === plan.name && <Lamp tone="neutral">Setup pending</Lamp>}
       </div>
 
       <p className="mt-1 min-h-8 text-xs leading-snug text-fg-muted">

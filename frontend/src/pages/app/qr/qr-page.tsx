@@ -1,14 +1,18 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Download, ImagePlus, QrCode, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listLinks } from "@/api/links";
 import { downloadQrImage, fetchQrImage } from "@/api/qr";
 import { getAccessToken } from "@/api/token";
 import { ApiError } from "@/api/client";
-import { PageHeader, EmptyState, ErrorState } from "@/components/app/page-primitives";
+import { Banner } from "@/components/ui/banner";
 import { Button } from "@/components/ui/button";
+import { CodeChip } from "@/components/ui/code-chip";
+import { EmptyState, ErrorState } from "@/components/ui/empty";
 import { Input } from "@/components/ui/input";
+import { RouteStrip } from "@/components/ui/route-strip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
 import { QrStudio } from "./qr-studio";
@@ -134,8 +138,10 @@ function QrPage() {
 
   return (
     <>
-      <PageHeader
-        title="QR Codes"
+      <RouteStrip
+        index="03"
+        label="QR Codes"
+        title="Every code, in your brand."
         description="Design, generate and manage QR codes for your links — every code stays in sync with its destination."
         action={
           <Button size="md" onClick={() => openStudio()}>
@@ -148,7 +154,7 @@ function QrPage() {
       {links.isPending ? (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" aria-label="Loading QR codes">
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="rounded-lg border border-border bg-surface p-2.5">
+            <div key={i} className="ls-plate p-2.5">
               <Skeleton className="h-44 w-full rounded-md" />
               <Skeleton className="mt-2.5 h-3.5 w-3/4" />
               <Skeleton className="mt-1.5 h-3 w-1/2" />
@@ -163,16 +169,15 @@ function QrPage() {
         />
       ) : !hasLinks && !debounced ? (
         <EmptyState
-          icon={<QrCode className="size-5" />}
+          marquee="QR library"
           title="No links to decorate yet"
           description="QR codes belong to links. Create your first link and a matching, fully styled QR code is one click away."
           action={
-            <a
-              href="/app/links"
-              className="inline-flex h-9 items-center rounded-md border border-brand/40 bg-brand/[0.09] px-4 font-mono text-[11px] font-medium tracking-[0.08em] text-foreground uppercase transition-colors hover:border-brand/75 hover:bg-brand/[0.16]"
-            >
-              Go to Links
-            </a>
+            <Link to="/app/links">
+              <Button variant="secondary" size="md">
+                Go to Links
+              </Button>
+            </Link>
           }
         />
       ) : (
@@ -195,7 +200,7 @@ function QrPage() {
 
           {rows.length === 0 ? (
             <EmptyState
-              icon={<Search className="size-5" />}
+              marquee="No matches"
               title="No links match"
               description="Nothing matches that search."
               action={
@@ -209,7 +214,7 @@ function QrPage() {
               {rows.map((link) => (
                 <article
                   key={link.id}
-                  className="group flex flex-col rounded-lg border border-border bg-surface p-2.5 transition-colors hover:border-border-strong"
+                  className="group ls-plate flex flex-col p-2.5 transition-colors hover:border-border-strong"
                 >
                   <QrThumbnail linkId={link.id} version={galleryVersion} />
 
@@ -217,10 +222,9 @@ function QrPage() {
                     <p className="truncate text-[12px] font-medium text-foreground">
                       {link.name ?? "Untitled link"}
                     </p>
-                    <p className="truncate font-mono text-[10px]">
-                      <span className="text-fg-muted">{link.domainHost || DEFAULT_SHORT_DOMAIN}/</span>
-                      <span className="text-brand">{link.shortId}</span>
-                    </p>
+                    <CodeChip truncate prefix={`${link.domainHost || DEFAULT_SHORT_DOMAIN}/`} className="mt-1">
+                      {link.shortId}
+                    </CodeChip>
                   </div>
 
                   <div className="mt-2.5 flex items-center justify-between gap-1.5 border-t border-border pt-2.5">
@@ -234,7 +238,7 @@ function QrPage() {
                       onClick={() => void handleDownload(link.id, link.shortId)}
                       className={cn(
                         "flex size-7 shrink-0 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-elevated hover:text-foreground",
-                        downloadingId === link.id && "animate-pulse text-brand",
+                        downloadingId === link.id && "motion-safe:animate-pulse motion-reduce:animate-none text-brand",
                       )}
                     >
                       <Download className="size-3.5" />
@@ -246,12 +250,17 @@ function QrPage() {
           )}
 
           {partialError ? (
-            <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-5">
-              <p className="text-[12px] text-destructive">Couldn't load more links.</p>
-              <Button variant="outline" size="sm" onClick={() => void fetchNextPage()}>
-                Retry
-              </Button>
-            </div>
+            <Banner
+              tone="destructive"
+              className="mt-4"
+              action={
+                <Button variant="outline" size="sm" onClick={() => void fetchNextPage()}>
+                  Retry
+                </Button>
+              }
+            >
+              Couldn't load more links.
+            </Banner>
           ) : hasNextPage || isFetchingNextPage ? (
             <div ref={sentinelRef} className="mt-4 flex items-center justify-center" aria-live="polite">
               <p className="font-mono text-[10px] tracking-[0.12em] text-fg-muted uppercase">

@@ -27,7 +27,7 @@ function ThemeToggle() {
 
       <MenuPrimitive.Portal>
         <MenuPrimitive.Positioner align="end" sideOffset={8} className="z-50">
-          <MenuPrimitive.Popup className="relative w-44 overflow-hidden rounded-lg border border-border bg-elevated p-1.5 shadow-2xl shadow-black/60 animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
+          <MenuPrimitive.Popup className="relative w-44 overflow-hidden rounded-lg border border-border bg-elevated p-1.5 shadow-lift animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
             <span aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-brand/60" />
             <div className="border-b border-border px-3 pt-3.5 pb-2">
               <p className="font-mono text-[9px] tracking-[0.18em] text-fg-muted uppercase">

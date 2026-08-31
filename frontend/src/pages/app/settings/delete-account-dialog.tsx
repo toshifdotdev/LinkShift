@@ -18,7 +18,7 @@ function DangerZoneSection() {
     <div>
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-rose-500/10 text-rose-400">
+          <span className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md bg-destructive/10 text-destructive">
             <AlertTriangle className="size-3.5" />
           </span>
           <div>

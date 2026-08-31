@@ -5,8 +5,10 @@ import { Link } from "react-router-dom";
 import { cancelSubscription, getBillingUsage } from "@/api/billing";
 import { useSession } from "@/auth/session";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { ErrorState, PageHeader } from "@/components/app/page-primitives";
-import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/ui/empty";
+import { Lamp } from "@/components/ui/lamp";
+import { RouteStrip } from "@/components/ui/route-strip";
+import { Waybill, WaybillRow } from "@/components/ui/waybill";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
@@ -91,9 +93,11 @@ function BillingPage() {
 
   return (
     <FadeIn>
-      <PageHeader
-        title="Billing"
-        description="Your subscription, usage, and plan limits. All in one place."
+      <RouteStrip
+        index="06"
+        label="Billing"
+        title="The account, on one manifest."
+        description="Your subscription, usage, and plan limits in a single place."
         action={
           planName === "FREE" ? (
             <Link to="/pricing">
@@ -113,68 +117,39 @@ function BillingPage() {
         }
       />
 
-      {/* current plan — the editorial hero */}
-      <section
+      {/* current plan — the waybill */}
+      <Waybill
         aria-label="Current plan"
-        className="relative overflow-hidden rounded-xl border border-border bg-surface"
-      >
-        <span aria-hidden="true" className="ls-stripe" />
-        <div className="flex flex-wrap items-start justify-between gap-6 p-5 sm:p-6">
-          <div className="min-w-0">
-            <p className="ls-marquee">Current plan</p>
-            <p className="font-display mt-2 text-3xl font-semibold tracking-[-0.02em] text-foreground">
-              {planName.charAt(0) + planName.slice(1).toLowerCase()}
-            </p>
-            {renewal && (
-              <p className="mt-2 font-mono text-[10px] tracking-[0.16em] text-fg-muted uppercase">
-                {renewal}
+        code={planName}
+        name={planName.charAt(0) + planName.slice(1).toLowerCase()}
+        status={<Lamp tone={status.tone === "muted" ? "dim" : status.tone === "destructive" ? "danger" : status.tone}>{status.label}</Lamp>}
+        current
+        className="mt-8"
+        action={
+          isPaid && sub?.status === "ACTIVE" && !sub.cancelAtPeriodEnd ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-[11px] text-fg-muted">
+                Access continues until the end of the paid period.
               </p>
-            )}
-          </div>
-          <Badge shape="mark" variant={status.tone === "destructive" ? "danger" : status.tone === "warning" ? "warning" : status.tone === "success" ? "success" : "neutral"}>
-            {status.label}
-          </Badge>
-        </div>
-
-        {status.note && (
-          <p className="border-t border-border/60 px-5 py-3 text-[13px] text-fg-secondary sm:px-6">
-            {status.note}
-          </p>
-        )}
-
-        <dl className="grid gap-x-8 gap-y-3 border-t border-border/60 px-5 py-4 text-[13px] sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
-          <div>
-            <dt className="font-mono text-[9px] tracking-[0.18em] text-fg-muted uppercase">Cycle</dt>
-            <dd className="mt-0.5 capitalize text-foreground">
-              {sub?.billingCycle?.toLowerCase() ?? "—"}
-            </dd>
-          </div>
-          <div>
-            <dt className="font-mono text-[9px] tracking-[0.18em] text-fg-muted uppercase">Period ends</dt>
-            <dd className="mt-0.5 text-foreground">{fmtDate(sub?.currentPeriodEnd ?? null)}</dd>
-          </div>
-          {sub?.cancelAtPeriodEnd && sub.currentPeriodEnd && (
-            <div>
-              <dt className="font-mono text-[9px] tracking-[0.18em] text-amber-300/90 uppercase">Cancels</dt>
-              <dd className="mt-0.5 text-amber-300">
-                Access ends {fmtDate(sub.currentPeriodEnd)}
-              </dd>
+              <Button variant="ghost" size="sm" className="text-fg-muted" onClick={() => setCancelOpen(true)}>
+                Cancel subscription
+              </Button>
             </div>
-          )}
-        </dl>
-
-        {/* cancel action */}
-        {isPaid && sub?.status === "ACTIVE" && !sub.cancelAtPeriodEnd && (
-          <div className="flex items-center justify-between gap-3 border-t border-border/60 px-5 py-3.5 sm:px-6">
-            <p className="text-[11px] text-fg-muted">
-              Access continues until the end of the paid period.
-            </p>
-            <Button variant="ghost" size="sm" className="text-fg-muted" onClick={() => setCancelOpen(true)}>
-              Cancel subscription
-            </Button>
-          </div>
+          ) : undefined
+        }
+      >
+        <WaybillRow label="Cycle">
+          <span className="capitalize">{sub?.billingCycle?.toLowerCase() ?? "—"}</span>
+        </WaybillRow>
+        <WaybillRow label="Period ends">{fmtDate(sub?.currentPeriodEnd ?? null)}</WaybillRow>
+        {renewal && <WaybillRow label="Renewal">{renewal}</WaybillRow>}
+        {sub?.cancelAtPeriodEnd && sub.currentPeriodEnd && (
+          <WaybillRow label="Cancels">
+            <span className="text-warning">Access ends {fmtDate(sub.currentPeriodEnd)}</span>
+          </WaybillRow>
         )}
-      </section>
+        {status.note && <WaybillRow label="Note">{status.note}</WaybillRow>}
+      </Waybill>
 
       {/* usage */}
       <section
@@ -182,7 +157,7 @@ function BillingPage() {
         className="mt-6 relative overflow-hidden rounded-xl border border-border bg-surface"
       >
         <span aria-hidden="true" className="ls-stripe" />
-        <header className="border-b border-border/60 px-5 py-3 sm:px-6">
+        <header className="border-b border-border-subtle px-5 py-3 sm:px-6">
           <p className="ls-marquee">Usage</p>
         </header>
 
@@ -319,7 +294,7 @@ function UsageRow({
             <div
               className={cn(
                 "h-full rounded-full transition-[width] duration-500",
-                nearCap ? "bg-amber-400" : "bg-brand",
+                nearCap ? "bg-warning" : "bg-brand",
               )}
               style={{ width: `${Math.max(pct, used !== null && used > 0 ? 4 : 0)}%` }}
             />

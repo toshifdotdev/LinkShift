@@ -3,18 +3,16 @@ import { APP_NAV } from "./nav-config";
 import { Logo } from "@/components/brand/logo";
 import { useSession } from "@/auth/session";
 import { Avatar } from "./avatar";
+import type { VariantProps } from "class-variance-authority";
+import { Lamp, lampVariants } from "@/components/ui/lamp";
 import { cn } from "@/lib/utils";
 
-function planTone(planName: string): string {
-  if (planName === "PRO") return "text-brand";
-  if (planName === "CREATOR") return "text-foreground";
-  return "text-fg-secondary";
-}
+type LampTone = VariantProps<typeof lampVariants>["tone"];
 
-function planAccent(planName: string): string {
-  if (planName === "PRO") return "from-brand/40 to-brand/0";
-  if (planName === "CREATOR") return "from-fg-secondary/30 to-fg-secondary/0";
-  return "from-border to-border/0";
+function planTone(planName: string): LampTone {
+  if (planName === "PRO") return "ember";
+  if (planName === "CREATOR") return "neutral";
+  return "dim";
 }
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
@@ -37,11 +35,11 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         >
           {({ isActive }) => (
             <>
-              {/* The Ember Stripe: a 2px left rail that only the active item shows */}
+              {/* The Ember Rail: a 1px left hairline that only the active item shows */}
               <span
                 aria-hidden="true"
                 className={cn(
-                  "pointer-events-none absolute top-2 bottom-2 left-0 w-0.5 rounded-full bg-brand transition-[transform,opacity] duration-300 ease-out",
+                  "pointer-events-none absolute top-2 bottom-2 left-0 w-px bg-brand transition-[transform,opacity] duration-300 ease-out",
                   isActive ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0",
                 )}
               />
@@ -56,7 +54,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
               <item.icon
                 className={cn(
                   "size-4 transition-colors duration-150",
-                  isActive ? "text-brand" : "",
+                  isActive ? "text-fg-secondary" : "",
                 )}
                 aria-hidden="true"
               />
@@ -84,20 +82,15 @@ function PlanCard() {
   const renewal = renewalCountdown(user?.subscription?.currentPeriodEnd);
   return (
     <div className="relative mx-3 mb-3 overflow-hidden rounded-lg border border-border bg-elevated/60 p-3.5">
-      {/* The plan accent gradient — visible only on CREATOR/PRO. */}
-      <span
-        aria-hidden="true"
-        className={cn(
-          "pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r",
-          planAccent(plan),
-        )}
-      />
       <p className="font-mono text-[9px] tracking-[0.18em] text-fg-muted uppercase">
         Current plan
       </p>
-      <p className={cn("font-display mt-1 text-lg font-semibold tracking-tight", planTone(plan))}>
-        {plan.charAt(0) + plan.slice(1).toLowerCase()}
-      </p>
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <p className="font-display text-lg font-semibold tracking-tight text-foreground">
+          {plan.charAt(0) + plan.slice(1).toLowerCase()}
+        </p>
+        <Lamp tone={planTone(plan)}>{plan}</Lamp>
+      </div>
       {renewal && (
         <p className="mt-1.5 font-mono text-[10px] tracking-[0.12em] text-fg-muted">
           {renewal}

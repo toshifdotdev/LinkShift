@@ -41,7 +41,7 @@ function AreaChart({
     return (
       <div
         className={cn(
-          "relative flex items-end gap-[2px] sm:gap-[3px] rounded-md bg-[repeating-linear-gradient(90deg,transparent_0_calc(10%-3px),rgba(255,255,255,0.03)_calc(10%-3px)_10%)]",
+          "relative flex items-end gap-[2px] sm:gap-[3px] rounded-md bg-[repeating-linear-gradient(90deg,transparent_0_calc(10%-3px),color-mix(in_oklab,var(--color-elevated)_55%,transparent)_calc(10%-3px)_10%)]",
           heightClass,
         )}
       >
@@ -81,7 +81,7 @@ function AreaChart({
             style={{ left: `${((hover + 0.5) / data.length) * 100}%` }}
           />
           <div
-            className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-raised px-2.5 py-1.5 text-center shadow-lg shadow-black/40"
+            className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-raised px-2.5 py-1.5 text-center shadow-lift"
             style={{ left: `${((hover + 0.5) / data.length) * 100}%` }}
           >
             <p className="font-mono text-[10px] text-fg-muted">{fmtDay(data[hover].day)}</p>

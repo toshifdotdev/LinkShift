@@ -1,5 +1,9 @@
 import { cn } from "@/lib/utils";
 
+/*
+ * The arc stays visible under reduced motion — role="status" plus the
+ * label carry the meaning when the spin stops.
+ */
 function Spinner({ className }: { className?: string }) {
   return (
     <svg
@@ -7,7 +11,7 @@ function Spinner({ className }: { className?: string }) {
       fill="none"
       role="status"
       aria-label="Loading"
-      className={cn("size-4 animate-spin text-brand", className)}
+      className={cn("size-4 motion-safe:animate-spin motion-reduce:animate-none text-brand", className)}
     >
       <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.2" strokeWidth="2.5" />
       <path

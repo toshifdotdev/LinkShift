@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { setAccessToken } from "@/api/token";
 import { Logo } from "@/components/brand/logo";
+import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
 
 /**
@@ -33,9 +34,7 @@ function GoogleCallbackPage() {
       </div>
       <div className="flex flex-1 items-center justify-center px-5 py-12">
         <div className="w-full max-w-sm text-center">
-          <p className="font-mono text-[11px] font-medium tracking-[0.18em] text-brand uppercase">
-            Google sign-in
-          </p>
+          <p className="ls-marquee justify-center">Google sign-in</p>
           {accessToken ? (
             <>
               <h1 className="font-display mt-3 text-3xl font-semibold tracking-tight text-foreground">
@@ -55,11 +54,8 @@ function GoogleCallbackPage() {
                 happen if the sign-in was interrupted or the link expired. No
                 changes were made to your account.
               </p>
-              <Link
-                to="/login"
-                className="mt-6 inline-flex h-10 items-center justify-center rounded-md bg-brand px-5 font-mono text-[12px] font-semibold tracking-[0.08em] text-white uppercase transition-colors hover:bg-brand-hover"
-              >
-                Back to sign in
+              <Link to="/login" className="mt-6 inline-flex">
+                <Button size="lg">Back to sign in</Button>
               </Link>
             </>
           )}

@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 
 const SEGMENT_COLORS = [
   "var(--chart-1)",
@@ -34,17 +35,17 @@ function DonutChart({
   const total = visible.reduce((s, i) => s + i.count, 0);
 
   return (
-    <section aria-label={title} className="rounded-lg border border-border bg-surface">
-      <header className="border-b border-border px-5 py-3.5">
-        <h3 className="font-mono text-[10px] tracking-[0.18em] text-fg-secondary uppercase">{title}</h3>
+    <section aria-label={title} className="ls-plate">
+      <header className="border-b border-border-subtle px-5 py-3">
+        <p className="ls-marquee">{title}</p>
       </header>
 
       {loading ? (
         <div className="flex items-center gap-6 px-5 py-6">
-          <div className="size-32 animate-pulse rounded-full bg-elevated" />
+          <Skeleton className="size-32 rounded-full" />
           <div className="flex-1 space-y-2.5">
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="h-3 w-24 animate-pulse rounded bg-elevated" />
+              <Skeleton key={i} className="h-3 w-24" />
             ))}
           </div>
         </div>

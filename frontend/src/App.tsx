@@ -33,7 +33,7 @@ function NotFound() {
         </p>
         <Link
           to="/"
-          className="mt-6 inline-flex h-9 items-center rounded-md bg-brand px-4 font-mono text-[11px] font-medium tracking-[0.08em] text-white uppercase transition-colors hover:bg-brand-hover"
+          className="mt-6 inline-flex h-9 items-center rounded-md bg-brand px-4 font-mono text-[11px] font-medium tracking-[0.08em] text-primary-foreground uppercase transition-colors hover:bg-brand-hover"
         >
           Back to home
         </Link>

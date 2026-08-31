@@ -322,14 +322,14 @@ function DomainStage({ active }: { active: boolean }) {
   return (
     <p className="flex items-center gap-2 rounded-md border border-border bg-elevated px-2.5 py-1.5 font-mono text-[11px]">
       <span
-        className={`size-1.5 rounded-full bg-emerald-400 transition-[transform,opacity] duration-300 ${
+        className={`size-1.5 rounded-full bg-success transition-[transform,opacity] duration-300 ${
           active ? "scale-100 opacity-100" : "scale-50 opacity-30"
         }`}
         aria-hidden="true"
       />
       go.linkshift.in
       <Check
-        className={`size-3 text-emerald-400 transition-[transform,opacity] duration-300 delay-100 ${
+        className={`size-3 text-success transition-[transform,opacity] duration-300 delay-100 ${
           active ? "scale-100 opacity-100" : "scale-50 opacity-0"
         }`}
         aria-hidden="true"

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowDown, Check, Copy, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Lamp } from "@/components/ui/lamp";
 import { useToaster } from "@/components/ui/toaster";
 import { useCountUp } from "@/lib/use-count-up";
 import { useScramble } from "@/lib/use-scramble";
@@ -200,9 +200,12 @@ function ShortenDemo() {
           />
           <span className="size-2 rounded-full bg-border-strong" />
         </div>
-        <Badge variant={state === "expanded" ? "ember" : "neutral"}>
+        <Lamp
+          tone={state === "expanded" ? "ember" : "neutral"}
+          pulse={state === "shifting"}
+        >
           {state === "shifting" ? "Shifting" : "Preview"}
-        </Badge>
+        </Lamp>
       </div>
 
       <div className="p-4 sm:p-5">
@@ -327,7 +330,7 @@ function ShortenDemo() {
                       className="flex size-8 shrink-0 items-center justify-center rounded-md text-fg-secondary transition-all duration-150 hover:bg-raised hover:text-foreground active:scale-90"
                     >
                       {copied ? (
-                        <Check className="size-4 text-emerald-400" />
+                        <Check className="size-4 text-success" />
                       ) : (
                         <Copy className="size-4" />
                       )}

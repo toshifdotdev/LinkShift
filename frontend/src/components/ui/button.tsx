@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
  * LinkShift button family.
  * Static design carries the identity: slug typography (mono caps) on ink
  * surfaces with a drawn ember rule on hover. Ghost/link stay editorial
- * Inter for quiet contexts.
+ * Archivo for quiet contexts.
  */
 const buttonVariants = cva(
   // `ls-btn` carries the shared interaction system (ember rule-draw + press feedback)
@@ -26,9 +26,9 @@ const buttonVariants = cva(
       variant: {
         /* Primary action — ember plate, deep-ember spine, white rule */
         default:
-          "bg-brand font-mono uppercase tracking-[0.08em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.22)] [--ls-spine:#9a3d06] [--ls-rule:rgba(255,255,255,0.85)] hover:bg-brand-hover active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.28)]",
+          "bg-brand font-mono uppercase tracking-[0.08em] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.22)] [--ls-spine:#9a3d06] [--ls-rule:rgba(255,255,255,0.85)] hover:bg-brand-hover active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.28)]",
         primary:
-          "bg-brand font-mono uppercase tracking-[0.08em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.22)] [--ls-spine:#9a3d06] [--ls-rule:rgba(255,255,255,0.85)] hover:bg-brand-hover active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.28)]",
+          "bg-brand font-mono uppercase tracking-[0.08em] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.22)] [--ls-spine:#9a3d06] [--ls-rule:rgba(255,255,255,0.85)] hover:bg-brand-hover active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.28)]",
         /* Ink plate — raised surface, ember spine + rule */
         secondary:
           "border border-border bg-raised font-mono uppercase tracking-[0.08em] text-foreground [--ls-spine:var(--brand)] [--ls-rule:var(--brand)] hover:border-border-strong hover:bg-[var(--raised-hover)] active:bg-[var(--raised-active)]",
@@ -78,7 +78,7 @@ function Button({
     >
       {loading ? (
         <>
-          <Spinner className="size-3.5" />
+          <Spinner className="size-3.5 text-current" />
           {loadingLabel && <span>{loadingLabel}</span>}
         </>
       ) : (

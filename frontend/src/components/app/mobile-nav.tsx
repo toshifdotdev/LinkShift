@@ -25,7 +25,7 @@ function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/70 lg:hidden"
+            className="fixed inset-0 z-40 bg-overlay/75 lg:hidden"
           />
           <motion.aside
             initial={{ x: "-100%" }}

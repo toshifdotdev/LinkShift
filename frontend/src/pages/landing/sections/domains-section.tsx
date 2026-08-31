@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
 import { Container } from "@/components/ui/container";
-import { Badge } from "@/components/ui/badge";
+import { Lamp } from "@/components/ui/lamp";
 import { GhostNumeral } from "../components/ghost-numeral";
 import { EASE, Kicker, Reveal } from "../components/reveal";
 
@@ -51,13 +50,9 @@ function DomainsSection() {
                         {d.note}
                       </span>
                       {d.status === "PENDING" ? (
-                        <Badge variant="warning">
-                          <span className="relative flex size-1.5" aria-hidden="true">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
-                            <span className="relative inline-flex size-1.5 rounded-full bg-amber-400" />
-                          </span>
+                        <Lamp tone="warning" pulse>
                           {d.status}
-                        </Badge>
+                        </Lamp>
                       ) : (
                         <motion.span
                           initial={{ scale: 0.6, opacity: 0 }}
@@ -70,10 +65,7 @@ function DomainsSection() {
                             delay: (d.delay ?? 0) + 0.25,
                           }}
                         >
-                          <Badge variant="success">
-                            <Check className="size-2.5" aria-hidden="true" />
-                            {d.status}
-                          </Badge>
+                          <Lamp tone="success">{d.status}</Lamp>
                         </motion.span>
                       )}
                     </span>

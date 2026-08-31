@@ -2,13 +2,14 @@
 @import 'tw-animate-css';
 
 /* ============================================================
-   INK & EMBER — LinkShift design tokens
-   Dark-first. Copper accent used surgically.
+   ROUTE OFFICE — LinkShift design tokens (evolves Ink & Ember)
+   Everything is a route: codes (mono), lamps (status), rails
+   (live hairlines). Ember stays the only fill color.
    ============================================================ */
 
 @theme inline {
   /* Typography */
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: "Fraunces", ui-serif, Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
@@ -17,6 +18,8 @@
   --color-surface: var(--surface);
   --color-elevated: var(--elevated);
   --color-raised: var(--raised);
+  --color-sunken: var(--sunken);
+  --color-overlay: var(--overlay);
 
   /* Foregrounds */
   --color-foreground: var(--foreground);
@@ -60,6 +63,15 @@
   --color-ring: var(--ring);
   --color-dot: var(--dot);
 
+  /* Status lamps — soft tonal backgrounds for badges/banners */
+  --color-success-soft: var(--success-soft);
+  --color-warning-soft: var(--warning-soft);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-info-soft: var(--info-soft);
+
+  /* Themed elevation — the only shadow scale the app uses */
+  --shadow-lift: var(--shadow-lift);
+
   /* Radii — scale */
   --radius-xs: 3px;   /* chips, status dots */
   --radius-sm: 4px;   /* tooltips */
@@ -72,149 +84,166 @@
 :root {
   color-scheme: dark;
 
-  /* Surfaces — 6 levels for real hierarchy */
-  --background: #0d0d0d;   /* page canvas */
-  --surface: #111111;      /* card / plate */
-  --elevated: #161616;     /* nested inside a plate */
-  --raised: #1c1c1c;       /* input fields, popovers */
-  --overlay: #0a0a0a;      /* scrim behind modals */
-  --sunken: #080808;       /* empty-state wells */
+  /* Surfaces — warm carbon ladder (canvas → plate) */
+  --background: #141210;   /* Carbon — page canvas */
+  --surface: #1a1713;      /* Char — card / plate */
+  --elevated: #201d18;     /* nested inside a plate */
+  --raised: #27231d;       /* input fields, popovers */
+  --overlay: #0c0a08;      /* scrim behind modals */
+  --sunken: #0f0d0b;       /* empty-state wells */
 
-  /* Text */
-  --foreground: #f5f1eb;
-  --fg-secondary: #a8a199;
-  --fg-muted: #6b6560;
+  /* Text — Bone ink on carbon */
+  --foreground: #f1ece3;
+  --fg-secondary: #9c9284;
+  --fg-muted: #8a8172;
 
-  /* Lines — tonal scale */
-  --border: #262626;
-  --border-strong: #3a3a3a;
-  --border-subtle: #1f1f1f;
+  /* Lines — warm tonal scale */
+  --border: #2a251f;
+  --border-strong: #3d372e;
+  --border-subtle: #201c17;
   --border-ember: rgba(232, 89, 12, 0.35);
 
-  /* Ember */
+  /* Ember — the only fill color */
   --brand: #e8590c;
   --brand-hover: #f56d1e;
   --brand-soft: rgba(232, 89, 12, 0.10);
   --brand-ink: #f56d1e;
 
-  /* Semantic aliases */
-  --card: #111111;
-  --card-foreground: #f5f1eb;
-  --popover: #161616;
-  --popover-foreground: #f5f1eb;
+  /* Semantic aliases (lamps: status is color + word, never color alone) */
+  --card: #1a1713;
+  --card-foreground: #f1ece3;
+  --popover: #201d18;
+  --popover-foreground: #f1ece3;
   --primary: #e8590c;
-  --primary-foreground: #ffffff;
-  --secondary: #1c1c1c;
-  --secondary-foreground: #f5f1eb;
-  --muted: #161616;
-  --muted-foreground: #a8a199;
-  --accent: #1c1c1c;
-  --accent-foreground: #f5f1eb;
+  --primary-foreground: #141210; /* ink on ember — construction-sign language */
+  --secondary: #27231d;
+  --secondary-foreground: #f1ece3;
+  --muted: #201d18;
+  --muted-foreground: #9c9284;
+  --accent: #27231d;
+  --accent-foreground: #f1ece3;
   --destructive: #e5484d;
   --destructive-foreground: #fca5a5;
-  --warning: #f59e0b;
-  --warning-foreground: #fcd34d;
-  --success: #34d399;
-  --success-foreground: #6ee7b7;
+  --warning: #e0a83c;
+  --warning-foreground: #ebc46f;
+  --success: #3fbf85;
+  --success-foreground: #82dcb6;
   --info: #60a5fa;
   --info-foreground: #93c5fd;
-  --input: #262626;
+  --input: #2a251f;
   --ring: #f56d1e;
 
+  /* Lamp softs — tonal backgrounds for badges/banners */
+  --success-soft: rgba(63, 191, 133, 0.10);
+  --warning-soft: rgba(224, 168, 60, 0.10);
+  --destructive-soft: rgba(229, 72, 77, 0.10);
+  --info-soft: rgba(96, 165, 250, 0.10);
+
   /* Texture */
-  --dot: rgba(245, 241, 235, 0.10);
+  --dot: rgba(241, 236, 227, 0.10);
   --shadow-color: 0 0% 0%;
 
+  /* Themed elevation */
+  --shadow-lift: 0 2px 6px hsl(0 0% 0% / 0.35), 0 16px 40px -16px hsl(0 0% 0% / 0.6);
+
   /* Interactive raised-surface states */
-  --raised-hover: #232323;
-  --raised-active: #202020;
+  --raised-hover: #2e2922;
+  --raised-active: #2a251f;
 
   /* Data-viz */
-  --chart-track: #262626;
+  --chart-track: #2a251f;
   --chart-1: #e8590c;
-  --chart-2: #f5f1eb;
-  --chart-3: #8a8378;
-  --chart-4: #4a453f;
+  --chart-2: #f1ece3;
+  --chart-3: #8d8579;
+  --chart-4: #4a4238;
   --chart-5: #b4622d;
-  --chart-6: #6b6560;
+  --chart-6: #6f6759;
   --chart-center: #ffffff;
 }
 
 /* ============================================================
-   PORCELAIN & EMBER — the light scheme.
-   A clean, predominantly white canvas with crisp neutral grays
-   and the same copper accent. Premium and sharp, deliberately
-   not a cream wash and not a flat inversion of Ink & Ember.
+   PAPER OFFICE — the light scheme.
+   A near-neutral warm white (deliberately not cream), crisp warm
+   hairlines, and the ember deepened for AA contrast on white.
    ============================================================ */
 :root[data-theme="light"] {
   color-scheme: light;
 
-  /* Surfaces — white, still layered for hierarchy */
-  --background: #f6f6f7;   /* page canvas (soft neutral) */
-  --surface: #ffffff;      /* card / plate */
-  --elevated: #f2f2f3;     /* nested inside a plate */
+  /* Surfaces — paper, still layered for hierarchy */
+  --background: #f7f6f4;   /* Paper — page canvas */
+  --surface: #ffffff;      /* Sheet — card / plate */
+  --elevated: #f0efec;     /* nested inside a plate */
   --raised: #ffffff;       /* input fields, popovers */
-  --overlay: #101012;      /* scrim behind modals */
-  --sunken: #efeff0;       /* empty-state wells */
+  --overlay: #14120e;      /* scrim behind modals */
+  --sunken: #eeece8;       /* empty-state wells */
 
-  /* Text — near-black neutral ink */
-  --foreground: #131316;
-  --fg-secondary: #4b4b53;
-  --fg-muted: #6e6e77;
+  /* Text — warm near-black ink */
+  --foreground: #191613;
+  --fg-secondary: #4c463d;
+  --fg-muted: #6e675c;
 
-  /* Lines — neutral hairlines */
-  --border: #e5e5e8;
-  --border-strong: #d2d2d7;
-  --border-subtle: #ededf0;
-  --border-ember: rgba(217, 72, 15, 0.40);
+  /* Lines — warm hairlines */
+  --border: #e4e1db;
+  --border-strong: #d6d2c9;
+  --border-subtle: #edebe6;
+  --border-ember: rgba(194, 65, 12, 0.40);
 
-  /* Ember — unchanged brand hue, deepened for contrast on white */
-  --brand: #e8590c;
-  --brand-hover: #d9480f;
-  --brand-soft: rgba(232, 89, 12, 0.07);
+  /* Ember — deepened for contrast on white */
+  --brand: #c2410c;
+  --brand-hover: #a33708;
+  --brand-soft: rgba(194, 65, 12, 0.07);
   --brand-ink: #c2410c;
 
-  /* Semantic aliases */
+  /* Semantic aliases (lamps: status is color + word, never color alone) */
   --card: #ffffff;
-  --card-foreground: #131316;
+  --card-foreground: #191613;
   --popover: #ffffff;
-  --popover-foreground: #131316;
-  --primary: #e8590c;
+  --popover-foreground: #191613;
+  --primary: #c2410c;
   --primary-foreground: #ffffff;
-  --secondary: #f2f2f3;
-  --secondary-foreground: #131316;
-  --muted: #f2f2f3;
-  --muted-foreground: #4b4b53;
-  --accent: #efeff1;
-  --accent-foreground: #131316;
+  --secondary: #f0efec;
+  --secondary-foreground: #191613;
+  --muted: #f0efec;
+  --muted-foreground: #4c463d;
+  --accent: #eeece8;
+  --accent-foreground: #191613;
   --destructive: #dc2626;
   --destructive-foreground: #ffffff;
   --warning: #b45309;
   --warning-foreground: #92400e;
-  --success: #059669;
+  --success: #047857;
   --success-foreground: #047857;
   --info: #2563eb;
   --info-foreground: #1d4ed8;
-  --input: #d6d6db;
-  --ring: #e8590c;
+  --input: #d8d4cb;
+  --ring: #c2410c;
+
+  /* Lamp softs — tonal backgrounds for badges/banners */
+  --success-soft: rgba(4, 120, 87, 0.08);
+  --warning-soft: rgba(180, 83, 9, 0.08);
+  --destructive-soft: rgba(220, 38, 38, 0.07);
+  --info-soft: rgba(37, 99, 235, 0.08);
 
   /* Texture */
-  --dot: rgba(19, 19, 22, 0.08);
-  --shadow-color: 240 5% 12%;
+  --dot: rgba(25, 22, 19, 0.08);
+  --shadow-color: 30 8% 15%;
+
+  /* Themed elevation — tight neutral, never dark-mode shadows */
+  --shadow-lift: 0 2px 6px hsl(30 8% 15% / 0.07), 0 16px 40px -18px hsl(30 8% 15% / 0.16);
 
   /* Interactive raised-surface states */
-  --raised-hover: #f7f7f8;
-  --raised-active: #efeff1;
+  --raised-hover: #f6f5f2;
+  --raised-active: #efede9;
 
   /* Data-viz */
-  --chart-track: #e9e9ec;
-  --chart-1: #e8590c;
-  --chart-2: #131316;
-  --chart-3: #6e6e77;
-  --chart-4: #d2d2d7;
+  --chart-track: #e9e7e2;
+  --chart-1: #c2410c;
+  --chart-2: #191613;
+  --chart-3: #6e675c;
+  --chart-4: #d6d2c9;
   --chart-5: #b4622d;
-  --chart-6: #4b4b53;
-  --chart-center: #131316;
+  --chart-6: #4c463d;
+  --chart-center: #191613;
 }
 
 @layer base {
@@ -231,7 +260,6 @@
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "cv11", "ss01";
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

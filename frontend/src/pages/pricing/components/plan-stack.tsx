@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useSession } from "@/auth/session";
-import { Badge } from "@/components/ui/badge";
+import { Lamp } from "@/components/ui/lamp";
 import { Button } from "@/components/ui/button";
 import type { ApiPlan, ApiSubscription, BillingCycle, Currency } from "@/api/billing";
 import {
@@ -80,19 +80,14 @@ function PlanBlock({
     isCurrent && subscription?.status === "ACTIVE" && !subscription.pendingPlan;
 
   return (
-    <article
-      className={cn(
-        "overflow-hidden rounded-lg border bg-surface",
-        featured ? "border-brand/40" : "border-border",
-      )}
-    >
+    <article className={cn("ls-plate overflow-hidden", featured && "border-brand/40")}>
       <div className={cn("border-b border-border p-5", featured && "bg-brand/[0.04]")}>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           <h2 className="font-display text-xl font-semibold tracking-tight">
             {plan.name.charAt(0) + plan.name.slice(1).toLowerCase()}
           </h2>
-          {featured && <Badge variant="ember">Popular</Badge>}
-          {isCurrent && <Badge variant="success">Current</Badge>}
+          {featured && <Lamp tone="ember">Popular</Lamp>}
+          {isCurrent && <Lamp tone="success">Current</Lamp>}
         </div>
 
         <div className="mt-3 flex items-baseline gap-1.5">
@@ -119,10 +114,12 @@ function PlanBlock({
           const value = row.value(plan);
           return (
             <div key={row.key} className="flex flex-col">
-              <dt className="text-[11px] text-fg-muted">{row.label}</dt>
+              <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
+                {row.label}
+              </dt>
               <dd
                 className={cn(
-                  "font-mono text-sm tabular-nums",
+                  "mt-0.5 font-mono text-sm tabular-nums",
                   value === "—" ? "text-fg-muted" : "text-foreground",
                 )}
               >
@@ -134,9 +131,7 @@ function PlanBlock({
       </dl>
 
       <div className="border-t border-border px-5 py-4">
-        <p className="font-mono text-[10px] tracking-[0.18em] text-fg-muted uppercase">
-          Capabilities
-        </p>
+        <p className="ls-marquee">Capabilities</p>
         <ul className="mt-2.5 space-y-1.5">
           {FLAG_ROWS.map((row) => (
             <li key={row.label} className="flex items-center justify-between gap-3">

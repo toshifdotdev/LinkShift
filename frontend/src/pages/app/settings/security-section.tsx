@@ -4,7 +4,7 @@ import { resendVerification } from "@/api/auth";
 import { ApiError } from "@/api/client";
 import { changePassword } from "@/api/settings";
 import { useLogout, useSession } from "@/auth/session";
-import { Badge } from "@/components/ui/badge";
+import { Lamp } from "@/components/ui/lamp";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -100,25 +100,25 @@ function SecuritySection() {
     <div className="grid gap-6 lg:grid-cols-2">
       {/* Sign-in & session summary */}
       <div className="flex flex-col gap-6">
-        <dl className="grid grid-cols-1 overflow-hidden rounded-lg border border-border bg-raised/40 sm:grid-cols-2">
+        <dl className="ls-plate grid grid-cols-1 overflow-hidden sm:grid-cols-2">
           <div className="border-b border-border px-4 py-3.5 sm:border-r">
-            <dt className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">Password</dt>
+            <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Password</dt>
             <dd className="mt-1.5">
               {user.hasPassword ? (
-                <Badge variant="neutral">Set</Badge>
+                <Lamp tone="neutral">Set</Lamp>
               ) : (
-                <Badge variant="warning">Not set. Google sign-in</Badge>
+                <Lamp tone="warning">Not set. Google sign-in</Lamp>
               )}
             </dd>
           </div>
           <div className="border-b border-border px-4 py-3.5">
-            <dt className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">Email status</dt>
+            <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Email status</dt>
             <dd className="mt-1.5 flex flex-wrap items-center gap-2">
               {user.verified ? (
-                <Badge variant="success">Verified</Badge>
+                <Lamp tone="success">Verified</Lamp>
               ) : (
                 <>
-                  <Badge variant="warning">Unverified</Badge>
+                  <Lamp tone="warning">Unverified</Lamp>
                   <button
                     type="button"
                     onClick={() => void handleResend()}
@@ -133,7 +133,7 @@ function SecuritySection() {
           </div>
         </dl>
 
-        <div className="flex flex-col gap-2 rounded-lg border border-border bg-raised/40 px-4 py-3.5">
+        <div className="ls-plate flex flex-col gap-2 px-4 py-3.5">
           <div className="flex items-start gap-2.5">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand" />
             <div>
@@ -161,7 +161,7 @@ function SecuritySection() {
       {/* Password change form */}
       <form
         onSubmit={handlePasswordChange}
-        className="flex flex-col gap-4 rounded-lg border border-border bg-raised/40 px-4 py-4"
+        className="ls-plate flex flex-col gap-4 px-4 py-4"
         noValidate
       >
         {user.hasPassword ? (
@@ -197,7 +197,7 @@ function SecuritySection() {
                 className={cn(
                   "rounded-full border px-2 py-0.5 font-mono text-[9px] tracking-wide uppercase transition-colors duration-200",
                   r.ok
-                    ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                    ? "border-success/30 bg-success-soft text-success"
                     : "border-border bg-elevated text-fg-muted",
                 )}
               >

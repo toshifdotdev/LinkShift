@@ -1,5 +1,5 @@
 import { Lock } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Segmented } from "@/components/ui/segmented";
 
 export type PlanName = "FREE" | "STARTER" | "CREATOR" | "PRO";
 
@@ -29,6 +29,9 @@ export function rangeLocked(option: RangeOption, plan: string): boolean {
   return planRank(option.minPlan) > planRank(plan);
 }
 
+/* Locked ranges stay clickable (not disabled) so the click can surface the
+   upgrade path instead of silently doing nothing; the controlled value keeps
+   the thumb in place. */
 function RangeSelect({
   value,
   plan,
@@ -41,34 +44,29 @@ function RangeSelect({
   onLocked: (days: number, minPlan: PlanName) => void;
 }) {
   return (
-    <div
-      role="radiogroup"
-      aria-label="Analytics period"
-      className="inline-flex flex-wrap items-center rounded-md border border-border bg-surface p-1"
-    >
-      {RANGE_OPTIONS.map((option) => {
-        const active = value === option.days;
-        const locked = rangeLocked(option, plan);
-        return (
-          <button
-            key={option.label}
-            type="button"
-            role="radio"
-            aria-checked={active}
-            onClick={() => (locked ? onLocked(option.days, option.minPlan) : onChange(option.days))}
-            className={cn(
-              "relative h-7 cursor-pointer rounded-sm px-2.5 font-mono text-[10px] tracking-[0.1em] uppercase transition-colors",
-              active
-                ? "border border-border-strong bg-raised text-foreground"
-                : "text-fg-muted hover:text-fg-secondary",
+    <Segmented
+      ariaLabel="Analytics period"
+      value={String(value)}
+      onValueChange={(v) => {
+        const option = RANGE_OPTIONS.find((r) => String(r.days) === v);
+        if (!option) return;
+        if (rangeLocked(option, plan)) onLocked(option.days, option.minPlan);
+        else onChange(option.days);
+      }}
+      options={RANGE_OPTIONS.map((option) => ({
+        value: String(option.days),
+        label: (
+          <>
+            {rangeLocked(option, plan) && (
+              <Lock className="size-3 text-brand" aria-hidden="true" />
             )}
-          >
-            {locked && <Lock className="mr-1 inline size-2.5 text-brand" aria-hidden="true" />}
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
+            <span className="font-mono text-[10px] tracking-[0.1em] uppercase">
+              {option.label}
+            </span>
+          </>
+        ),
+      }))}
+    />
   );
 }
 

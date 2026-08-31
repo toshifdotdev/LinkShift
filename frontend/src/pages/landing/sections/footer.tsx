@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Container } from "@/components/ui/container";
+import { Lamp } from "@/components/ui/lamp";
 import { Logo } from "@/components/brand/logo";
 
 const productLinks = [
@@ -41,13 +42,9 @@ function Footer() {
 
       <div className="flex flex-col items-start justify-between gap-3 border-t border-border py-6 sm:flex-row sm:items-center">
         <p className="font-mono text-xs text-fg-muted">© {new Date().getFullYear()} LinkShift</p>
-        <p className="flex items-center gap-2 font-mono text-xs text-fg-muted">
-          <span className="relative flex size-1.5">
-            <span className="absolute inset-0 rounded-full bg-emerald-400/60 ls-ping" />
-            <span className="relative inline-flex size-1.5 rounded-full bg-emerald-400" />
-          </span>
+        <Lamp tone="success" pulse>
           Live. Self-healing.
-        </p>
+        </Lamp>
       </div>
       </Container>
     </footer>

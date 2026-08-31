@@ -1,14 +1,9 @@
 import { useEffect, useState } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { Segmented } from "@/components/ui/segmented";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import type { ListLinksParams } from "@/api/links";
-
-const STATUS_TABS = [
-  { label: "All", value: undefined },
-  { label: "Active", value: "active" as const },
-  { label: "Inactive", value: "inactive" as const },
-];
 
 const SORT_OPTIONS = [
   { label: "Newest first", sort: "createdAt" as const, order: "desc" as const },
@@ -50,36 +45,18 @@ function LinksToolbar({
 
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-      {/* status tabs */}
-      <div
-        role="radiogroup"
-        aria-label="Filter by status"
-        className="inline-flex items-center rounded-md border border-border bg-surface p-1"
-      >
-        {STATUS_TABS.map((tab) => {
-          const active = status === tab.value;
-          return (
-            <button
-              key={tab.label}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => onStatus(tab.value)}
-              className={cn(
-                "relative h-7 cursor-pointer rounded-sm px-3 text-[12px] font-medium transition-colors",
-                active
-                  ? "border border-border-strong bg-raised text-foreground"
-                  : "border border-transparent text-fg-muted hover:text-fg-secondary",
-              )}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <Segmented
+        ariaLabel="Filter by status"
+        value={status ?? "all"}
+        onValueChange={(v) => onStatus(v === "all" ? undefined : (v as "active" | "inactive"))}
+        options={[
+          { value: "all", label: "All" },
+          { value: "active", label: "Active" },
+          { value: "inactive", label: "Inactive" },
+        ]}
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        {/* search */}
         <div className="relative">
           <Search
             className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-fg-muted"
@@ -101,25 +78,27 @@ function LinksToolbar({
           </span>
         </div>
 
-        {/* sort */}
-        <select
-          aria-label="Sort links"
+        <Select
           value={`${sort}:${order}`}
-          onChange={(e) => {
-            const [nextSort, nextOrder] = e.target.value.split(":") as [
+          onValueChange={(v) => {
+            const [nextSort, nextOrder] = v.split(":") as [
               NonNullable<ListLinksParams["sort"]>,
               NonNullable<ListLinksParams["order"]>,
             ];
             onSort(nextSort, nextOrder);
           }}
-          className="h-9 cursor-pointer rounded-md border border-input bg-surface px-3 text-sm text-foreground transition-colors hover:border-border-strong focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-ring/40"
         >
-          {SORT_OPTIONS.map((o) => (
-            <option key={o.label} value={`${o.sort}:${o.order}`}>
-              {current?.sort === o.sort && current?.order === o.order ? o.label : o.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger className="w-full sm:w-44" aria-label="Sort links">
+            {current?.label ?? "Newest first"}
+          </SelectTrigger>
+          <SelectContent>
+            {SORT_OPTIONS.map((o) => (
+              <SelectItem key={o.label} value={`${o.sort}:${o.order}`}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

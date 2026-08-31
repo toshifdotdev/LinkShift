@@ -1,3 +1,4 @@
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 interface BreakdownItem {
@@ -31,28 +32,26 @@ function BreakdownPanel({
   return (
     <section
       aria-label={title}
-      className={cn("rounded-lg border border-border bg-surface", className)}
+      className={cn("ls-plate", className)}
     >
-      <header className="border-b border-border px-5 py-3.5">
-        <h3 className="font-mono text-[10px] tracking-[0.18em] text-fg-secondary uppercase">
-          {title}
-        </h3>
+      <header className="border-b border-border-subtle px-5 py-3">
+        <p className="ls-marquee">{title}</p>
       </header>
 
       {loading ? (
         <div className="space-y-3 px-5 py-4">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex items-center gap-3">
-              <div className="h-3 w-20 shrink-0 animate-pulse rounded bg-elevated" />
-              <div className="h-1.5 flex-1 animate-pulse rounded bg-elevated" />
-              <div className="h-3 w-8 shrink-0 animate-pulse rounded bg-elevated" />
+              <Skeleton className="h-3 w-20 shrink-0" />
+              <Skeleton className="h-1.5 flex-1" />
+              <Skeleton className="h-3 w-8 shrink-0" />
             </div>
           ))}
         </div>
       ) : visible.length === 0 || (visible.length === 1 && visible[0].label === "Unknown" && visible[0].count === 0) ? (
         <p className="px-5 py-6 text-center text-xs text-fg-muted">{emptyText}</p>
       ) : (
-        <ul className="divide-y divide-border/60">
+        <ul className="divide-y divide-border-subtle">
           {visible.map((item, i) => (
             <li key={item.label + i} className="px-5 py-2.5">
               <div className="flex items-baseline justify-between gap-3">

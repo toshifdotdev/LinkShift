@@ -7,6 +7,7 @@ import { ApiError } from "@/api/client";
 import { devSlow } from "@/lib/dev-delay";
 import { useSession } from "@/auth/session";
 import { Button } from "@/components/ui/button";
+import { Banner } from "@/components/ui/banner";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -82,23 +83,15 @@ function LoginPage() {
       }
     >
       {googleFailed && !justVerified && (
-        <div
-          role="alert"
-          className="mb-5 flex items-start gap-2.5 rounded-md border border-destructive/30 bg-destructive/10 px-3.5 py-3 text-[13px] text-destructive"
-        >
-          <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-destructive" />
+        <Banner tone="destructive" className="mb-5">
           Google sign-in failed. Try again or continue with email.
-        </div>
+        </Banner>
       )}
 
       {justVerified && (
-        <div
-          role="status"
-          className="mb-5 flex items-start gap-2.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-3.5 py-3 text-[13px] text-emerald-300"
-        >
-          <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-emerald-400" />
+        <Banner tone="success" className="mb-5">
           Email verified. Your account is live. Log in to continue.
-        </div>
+        </Banner>
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>

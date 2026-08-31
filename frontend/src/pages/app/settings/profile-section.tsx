@@ -1,11 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, UploadCloud, X } from "lucide-react";
+import { UploadCloud, X } from "lucide-react";
 import { useRef, useState } from "react";
 import { ApiError } from "@/api/client";
 import { removeAvatar, uploadAvatar } from "@/api/settings";
 import { useSession } from "@/auth/session";
 import { Avatar } from "@/components/app/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Lamp } from "@/components/ui/lamp";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -35,11 +35,11 @@ function ProfileSection() {
   const [cropFile, setCropFile] = useState<File | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
 
-  if (user?.name !== prevName) {
+  if (user && user.name !== prevName) {
     // The profile refreshed from the server (e.g. saved elsewhere) — resync
     // the draft so it never silently diverges from the stored name.
-    setPrevName(user?.name ?? "");
-    setNameDraft(user?.name ?? "");
+    setPrevName(user.name);
+    setNameDraft(user.name);
   }
 
   if (!user) return null;
@@ -193,35 +193,32 @@ function ProfileSection() {
       </div>
 
       {/* Account facts */}
-      <dl className="grid h-fit grid-cols-1 overflow-hidden rounded-lg border border-border bg-raised/40 sm:grid-cols-2">
+      <dl className="ls-plate grid h-fit grid-cols-1 overflow-hidden sm:grid-cols-2">
         <div className="border-b border-border px-4 py-3.5 sm:border-r">
-          <dt className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">Email</dt>
+          <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Email</dt>
           <dd className="mt-1 truncate font-mono text-xs text-foreground" title={user.email}>
             {user.email}
           </dd>
         </div>
         <div className="border-b border-border px-4 py-3.5">
-          <dt className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">Member since</dt>
+          <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Member since</dt>
           <dd className="mt-1 text-[13px] text-foreground">{memberSince(user.createdAt)}</dd>
         </div>
         <div className="px-4 py-3.5 sm:border-r sm:border-border">
-          <dt className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">Sign-in method</dt>
+          <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Sign-in method</dt>
           <dd className="mt-1.5">
-            <Badge variant={user.provider === "GOOGLE" ? "ember" : "neutral"}>
+            <Lamp tone={user.provider === "GOOGLE" ? "ember" : "neutral"}>
               {user.provider === "GOOGLE" ? "Google" : "Email & password"}
-            </Badge>
+            </Lamp>
           </dd>
         </div>
         <div className="px-4 py-3.5">
-          <dt className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">Email status</dt>
+          <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Email status</dt>
           <dd className="mt-1.5">
             {user.verified ? (
-              <Badge variant="success">
-                <Check className="size-3" />
-                Verified
-              </Badge>
+              <Lamp tone="success">Verified</Lamp>
             ) : (
-              <Badge variant="warning">Unverified</Badge>
+              <Lamp tone="warning">Unverified</Lamp>
             )}
           </dd>
         </div>

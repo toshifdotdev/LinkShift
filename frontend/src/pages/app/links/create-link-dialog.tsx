@@ -5,7 +5,7 @@ import { createLink } from "@/api/links";
 import { ApiError } from "@/api/client";
 import { useSession } from "@/auth/session";
 import { useDomains } from "@/hooks/use-domains";
-import { Badge } from "@/components/ui/badge";
+import { Lamp } from "@/components/ui/lamp";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field";
@@ -188,9 +188,9 @@ function CreateLinkDialog({
           <span className="min-w-0 truncate font-medium text-foreground">
             {canUseSlug ? (slug.trim() || "your-slug") : "your-slug"}
           </span>
-          <Badge shape="mark" variant="dim" className="ml-auto">
+          <Lamp tone="dim" className="ml-auto">
             {canUseSlug ? "Custom" : "Auto"}
-          </Badge>
+          </Lamp>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-4" noValidate>
@@ -342,7 +342,7 @@ function CreateLinkDialog({
                             className={cn(
                               "rounded-full border px-2 py-0.5 font-mono text-[9px] tracking-[0.16em] uppercase transition-colors",
                               r.test(password)
-                                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                                ? "border-success/30 bg-success-soft text-success"
                                 : "border-border bg-elevated text-fg-muted",
                             )}
                           >
