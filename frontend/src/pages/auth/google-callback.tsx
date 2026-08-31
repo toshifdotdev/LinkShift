@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { setAccessToken } from "@/api/token";
 import { Logo } from "@/components/brand/logo";
 import { useQueryClient } from "@tanstack/react-query";
@@ -9,9 +9,9 @@ import { useQueryClient } from "@tanstack/react-query";
  *
  * Contract: the backend's Google callback redirects the browser here with
  * `?accessToken=…`. The access token is stored, the session is primed, and
- * the user lands in /app. If the token is missing, the page renders a brief
- * "signing in…" affordance and waits (the redirect cannot realistically
- * arrive without a token — the controller always sets one).
+ * the user lands in /app. If the token is missing (interrupted login, stale
+ * or tampered handoff) we render a clean recovery state with a way back to
+ * sign-in instead of spinning forever.
  */
 function GoogleCallbackPage() {
   const navigate = useNavigate();
@@ -36,12 +36,33 @@ function GoogleCallbackPage() {
           <p className="font-mono text-[11px] font-medium tracking-[0.18em] text-brand uppercase">
             Google sign-in
           </p>
-          <h1 className="font-display mt-3 text-3xl font-semibold tracking-tight text-foreground">
-            Signing you in…
-          </h1>
-          <p className="mt-3 text-sm leading-relaxed text-fg-secondary">
-            One moment while your workspace loads.
-          </p>
+          {accessToken ? (
+            <>
+              <h1 className="font-display mt-3 text-3xl font-semibold tracking-tight text-foreground">
+                Signing you in…
+              </h1>
+              <p className="mt-3 text-sm leading-relaxed text-fg-secondary">
+                One moment while your workspace loads.
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="font-display mt-3 text-3xl font-semibold tracking-tight text-foreground">
+                Sign-in didn&apos;t finish
+              </h1>
+              <p className="mt-3 text-sm leading-relaxed text-fg-secondary">
+                We couldn&apos;t complete the handoff from Google. This can
+                happen if the sign-in was interrupted or the link expired. No
+                changes were made to your account.
+              </p>
+              <Link
+                to="/login"
+                className="mt-6 inline-flex h-10 items-center justify-center rounded-md bg-brand px-5 font-mono text-[12px] font-semibold tracking-[0.08em] text-white uppercase transition-colors hover:bg-brand-hover"
+              >
+                Back to sign in
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </main>

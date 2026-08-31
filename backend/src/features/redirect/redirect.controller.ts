@@ -3,11 +3,27 @@ import { asyncHandler } from "../../utils/asyncHandler";
 import { redirect as redirectService, unlockService } from "./redirect.service";
 import { unlockData } from "./redirect.validation";
 import { getHost } from "../../utils/getHost";
+import { extractQuery, extractRest } from "../../utils/appDeepLink";
+import { renderUnlockPage } from "../../utils/unlockPage";
 
 type RedirectParams = {
     shortId : string;
 };
 
+/* Browsers send Accept: text/html,… — API clients send application/json.
+   Password-gated GETs answer with the unlock page for the former and keep
+   the historical JSON contract for the latter. */
+const prefersJson = (req: Request): boolean => {
+    const accept = req.headers.accept ?? "";
+    return accept.includes("application/json") && !accept.includes("text/html");
+};
+
+const sendInterstitial = (res: Response, html: string): void => {
+    res.status(200)
+        .set("Cache-Control", "no-store")
+        .type("html")
+        .send(html);
+};
 
 export const redirect = asyncHandler(async(req : Request, res : Response) => {
     const validated = req.validated!;
@@ -19,15 +35,23 @@ export const redirect = asyncHandler(async(req : Request, res : Response) => {
     const result = await redirectService(shortId, host, req);
 
     if(result.requiresPassword) {
-        res.status(401).json(result);
+        if (prefersJson(req)) {
+            res.status(401).json(result);
+            return;
+        }
+        /* Unlock page whose form action preserves the visitor's appended
+           path and query, so both survive the password round trip. */
+        const rest = extractRest(req.params as Record<string, unknown>);
+        const query = extractQuery(req.url ?? "");
+        res.status(401)
+            .set("Cache-Control", "no-store")
+            .type("html")
+            .send(renderUnlockPage({ shortId, rest, query }));
         return;
     }
 
     if (result.kind === "interstitial") {
-        res.status(200)
-            .set("Cache-Control", "no-store")
-            .type("html")
-            .send(result.html);
+        sendInterstitial(res, result.html);
         return;
     }
 
@@ -44,7 +68,12 @@ export const unlockController = asyncHandler(async(req : Request, res : Response
 
     const host = getHost(req.headers.host ?? "");
 
-    const targetUrl = await unlockService(shortId, password, host, req);
+    const resolved = await unlockService(shortId, password, host, req);
 
-    return res.redirect(targetUrl!);
+    if (resolved.kind === "interstitial") {
+        sendInterstitial(res, resolved.html);
+        return;
+    }
+
+    return res.redirect(resolved.targetUrl);
 })

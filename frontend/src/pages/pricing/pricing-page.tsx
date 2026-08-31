@@ -124,13 +124,17 @@ function PricingPage() {
     }
   }
 
+  /* Pricing is public — only checkout needs an account. Route a signed-out
+     visitor through sign-in, carrying the plan intent so the intended
+     checkout resumes once the session exists. */
+  function beginSignInForCheckout(planName: string) {
+    sessionStorage.setItem("ls:plan-intent", JSON.stringify({ plan: planName, cycle }));
+    navigate("/login", { state: { from: "/pricing" } });
+  }
+
   async function handleSubscribe(planName: string) {
     if (!getAccessToken()) {
-      toast({
-        title: "Sign in required",
-        description: "Create an account first — authentication is coming in the next update.",
-        variant: "error",
-      });
+      beginSignInForCheckout(planName);
       return;
     }
 
@@ -171,11 +175,7 @@ function PricingPage() {
       if (err instanceof ApiError && err.status === 401) {
         /* Journey: unauthenticated plan selection → auth → straight back
            into the intended checkout. */
-        sessionStorage.setItem(
-          "ls:plan-intent",
-          JSON.stringify({ plan: planName, cycle }),
-        );
-        navigate("/login", { state: { from: "/pricing" } });
+        beginSignInForCheckout(planName);
         return;
       }
       const message =

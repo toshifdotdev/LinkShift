@@ -3,6 +3,7 @@ import { loginUser, registerUser, forgotPasswordService, resetPasswordService, r
 import { asyncHandler } from "../../utils/asyncHandler";
 import { forgotPasswordInput, LoginUserInput, RegisterUserInput, resendVerificationInput, resetPasswordInput, verifyEmailInput } from "./auth.validation";
 import { setRefreshCookie } from "../../utils/refreshCookie";
+import { clearOAuthStateCookie } from "./oauthState";
 import { AuthResponse } from "./auth.types";
 import { AppError } from "../../errors/AppError";
 import { config } from "../../config";

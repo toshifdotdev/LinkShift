@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/AppError";
 import { log } from "../utils/logger";
+import { config } from "../config";
+import { clearOAuthStateCookie } from "../features/auth/oauthState";
 
 /* Public short-link error template. Mirrors the LinkShift ink-and-ember
    language used by the auth shell and the landing page — monochrome surface,
@@ -43,6 +45,15 @@ function copyFor(statusCode: number, message: string): { kicker: string; headlin
             ctaLabel: "Back to home",
         };
     }
+    if (statusCode === 429) {
+        return {
+            kicker: "429",
+            headline: "You're going a bit fast.",
+            note: message || "This page has had a lot of traffic from your network just now. Give it a moment, then try again.",
+            ctaHref: "/",
+            ctaLabel: "Back to home",
+        };
+    }
     return {
         kicker: String(statusCode),
         headline: "Something went wrong.",
@@ -52,7 +63,7 @@ function copyFor(statusCode: number, message: string): { kicker: string; headlin
     };
 }
 
-function renderPublicError(statusCode: number, message: string): string {
+export function renderPublicError(statusCode: number, message: string): string {
     const safe = escapeHtml(message || "");
     const { kicker, headline, note, ctaHref, ctaLabel } = copyFor(statusCode, safe);
     return `<!doctype html>
@@ -148,7 +159,45 @@ function renderPublicError(statusCode: number, message: string): string {
 </html>`;
 }
 
+/* Browsers send Accept: text/html,… — API clients send application/json.
+   Same convention as redirect.controller: visitor pages answer in HTML,
+   machine clients keep the JSON contract. */
+const prefersJson = (req: Request): boolean => {
+    const accept = req.headers.accept ?? "";
+    return accept.includes("application/json") && !accept.includes("text/html");
+};
+
+/* express-rate-limit handler for the public short-link routes. The limit is
+   still enforced (status 429 either way); only the body changes — branded
+   HTML for people, JSON for API clients. */
+export const createVisitorRateLimitHandler =
+    (message: { success: boolean; message: string }) =>
+    (req: Request, res: Response): void => {
+        res.status(429);
+        if (prefersJson(req)) {
+            res.json(message);
+            return;
+        }
+        res.set("Cache-Control", "no-store")
+            .type("html")
+            .send(renderPublicError(429, message.message));
+    };
+
 export const errorMiddleware = (err : unknown, req : Request, res : Response, next : NextFunction) => {
+    // The Google OAuth endpoints are top-level browser navigations (redirects
+    // from Google), not API calls. Any failure there — a provider error, an
+    // interrupted login, a token-exchange or database error — must return the
+    // person to the sign-in screen with a clean banner, never raw JSON.
+    if (req.path === "/api/v1/auth/google" || req.path === "/api/v1/auth/google/callback") {
+        log.error("google_auth_failed", {
+            path: req.originalUrl,
+            errName: (err as Error)?.name,
+            errMessage: (err as Error)?.message,
+        });
+        clearOAuthStateCookie(res);
+        return res.redirect(`${config.frontendUrl}/login?error=google`);
+    }
+
     if(req.path.startsWith('/api')) {
 
             if (err instanceof AppError) {
@@ -173,6 +222,11 @@ export const errorMiddleware = (err : unknown, req : Request, res : Response, ne
     }
 
         if(err instanceof AppError) {
+            // Quota-exhaustion 429s on the public short-link path: machine
+            // clients keep the JSON contract, browsers get the branded page.
+            if (err.statusCode === 429 && prefersJson(req)) {
+                return res.status(429).json({ success: false, message: err.message });
+            }
             return res.status(err.statusCode).send(renderPublicError(err.statusCode, err.message));
         }
         else {

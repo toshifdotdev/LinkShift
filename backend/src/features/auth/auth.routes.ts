@@ -10,6 +10,7 @@ import passport from "passport";
 import { authMiddleWare } from "../../middleware/auth.middleware";
 import { config } from "../../config";
 import { imageUpload } from "../../middleware/upload.middleware";
+import { clearOAuthStateCookie } from "./oauthState";
 
 const router = Router();
 
@@ -23,6 +24,7 @@ router.get('/google/callback', passport.authenticate("google", {
                                                             }),
                                                             googleCallbackController)
 router.get("/google/failure", (_, res) => {
+    clearOAuthStateCookie(res);
     res.redirect(`${config.frontendUrl}/login?error=google`);
 });
 

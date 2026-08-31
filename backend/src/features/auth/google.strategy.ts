@@ -3,6 +3,7 @@ import passport from "passport";
 import { Strategy as GoogleStrategy, Profile, VerifyCallback } from "passport-google-oauth20";
 import { config } from "../../config";
 import { googleLogin } from "./auth.service";
+import { oauthStateStore } from "./oauthState";
 
 
 passport.use(
@@ -10,6 +11,9 @@ passport.use(
         clientID : config.googleClientId!,
         clientSecret : config.googleClientSecret!,
         callbackURL : config.googleCallbackUrl!,
+        // Stateless CSRF state: passport's default stores need login sessions,
+        // which this flow runs without.
+        store : oauthStateStore,
     },
         async (accessToken : string, refreshToken : string, profile : Profile, done : VerifyCallback) => {
             try {

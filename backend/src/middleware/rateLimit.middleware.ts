@@ -1,5 +1,6 @@
 import { ipKeyGenerator, rateLimit } from 'express-rate-limit';
 import type { Request, Response } from 'express';
+import { createVisitorRateLimitHandler } from './error.middleware';
 
 // ---------------------------------------------------------------------------
 // Wave M4: per-authenticated-user limiter factory for high-value MUTATING
@@ -64,15 +65,18 @@ export const deleteAccountLimiter = createUserRateLimiter({
 // Public redirect hot path: generous ceiling against floods/scripts while
 // staying invisible to normal traffic. Keyed on the proxy-aware req.ip
 // (see TRUST_PROXY_HOPS in app.ts).
+const REDIRECT_LIMIT_MESSAGE = {
+    success: false,
+    message: 'Too many requests. Please slow down.',
+};
+
 export const redirectLimiter = rateLimit({
     windowMs: 60 * 1000,
     limit: 120,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    message: {
-        success: false,
-        message: 'Too many requests. Please slow down.',
-    },
+    message: REDIRECT_LIMIT_MESSAGE,
+    handler: createVisitorRateLimitHandler(REDIRECT_LIMIT_MESSAGE),
 });
 
 export const registerLimiter = rateLimit({
@@ -111,16 +115,19 @@ export const qrLimiter = rateLimit({
 })
 
 // unlockLimiter
+const UNLOCK_LIMIT_MESSAGE = {
+    success: false,
+    message: 'Too many incorrect password attempts. Please try again after 15 minutes.',
+};
+
 export const unlockLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 min
     limit: 5,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
-    message: {
-        success: false,
-        message: 'Too many incorrect password attempts. Please try again after 15 minutes.',
-    }
-})
+    message: UNLOCK_LIMIT_MESSAGE,
+    handler: createVisitorRateLimitHandler(UNLOCK_LIMIT_MESSAGE),
+});
 
 // forgotPassLimiter 
 export const forgotPasswordLimiter = rateLimit({

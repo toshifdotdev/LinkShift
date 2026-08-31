@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Download, ImagePlus, QrCode, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listLinks } from "@/api/links";
 import { downloadQrImage, fetchQrImage } from "@/api/qr";
@@ -14,6 +14,9 @@ import { useToaster } from "@/components/ui/toaster";
 import { QrStudio } from "./qr-studio";
 import { cn } from "@/lib/utils";
 import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
+import type { LinkItem } from "@/types/api";
+
+const PAGE_SIZE = 50;
 
 /* ---- authenticated QR thumbnail (blob-based; <img> can't send headers) ---- */
 function QrThumbnail({ linkId, version }: { linkId: string; version: number }) {
@@ -58,14 +61,54 @@ function QrPage() {
   const [studioLink, setStudioLink] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  const links = useQuery({
+  /* The gallery grows with the account, so page through links instead of a
+     fixed 100-item cap — an observer fetches the next page on scroll. */
+  const links = useInfiniteQuery({
     queryKey: ["qr-gallery-links", debounced],
-    queryFn: ({ signal }) =>
-      listLinks({ page: 1, limit: 100, search: debounced || undefined, sort: "createdAt", order: "desc" }, signal),
+    queryFn: ({ signal, pageParam }) =>
+      listLinks(
+        { page: pageParam, limit: PAGE_SIZE, search: debounced || undefined, sort: "createdAt", order: "desc" },
+        signal,
+      ),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => (lastPage.pagination.hasNextPage ? lastPage.pagination.page + 1 : undefined),
   });
 
-  const rows = links.data?.data ?? [];
-  const hasLinks = (links.data?.pagination.totalRecords ?? 0) > 0;
+  const rows = useMemo(() => {
+    const seen = new Set<string>();
+    const all: LinkItem[] = [];
+    for (const page of links.data?.pages ?? []) {
+      for (const link of page.data) {
+        if (!seen.has(link.id)) {
+          seen.add(link.id);
+          all.push(link);
+        }
+      }
+    }
+    return all;
+  }, [links.data]);
+
+  const totalRecords = links.data?.pages[0]?.pagination.totalRecords ?? 0;
+  const hasLinks = totalRecords > 0;
+  const partialError = links.isError && links.data !== undefined;
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = links;
+
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = sentinelRef.current;
+    if (!node || !hasNextPage || partialError) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && !isFetchingNextPage) {
+          void fetchNextPage();
+        }
+      },
+      { rootMargin: "320px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage, partialError, rows.length]);
 
   function openStudio(linkId?: string) {
     setStudioLink(linkId ?? null);
@@ -112,13 +155,13 @@ function QrPage() {
             </div>
           ))}
         </div>
-      ) : links.isError ? (
+      ) : links.isError && !links.data ? (
         <ErrorState
           title="Couldn't load your QR library"
           message={links.error instanceof Error ? links.error.message : undefined}
           onRetry={() => void links.refetch()}
         />
-      ) : !hasLinks ? (
+      ) : !hasLinks && !debounced ? (
         <EmptyState
           icon={<QrCode className="size-5" />}
           title="No links to decorate yet"
@@ -146,7 +189,7 @@ function QrPage() {
               />
             </div>
             <p className="hidden font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase sm:block">
-              {rows.length} link{rows.length === 1 ? "" : "s"}
+              {totalRecords} link{totalRecords === 1 ? "" : "s"}
             </p>
           </div>
 
@@ -201,6 +244,21 @@ function QrPage() {
               ))}
             </div>
           )}
+
+          {partialError ? (
+            <div className="mt-4 flex flex-col items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-5">
+              <p className="text-[12px] text-destructive">Couldn't load more links.</p>
+              <Button variant="outline" size="sm" onClick={() => void fetchNextPage()}>
+                Retry
+              </Button>
+            </div>
+          ) : hasNextPage || isFetchingNextPage ? (
+            <div ref={sentinelRef} className="mt-4 flex items-center justify-center" aria-live="polite">
+              <p className="font-mono text-[10px] tracking-[0.12em] text-fg-muted uppercase">
+                {isFetchingNextPage ? "Loading more codes…" : "Scroll to load more"}
+              </p>
+            </div>
+          ) : null}
 
           {hasLinks && rows.length > 0 && (
             <p className="mt-4 border-t border-border pt-3.5 font-mono text-[10px] tracking-[0.12em] text-fg-muted uppercase">

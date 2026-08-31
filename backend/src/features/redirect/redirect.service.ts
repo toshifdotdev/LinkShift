@@ -38,21 +38,86 @@ export type CachedLink = {
     utmContent: string | null
 };
 
-type RedirectResult =
+type ResolvedRedirect =
     | {
-        requiresPassword: false;
         kind: "redirect";
         targetUrl: string;
     }
     | {
-        requiresPassword: false;
         kind: "interstitial";
         html: string;
-    }
+    };
+
+type RedirectResult =
+    | ({
+        requiresPassword: false;
+    } & ResolvedRedirect)
     | {
         requiresPassword: true;
         linkId: string;
     };
+
+/**
+ * Shared tail of every successful resolution (plain redirect AND password
+ * unlock): record the scan, append UTM (inside completeTargetUrl), apply
+ * Pro-gated path forwarding, then Pro-gated platform-aware app deep linking.
+ * Keeping both flows on one pipeline is what guarantees an unlocked link
+ * behaves exactly like its unprotected equivalent.
+ */
+const resolveDestination = async (link: CachedLink, req: Request): Promise<ResolvedRedirect> => {
+    const result = await completeTargetUrl(link, req);
+
+    let finalUrl = result.targetUrl;
+    if (link.deepLink && (await hasDeepLinkAccess(link.userId))) {
+        finalUrl = applyDeepLink(finalUrl, req);
+    }
+
+    if (
+        link.appDeepLink &&
+        link.appScheme &&
+        (await hasAppDeepLinkAccess(link.userId))
+    ) {
+        const userAgent = req.headers["user-agent"] ?? "";
+        const platform = detectMobilePlatform(userAgent);
+
+        if (platform) {
+            const cfg: AppDeepLinkConfig = {
+                appScheme: link.appScheme,
+                androidPackage: link.androidPackage,
+                appPath: link.appPath,
+                iosStoreUrl: link.iosStoreUrl,
+                androidStoreUrl: link.androidStoreUrl,
+            };
+            const rest = extractRest(req.params as Record<string, unknown>);
+            const query = extractQuery(req.url ?? "");
+
+            /* Chromium-based Android browsers resolve intent:// natively:
+               they open the app when installed, otherwise they follow the
+               embedded browser_fallback_url without a round trip. */
+            if (platform === "android" && isAndroidChromium(userAgent) && cfg.androidPackage) {
+                return {
+                    kind: "redirect",
+                    targetUrl: buildIntentUrl(cfg, rest, query, finalUrl),
+                };
+            }
+
+            return {
+                kind: "interstitial",
+                html: renderAppInterstitial({
+                    platform,
+                    appUrl: buildAppUrl(cfg, rest, query),
+                    fallbackUrl: finalUrl,
+                    storeUrl: platform === "ios" ? cfg.iosStoreUrl : cfg.androidStoreUrl,
+                }),
+            };
+        }
+    }
+
+    return {
+        kind: "redirect",
+        targetUrl: finalUrl,
+    };
+};
 
 
 
@@ -152,66 +217,17 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
         }
     }
 
-    const result = await completeTargetUrl(targetUrl, req);
-
-    let finalUrl = result.targetUrl;
-    if (targetUrl.deepLink && (await hasDeepLinkAccess(targetUrl.userId))) {
-        finalUrl = applyDeepLink(finalUrl, req);
-    }
-
-    if (
-        targetUrl.appDeepLink &&
-        targetUrl.appScheme &&
-        (await hasAppDeepLinkAccess(targetUrl.userId))
-    ) {
-        const userAgent = req.headers["user-agent"] ?? "";
-        const platform = detectMobilePlatform(userAgent);
-
-        if (platform) {
-            const cfg: AppDeepLinkConfig = {
-                appScheme: targetUrl.appScheme,
-                androidPackage: targetUrl.androidPackage,
-                appPath: targetUrl.appPath,
-                iosStoreUrl: targetUrl.iosStoreUrl,
-                androidStoreUrl: targetUrl.androidStoreUrl,
-            };
-            const rest = extractRest(req.params as Record<string, unknown>);
-            const query = extractQuery(req.url ?? "");
-
-            /* Chromium-based Android browsers resolve intent:// natively:
-               they open the app when installed, otherwise they follow the
-               embedded browser_fallback_url without a round trip. */
-            if (platform === "android" && isAndroidChromium(userAgent) && cfg.androidPackage) {
-                return {
-                    requiresPassword: false,
-                    kind: "redirect",
-                    targetUrl: buildIntentUrl(cfg, rest, query, finalUrl),
-                };
-            }
-
-            return {
-                requiresPassword: false,
-                kind: "interstitial",
-                html: renderAppInterstitial({
-                    platform,
-                    appUrl: buildAppUrl(cfg, rest, query),
-                    fallbackUrl: finalUrl,
-                    storeUrl: platform === "ios" ? cfg.iosStoreUrl : cfg.androidStoreUrl,
-                }),
-            };
-        }
-    }
+    const resolved = await resolveDestination(targetUrl, req);
 
     return {
         requiresPassword : false,
-        kind: "redirect",
-        targetUrl : finalUrl
+        ...resolved
     }
 }
 
 
 
-export const unlockService = async(shortId : string, password : string, host : string, req : Request) => {
+export const unlockService = async(shortId : string, password : string, host : string, req : Request) : Promise<ResolvedRedirect> => {
     const domain = await prisma.domain.findFirst({
             where : {
                 host 
@@ -245,13 +261,9 @@ export const unlockService = async(shortId : string, password : string, host : s
         throw new AppError("Incorrect Password", 401);
     }
 
-    const result = await completeTargetUrl(targetUrl, req);
-
-    let finalUrl = result.targetUrl;
-    if (targetUrl.deepLink && (await hasDeepLinkAccess(targetUrl.userId))) {
-        finalUrl = applyDeepLink(finalUrl, req);
-    }
-
-    return finalUrl;
-
+    /* The unlock route carries the visitor's original wildcard tail
+       (POST /:shortId/unlock/*rest plus the original query string), so the
+       shared pipeline forwards path/query and applies the Pro-gated features
+       exactly like the unprotected redirect path. */
+    return resolveDestination(targetUrl, req);
 }

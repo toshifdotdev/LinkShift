@@ -11,8 +11,8 @@ const RUN = !!process.env.RUN_INTEGRATION;
 // Resolved via the import object so the path is correct from tests/integration/.
 vi.mock(import("../../src/utils/email"), () => ({
     // Deterministic: never hit Resend during integration runs.
-    sendVerificationEmail: async () => {},
-    sendPasswordResetEmail: async () => {},
+    sendVerificationEmail: async () => ({ delivered: true }),
+    sendPasswordResetEmail: async () => ({ delivered: true }),
     resend: {},
 }));
 
@@ -56,10 +56,13 @@ describe.skipIf(!RUN)("Integration API", () => {
         // NOTE: Link.userId FK is RESTRICT (no cascade) — links must be removed
         // before their owner. This is also why the future account-deletion
         // feature (M2) will need explicit link cleanup before user removal.
+        // "@" prefix keeps this scoped to THIS suite's domain — the bare suffix
+        // would also match sibling suites (e.g. @users.test.linkshift.in) and
+        // delete their fixtures while they are still running.
         await prisma.link.deleteMany({
-            where: { user: { email: { endsWith: EMAIL_DOMAIN } } },
+            where: { user: { email: { endsWith: `@${EMAIL_DOMAIN}` } } },
         });
-        await prisma.user.deleteMany({ where: { email: { endsWith: EMAIL_DOMAIN } } });
+        await prisma.user.deleteMany({ where: { email: { endsWith: `@${EMAIL_DOMAIN}` } } });
         await prisma.$disconnect();
     });
 
@@ -120,7 +123,7 @@ describe.skipIf(!RUN)("Integration API", () => {
 
         // Redirect #1 — WITH a Referer header (warms the Redis cache).
         const first = await request(app)
-            .get(`/r/${shortId}`)
+            .get(`/${shortId}`)
             .set("Host", "go.linkshift.in")
             .set("Referer", "https://news.example.com/article");
         expect(first.status).toBe(302);
@@ -136,7 +139,7 @@ describe.skipIf(!RUN)("Integration API", () => {
 
         // Redirect #2 — NO Referer header (still ACTIVE): null-safe scan.
         await request(app)
-            .get(`/r/${shortId}`)
+            .get(`/${shortId}`)
             .set("Host", "go.linkshift.in")
             .expect(302);
         const scan2 = await prisma.scan.findFirstOrThrow({
@@ -153,9 +156,9 @@ describe.skipIf(!RUN)("Integration API", () => {
             .expect(200);
 
         const second = await request(app)
-            .get(`/r/${shortId}`)
+            .get(`/${shortId}`)
             .set("Host", "go.linkshift.in");
-        // /r/* errors render the HTML error branch (non-/api path prefix).
+        // Redirect-path errors render the HTML error branch (non-/api path prefix).
         expect(second.status).toBe(403);
         expect(second.text).toMatch(/disabled/i);
 

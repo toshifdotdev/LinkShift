@@ -5,6 +5,7 @@ import { GoogleProfile, RefreshedTokens } from './auth.types';
 import { buildAuthResponse } from '../../utils/buildAuthResponse';
 import { generateRandomToken, hashToken } from '../../utils/token';
 import { sendPasswordResetEmail, sendVerificationEmail } from '../../utils/email';
+import { log } from '../../utils/logger';
 import { issueTokens } from '../../utils/issueToken';
 import { uploadImage } from '../../utils/uploadImage';
 import { deleteImage } from '../../utils/deleteImage';
@@ -32,7 +33,21 @@ export const registerUser = async (name : string, email : string, password : str
                         }
                     })
     
-    await sendVerificationEmail(createdUser.id,createdUser.email, createdUser.name);
+    const { delivered } = await sendVerificationEmail(createdUser.id,createdUser.email, createdUser.name);
+
+    if (!delivered) {
+        // Roll the partial registration back so an email-provider outage never
+        // leaves an orphaned unverified account (the user couldn't receive the
+        // verification link and a retry would collide on the email uniqueness
+        // constraint). EmailVerification cascades on user delete.
+        await prisma.user.delete({ where: { id: createdUser.id } }).catch((err) =>
+            log.error("register_rollback_failed", {
+                userId: createdUser.id,
+                error: err instanceof Error ? err.message : String(err),
+            })
+        );
+        throw new AppError("We couldn't send the verification email. Please try again.", 503);
+    }
 
 
     return {
@@ -201,6 +216,9 @@ export const forgotPasswordService = async(email : string) => {
         }
     })
 
+    // Delivery failures are absorbed on purpose: the response must stay
+    // byte-identical (enumeration resistance), the stored token expires in
+    // 15 minutes, and a retry simply regenerates the link.
     await sendPasswordResetEmail(email, generatedToken);
     return {
         success: true,
@@ -486,6 +504,8 @@ export const resendVerificationService = async(email : string) => {
     })
 
     if(user && !user.verified) {
+        // Delivery failures are absorbed (see sendEmailSafely): this endpoint's
+        // 200 must look identical in every case, outage included.
         await sendVerificationEmail(user.id, user.email, user.name);
     }
 

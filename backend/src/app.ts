@@ -56,6 +56,9 @@ app.post(
 );
 
 app.use(express.json());
+/* Native HTML forms (the password-protected link unlock page) post
+   urlencoded bodies. */
+app.use(express.urlencoded({ extended: false }));
 
 app.get("/health", async (_, res) => {
     // Dependency-aware health: 200 only when critical deps respond. Redis is

@@ -2,6 +2,7 @@ import { Resend } from "resend";
 import { config, prisma } from "../config";
 import { generateRandomToken, hashToken } from "./token";
 import { buildEmailVerificationUrl, buildPasswordResetUrl } from "./emailUrls";
+import { log } from "./logger";
 
 export const resend = new Resend(config.resendApiKey);
 
@@ -12,6 +13,7 @@ interface SendEmailData {
     
 }
 
+export type EmailDeliveryResult = { delivered: boolean };
 
 export const sendEmail = async(data : SendEmailData) => {
     await resend.emails.send({
@@ -24,7 +26,26 @@ export const sendEmail = async(data : SendEmailData) => {
     })
 }
 
-export const sendPasswordResetEmail = async(email : string, token : string) => {
+/**
+ * Provider outages must not surface as 500s mid-auth-flow. Delivery failures
+ * are logged here (never the recipient address) and reported to the caller
+ * via the result so it can degrade appropriately: registration rolls the
+ * account back, while reset/resend keep their enumeration-neutral response.
+ */
+const sendEmailSafely = async(data : SendEmailData) : Promise<EmailDeliveryResult> => {
+    try {
+        await sendEmail(data);
+        return { delivered: true };
+    } catch (err) {
+        log.error("email_send_failed", {
+            subject: data.subject,
+            error: err instanceof Error ? err.message : String(err),
+        });
+        return { delivered: false };
+    }
+}
+
+export const sendPasswordResetEmail = async(email : string, token : string) : Promise<EmailDeliveryResult> => {
     // Points at the FRONTEND origin — the reset page submits the new password
     // through the API. (FRONTEND_URL must be the SPA origin, not the OAuth path.)
     const resetLink = buildPasswordResetUrl(config.frontendUrl!, token);
@@ -44,7 +65,7 @@ export const sendPasswordResetEmail = async(email : string, token : string) => {
         </div>
     `;
 
-    await sendEmail({
+    return sendEmailSafely({
         to : email,
         subject : "LinkShift - Reset Your Password",
         html : html
@@ -52,7 +73,7 @@ export const sendPasswordResetEmail = async(email : string, token : string) => {
 }
 
 
-export const sendVerificationEmail = async (userId: string, email: string, name : string | null) => {
+export const sendVerificationEmail = async (userId: string, email: string, name : string | null) : Promise<EmailDeliveryResult> => {
     // delete previous verification token -- to prevent error 
     await prisma.emailVerification.deleteMany({
         where : {
@@ -92,7 +113,7 @@ export const sendVerificationEmail = async (userId: string, email: string, name 
         </div>
     `;
 
-    await sendEmail({
+    return sendEmailSafely({
         to : email,
         subject : "LinkShift - Verify Your Email",
         html : html

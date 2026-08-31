@@ -8,11 +8,24 @@ import request from "supertest";
 
 const RUN = !!process.env.RUN_INTEGRATION;
 
+/* Mutable outage switch: the fault-tolerance tests flip this to simulate
+   Resend being down without touching the network. */
+const emailOutage = vi.hoisted(() => ({ enabled: false }));
+
 vi.mock(import("../../src/utils/email"), () => ({
-    sendVerificationEmail: async () => {},
-    sendPasswordResetEmail: async () => {},
+    sendVerificationEmail: async () => ({ delivered: !emailOutage.enabled }),
+    sendPasswordResetEmail: async () => ({ delivered: !emailOutage.enabled }),
     resend: {},
 }));
+
+/* The fault-tolerance tests deliberately exceed the resend limiter's
+   3-per-15-min budget; supertest shares one IP across all requests. The real
+   limiter stays active in production. */
+vi.mock(import("../../src/middleware/rateLimit.middleware"), async (importOriginal) => {
+    const actual = await importOriginal();
+    const pass = (_req: unknown, _res: unknown, next: () => void) => next();
+    return { ...actual, resendVerificationLimiter: pass };
+});
 
 import { app } from "../../src/app";
 import { prisma } from "../../src/config";
@@ -167,6 +180,94 @@ describe.skipIf(!RUN)("Integration Users (M2)", () => {
         expect(unknown.status).toBe(200);
         expect(verified.status).toBe(200);
         expect(unknown.body.message).toBe(verified.body.message);
+    });
+
+    it("register rolls back the account when the verification email cannot be delivered", async () => {
+        const email = uniqueEmail("outage");
+        emailOutage.enabled = true;
+        try {
+            const res = await request(app)
+                .post("/api/v1/auth/register")
+                .send({ name: "Outage", email, password: PASSWORD })
+                .expect(503);
+            expect(res.body.message).toMatch(/couldn't send the verification email/i);
+
+            // No orphaned account may survive the outage — the rollback must
+            // remove the partially-created user entirely.
+            expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
+
+            // Once delivery recovers, the SAME email registers cleanly: proof
+            // the rollback left no conflicting state behind (no duplicate, no
+            // uniqueness collision, no stale verification token).
+            emailOutage.enabled = false;
+            await request(app)
+                .post("/api/v1/auth/register")
+                .send({ name: "Outage", email, password: PASSWORD })
+                .expect(201);
+            const retry = await prisma.user.findUnique({ where: { email } });
+            expect(retry).not.toBeNull();
+            expect(retry?.verified).toBe(false);
+        } finally {
+            emailOutage.enabled = false;
+        }
+    });
+
+    it("forgot-password stays enumeration-neutral during an email outage", async () => {
+        const { email } = await createVerifiedUser();
+
+        emailOutage.enabled = true;
+        try {
+            const known = await request(app)
+                .post("/api/v1/auth/forgot-password")
+                .send({ email })
+                .expect(200);
+            const unknown = await request(app)
+                .post("/api/v1/auth/forgot-password")
+                .send({ email: uniqueEmail("ghost") })
+                .expect(200);
+
+            // Byte-identical bodies — the outage must neither surface as a 500
+            // nor leak which addresses have accounts.
+            expect(known.body).toEqual(unknown.body);
+            expect(known.body.message).toBe("If an account exists, we've sent a reset link.");
+        } finally {
+            emailOutage.enabled = false;
+        }
+
+        // Delivery recovered: same contract, and a usable reset token exists.
+        await request(app)
+            .post("/api/v1/auth/forgot-password")
+            .send({ email })
+            .expect(200);
+        const user = await prisma.user.findUnique({ where: { email } });
+        expect(user?.resetPasswordToken).not.toBeNull();
+    });
+
+    it("resend-verification stays 200 and parity-preserving during an email outage", async () => {
+        const unverifiedEmail = uniqueEmail("uv");
+        await prisma.user.create({
+            data: { name: "UV", email: unverifiedEmail, passwordHash: null as never, provider: "LOCAL" as never, verified: false },
+        });
+
+        emailOutage.enabled = true;
+        try {
+            const during = await request(app)
+                .post("/api/v1/auth/resend-verification")
+                .send({ email: unverifiedEmail })
+                .expect(200);
+            const ghost = await request(app)
+                .post("/api/v1/auth/resend-verification")
+                .send({ email: uniqueEmail("ghost") })
+                .expect(200);
+            expect(during.body).toEqual(ghost.body);
+        } finally {
+            emailOutage.enabled = false;
+        }
+
+        await request(app)
+            .post("/api/v1/auth/resend-verification")
+            .send({ email: unverifiedEmail })
+            .expect(200);
     });
 
     it("deletion rejects wrong password and PRESERVES the account", async () => {
