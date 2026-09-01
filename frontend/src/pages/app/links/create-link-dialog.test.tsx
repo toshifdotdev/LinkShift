@@ -182,6 +182,24 @@ describe("CreateLinkDialog mobile app deep linking (Pro-gated)", () => {
     expect(vi.mocked(createLink).mock.calls.length).toBe(callsBefore);
   });
 
+  it("PRO: links both features to their documentation", async () => {
+    await openAdvancedWithDestination();
+    expect(screen.getByRole("link", { name: /how it works/i })).toHaveAttribute(
+      "href",
+      "/docs/path-forwarding",
+    );
+    expect(screen.getByRole("link", { name: /setup guide/i })).toHaveAttribute(
+      "href",
+      "/docs/mobile-app-deep-linking",
+    );
+
+    fireEvent.click(screen.getByLabelText("Open your app on mobile when it's installed"));
+    expect(screen.getByRole("link", { name: /how do i find these/i })).toHaveAttribute(
+      "href",
+      "/docs/mobile-app-deep-linking",
+    );
+  });
+
   it("CREATOR: shows an upgrade hint instead of the app config", async () => {
     planState.plan = "CREATOR";
     await openAdvancedWithDestination();

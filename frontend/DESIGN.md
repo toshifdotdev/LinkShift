@@ -25,6 +25,12 @@ Laws:
    Fraunces reserved for thesis lines. Never serif numerals.
 4. **Status is lamp + word.** Color is never the only channel.
 
+**Brand mark** — a chain link pierced by the ember shift arrow: the link
+carries the click forward. The chain inherits `currentColor` (ink on paper,
+paper on carbon); the arrow is always ember. It ships as `LogoMark`/`Logo`
+in the app, as inline SVG on the server-rendered pages (unlock, app
+interstitial, 429), and as `public/favicon.svg`.
+
 ## Tokens
 
 ### Color — Carbon Office (dark, default)
@@ -35,6 +41,7 @@ surface:     "#1a1713"   # --surface (Char)
 elevated:    "#201d18"
 raised:      "#27231d"   # inputs, popovers
 sunken:      "#0f0d0b"   # empty-state wells
+skeleton:    "#27231d"   # loading shapes
 overlay:     "#0c0a08"   # scrim
 ink:         "#f1ece3"   # --foreground (Bone)
 ink-2:       "#9c9284"   # --fg-secondary
@@ -53,16 +60,21 @@ lamp-info:   "#60a5fa"   # --info
 
 ### Color — Paper Office (light)
 
+Clean bright white — canvas and plates are pure white, never gray, beige or
+cream. White-on-white hierarchy comes from hairlines and `shadow-lift`, not
+color steps; the only tinted tiers are near-white neutrals.
+
 ```yaml
-canvas:      "#f7f6f4"   # Paper — near-neutral warm white, never cream
-surface:     "#ffffff"   # Sheet
-elevated:    "#f0efec"
-sunken:      "#eeece8"
-ink:         "#191613"
-ink-2:       "#4c463d"
-ink-3:       "#6e675c"
-line:        "#e4e1db"
-line-strong: "#d6d2c9"
+canvas:      "#ffffff"   # Paper — pure white canvas
+surface:     "#ffffff"   # Sheet — plates earn edges from lines and lift
+elevated:    "#f6f6f6"   # nested panels, menus, dialogs
+sunken:      "#f2f2f2"   # empty-state wells
+skeleton:    "#e9e9e9"   # loading shapes — must read on white
+ink:         "#171717"   # neutral ink
+ink-2:       "#525252"
+ink-3:       "#737373"
+line:        "#e5e5e5"
+line-strong: "#d4d4d4"
 ember:       "#c2410c"   # deepened to 5.2:1 on white (AA)
 ember-hover: "#a33708"
 ember-ink:   "#c2410c"   # ember as text on light
@@ -166,5 +178,4 @@ Badges on raw palette names → lamp tokens · three segmented controls →
 `Segmented` · native sort `<select>` → `Select` · three empty states →
 one · copy-pasted skeletons → templates · Spinner/FlashSweep reduced-motion
 holes · field `aria-describedby` wiring · error boundary `role="alert"` ·
-missing tooltips on icon buttons · `aria-sort` on the ledger · logo hardcoded
-hex (redesigned with the logo phase, out of scope here).
+missing tooltips on icon buttons · `aria-sort` on the ledger.

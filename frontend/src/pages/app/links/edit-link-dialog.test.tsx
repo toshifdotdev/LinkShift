@@ -191,6 +191,22 @@ describe("EditLinkDialog mobile app deep linking (Pro-gated)", () => {
     expect(vi.mocked(updateLink).mock.calls.length).toBe(callsBefore);
   });
 
+  it("PRO: links both features to their documentation", () => {
+    renderDialog({ appDeepLink: true, appScheme: "myapp" });
+    expect(screen.getByRole("link", { name: /how it works/i })).toHaveAttribute(
+      "href",
+      "/docs/path-forwarding",
+    );
+    expect(screen.getByRole("link", { name: /setup guide/i })).toHaveAttribute(
+      "href",
+      "/docs/mobile-app-deep-linking",
+    );
+    expect(screen.getByRole("link", { name: /how do i find these/i })).toHaveAttribute(
+      "href",
+      "/docs/mobile-app-deep-linking",
+    );
+  });
+
   it("CREATOR: hides the app config and shows the upgrade hint", () => {
     planState.plan = "CREATOR";
     renderDialog({ appDeepLink: true, appScheme: "myapp" });

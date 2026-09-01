@@ -90,7 +90,7 @@ function ToastProvider({ children }: { children: ReactNode }) {
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
               transition={{ duration: 0.18, ease: "easeOut" }}
               className={cn(
-                "pointer-events-auto relative flex items-start gap-3 overflow-hidden rounded-lg border border-border bg-raised p-3.5 pr-9 shadow-xl shadow-black/40 before:absolute before:inset-y-0 before:left-0 before:w-0.5",
+                "pointer-events-auto relative flex items-start gap-3 overflow-hidden rounded-lg border border-border bg-raised p-3.5 pr-9 shadow-lift before:absolute before:inset-y-0 before:left-0 before:w-0.5",
                 variantsToTone[t.variant],
               )}
             >

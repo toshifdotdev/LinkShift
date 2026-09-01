@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { LandingNavbar } from "@/pages/landing/landing-navbar";
 import { Footer } from "@/pages/landing/sections/footer";
 import { Container } from "@/components/ui/container";
@@ -31,7 +31,7 @@ const NOTES: Array<[string, string]> = [
   ["CHANGE AT CYCLE END", "Downgrades and monthly↔yearly switches start next period."],
   ["CANCEL ANYTIME", "Access continues until the end of the paid period."],
   ["REGIONAL PRICING", "INR and USD detected by region."],
-  ["DEEP LINKING", "Planned Pro capability. In development."],
+  ["DEEP LINKING", "Path forwarding and app deep linking ship with Pro."],
   ["ANALYTICS WINDOW", "Lookback capped per plan. Older scans stay archived."],
 ];
 
@@ -299,6 +299,39 @@ function PricingPage() {
                   </div>
                 ))}
               </div>
+
+              <p className="mt-8 border-t border-border pt-6 text-xs leading-relaxed text-fg-muted">
+                Payments are processed securely by Razorpay — card details never touch
+                LinkShift servers. By subscribing you agree to the{" "}
+                <Link
+                  to="/terms"
+                  className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+                >
+                  Terms of Service
+                </Link>
+                ,{" "}
+                <Link
+                  to="/privacy"
+                  className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+                >
+                  Privacy Policy
+                </Link>{" "}
+                and{" "}
+                <Link
+                  to="/refunds"
+                  className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+                >
+                  Refund &amp; Cancellation Policy
+                </Link>
+                , and the{" "}
+                <Link
+                  to="/shipping"
+                  className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+                >
+                  Shipping &amp; Delivery Policy
+                </Link>
+                .
+              </p>
             </>
           )}
         </Container>

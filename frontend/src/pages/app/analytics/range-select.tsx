@@ -1,9 +1,9 @@
 import { Lock } from "lucide-react";
 import { Segmented } from "@/components/ui/segmented";
 
-export type PlanName = "FREE" | "STARTER" | "CREATOR" | "PRO";
+export type PlanName = "FREE" | "STARTER" | "CREATOR" | "PRO" | "ENTERPRISE";
 
-const PLAN_RANK: Record<PlanName, number> = { FREE: 0, STARTER: 1, CREATOR: 2, PRO: 3 };
+const PLAN_RANK: Record<PlanName, number> = { FREE: 0, STARTER: 1, CREATOR: 2, PRO: 3, ENTERPRISE: 4 };
 
 export interface RangeOption {
   label: string;

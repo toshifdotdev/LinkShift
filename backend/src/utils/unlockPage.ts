@@ -98,8 +98,10 @@ export const renderUnlockPage = (opts: {
       <div class="row">
         <span class="plate" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none">
-            <rect x="5" y="10" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="2.2" />
-            <path d="M8 10V7a4 4 0 0 1 8 0v3" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+            <path d="M9.75 7.75H8.25A4.25 4.25 0 0 0 8.25 16.25H9.75" stroke="#f5f1eb" stroke-width="2.2" stroke-linecap="round" />
+            <path d="M14.25 7.75H15.75A4.25 4.25 0 0 1 15.75 16.25H14.25" stroke="#f5f1eb" stroke-width="2.2" stroke-linecap="round" />
+            <path d="M6.75 12H15.25" stroke="#e8590c" stroke-width="2.2" stroke-linecap="round" />
+            <path d="M13.9 8.8L17.4 12L13.9 15.2" stroke="#e8590c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </span>
         <span class="wordmark">LinkShift</span>

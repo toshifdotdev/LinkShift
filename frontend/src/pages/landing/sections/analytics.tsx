@@ -38,7 +38,7 @@ function Chart() {
               className={
                 i === PEAK_INDEX
                   ? "absolute inset-x-0 bottom-0 top-0 rounded-t-[3px] bg-brand will-change-transform"
-                  : "absolute inset-x-0 bottom-0 top-0 rounded-t-[2px] bg-raised transition-colors hover:bg-border-strong will-change-transform"
+                  : "absolute inset-x-0 bottom-0 top-0 rounded-t-[2px] bg-chart-track transition-colors hover:bg-border-strong will-change-transform"
               }
             />
           </div>

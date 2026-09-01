@@ -11,6 +11,7 @@ const links = [
   { label: "Analytics", href: "/#analytics", id: "analytics" },
   { label: "How it works", href: "/#how-it-works", id: "how-it-works" },
   { label: "Pricing", href: "/pricing", id: null },
+  { label: "Docs", href: "/docs", id: null },
 ];
 
 /* Scroll-spy via IntersectionObserver — no scroll listeners, no per-frame work */

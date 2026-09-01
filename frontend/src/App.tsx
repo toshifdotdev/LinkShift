@@ -1,6 +1,12 @@
-import { Link, Route, Routes } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { LandingPage } from "@/pages/landing/landing-page";
 import { PricingPage } from "@/pages/pricing/pricing-page";
+import { DocsPage } from "@/pages/docs/docs-page";
+import { DocsTopicPage } from "@/pages/docs/docs-topic-page";
+import { FaqPage } from "@/pages/faq/faq-page";
+import { LegalPage } from "@/pages/legal/legal-page";
+import { ContactPage } from "@/pages/contact/contact-page";
 import { LoginPage } from "@/pages/auth/login";
 import { RegisterPage } from "@/pages/auth/register";
 import { ForgotPasswordPage } from "@/pages/auth/forgot-password";
@@ -16,6 +22,17 @@ import { AnalyticsPage } from "@/pages/app/analytics/analytics-page";
 import { DomainsPage } from "@/pages/app/domains/domains-page";
 import { BillingPage } from "@/pages/app/billing/billing-page";
 import { SettingsPage } from "@/pages/app/settings/settings-page";
+
+/* Cross-page navigation opens the destination at the top. Hash navigations
+   are section jumps on the landing page — its own hook owns those. */
+function ScrollToTop() {
+  const location = useLocation();
+  useEffect(() => {
+    if (location.hash) return;
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, [location]);
+  return null;
+}
 
 function NotFound() {
   return (
@@ -44,9 +61,20 @@ function NotFound() {
 
 function App() {
   return (
-    <Routes>
+    <>
+      <ScrollToTop />
+      <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/docs" element={<DocsPage />} />
+      <Route path="/docs/:slug" element={<DocsTopicPage />} />
+      <Route path="/faq" element={<FaqPage />} />
+      <Route path="/privacy" element={<LegalPage slug="privacy" />} />
+      <Route path="/terms" element={<LegalPage slug="terms" />} />
+      <Route path="/refunds" element={<LegalPage slug="refunds" />} />
+      <Route path="/shipping" element={<LegalPage slug="shipping" />} />
+      <Route path="/acceptable-use" element={<LegalPage slug="acceptable-use" />} />
+      <Route path="/contact" element={<ContactPage />} />
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -68,7 +96,8 @@ function App() {
       </Route>
 
       <Route path="*" element={<NotFound />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }
 

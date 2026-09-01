@@ -26,20 +26,28 @@ describe("CodeChip", () => {
 });
 
 describe("KpiCell", () => {
-  it("renders micro-label and tabular value", () => {
+  // Values roll up from zero over ~400ms on first arrival, so assertions
+  // must await the settled value.
+  it("renders micro-label and tabular value", async () => {
     render(<KpiCell label="Total clicks" value={5210} />);
     expect(screen.getByText("Total clicks")).toBeInTheDocument();
-    expect(screen.getByText("5,210")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("5,210")).toBeInTheDocument(), {
+      timeout: 2000,
+    });
   });
 
-  it("applies a custom formatter", () => {
+  it("applies a custom formatter", async () => {
     render(<KpiCell label="CTR" value={64} format={(n) => `${n}%`} />);
-    expect(screen.getByText("64%")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("64%")).toBeInTheDocument(), {
+      timeout: 2000,
+    });
   });
 
   it("settles on the new value after an update", async () => {
     const { rerender } = render(<KpiCell label="Clicks" value={100} />);
-    expect(screen.getByText("100")).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText("100")).toBeInTheDocument(), {
+      timeout: 2000,
+    });
     rerender(<KpiCell label="Clicks" value={128} />);
     await waitFor(() => expect(screen.getByText("128")).toBeInTheDocument(), {
       timeout: 2000,

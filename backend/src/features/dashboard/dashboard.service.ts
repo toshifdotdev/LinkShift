@@ -1,6 +1,6 @@
 import { prisma } from "../../config"
 import { getCache, setCache } from "../../utils/cache";
-import { getAnalyticsCutoff } from "../billing/billing.service";
+import { getAnalyticsCutoff, getUserPlan, planRankOf } from "../billing/billing.service";
 import { analyticsMapper } from "./dashboard.mapper"
 
 
@@ -23,6 +23,7 @@ type cacheBoard = {
     inactiveLinks : number, 
     totalScans : number, 
     topLinks : TopLinks[],
+    dailyStats : { day: Date; clicks: number }[],
 };
 
 export const dashboardService = async(id : string, requestedDays ?: number) => {
@@ -130,12 +131,30 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
         .filter((link): link is TopLinks => link !== null);
 
 
+    const dailyRows = await prisma.$queryRaw<DailyStats[]>`
+            SELECT
+                DATE(s."scannedAt") AS day,
+                COUNT(*) AS clicks
+            FROM "Scan" s
+            JOIN "Link" l
+                ON s."linkId" = l.id
+            WHERE
+                l."userId" = ${id}
+                AND s."scannedAt" >= ${cutoff}
+            GROUP BY DATE(s."scannedAt")
+            ORDER BY day ASC
+            `;
+
     const analytics : cacheBoard = {
         totalLinks  , 
         activeLinks , 
         inactiveLinks, 
         totalScans, 
-        topLinks
+        topLinks,
+        dailyStats: dailyRows.map(item => ({
+            day: item.day,
+            clicks: Number(item.clicks)
+        }))
     }
 
     await setCache(cachedKey, analytics, 30);
@@ -145,6 +164,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
 
 export const getAnalytics = async(id : string, linkId : string, requestedDays ?: number) => {
     const cutoff = await getAnalyticsCutoff(id, requestedDays);
+    const rank = planRankOf((await getUserPlan(id)).name);
     const where = {
         linkId,
         link: {
@@ -155,7 +175,7 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
         }
     };
 
-    const [ browserStats, deviceStats, countryStats, osStats, totalClicks, utmSource, utmMedium, utmCampaign, utmTerm, utmContent ] = await Promise.all([
+    const [ browserStats, deviceStats, countryStats, osStats, totalClicks, referrerStats, utmSource, utmMedium, utmCampaign, utmTerm, utmContent ] = await Promise.all([
         prisma.scan.groupBy({
             by : ['browser'],
             where,
@@ -202,6 +222,17 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
 
         prisma.scan.count({
             where
+        }),
+
+        prisma.scan.groupBy({
+            by : ["referrer"],
+            where,
+            _count : { _all : true },
+            orderBy : {
+                _count : {
+                    referrer : "desc"
+                }
+            }
         }),
 
         prisma.scan.groupBy({
@@ -266,17 +297,45 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
         }),
     ])
 
+    // Breakdown sections are a plan entitlement: gated sections are stripped
+    // server-side so the client never receives data the plan doesn't include.
+    const starterUnlocked = rank >= planRankOf("STARTER");
+    const creatorUnlocked = rank >= planRankOf("CREATOR");
+
     return {
         totalClicks,
-        browserStats, 
-        deviceStats, 
-        countryStats, 
-        osStats,
-        utmSource,
-        utmMedium,
-        utmCampaign,
-        utmTerm,
-        utmContent
+        deviceStats: deviceStats.map(item => ({
+            device: item.device ?? "Unknown",
+            count: item._count._all
+        })),
+        countryStats: countryStats.map(item => ({
+            country: item.country ?? "Unknown",
+            count: item._count._all
+        })),
+        browserStats: starterUnlocked
+            ? browserStats.map(item => ({ browser: item.browser ?? "Unknown", count: item._count._all }))
+            : [],
+        osStats: starterUnlocked
+            ? osStats.map(item => ({ os: item.os ?? "Unknown", count: item._count._all }))
+            : [],
+        referrerStats: creatorUnlocked
+            ? referrerStats.map(item => ({ referrer: item.referrer, count: item._count._all }))
+            : [],
+        utmSource: creatorUnlocked
+            ? utmSource.map(item => ({ utmSource: item.utmSource, count: item._count._all }))
+            : [],
+        utmMedium: creatorUnlocked
+            ? utmMedium.map(item => ({ utmMedium: item.utmMedium, count: item._count._all }))
+            : [],
+        utmCampaign: creatorUnlocked
+            ? utmCampaign.map(item => ({ utmCampaign: item.utmCampaign, count: item._count._all }))
+            : [],
+        utmTerm: creatorUnlocked
+            ? utmTerm.map(item => ({ utmTerm: item.utmTerm, count: item._count._all }))
+            : [],
+        utmContent: creatorUnlocked
+            ? utmContent.map(item => ({ utmContent: item.utmContent, count: item._count._all }))
+            : [],
     };
 
 }

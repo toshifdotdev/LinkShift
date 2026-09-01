@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { DailyPoint } from "@/types/api";
@@ -7,7 +8,8 @@ import type { DailyPoint } from "@/types/api";
  * Primary time-series visualization — SVG area/line chart.
  * The area path uses a non-uniform viewBox scale (responsive), with
  * non-scaling stroke; the hover layer is HTML (percentage-positioned) so
- * tooltips never distort. Geometry mirrors the backend dailyStats shape.
+ * tooltips never distort. Line draws in on data change; reduced motion
+ * renders the final state directly.
  */
 function AreaChart({
   data,
@@ -23,6 +25,36 @@ function AreaChart({
   heightClass?: string;
 }) {
   const [hover, setHover] = useState<number | null>(null);
+  const reduce = useReducedMotion();
+  const lineRef = useRef<SVGPathElement>(null);
+  const areaRef = useRef<SVGPathElement>(null);
+
+  /* draw-in: dash the line at full length, release it; area fades up */
+  useEffect(() => {
+    const line = lineRef.current;
+    const area = areaRef.current;
+    if (!line || !area || reduce) return;
+
+    const len = line.getTotalLength();
+    line.style.transition = "none";
+    line.style.strokeDasharray = `${len}`;
+    line.style.strokeDashoffset = `${len}`;
+    area.style.transition = "none";
+    area.style.opacity = "0";
+    void line.getBoundingClientRect();
+    line.style.transition = "stroke-dashoffset 700ms cubic-bezier(0.3, 0, 0.2, 1)";
+    area.style.transition = "opacity 500ms ease-out 200ms";
+    line.style.strokeDashoffset = "0";
+    area.style.opacity = "1";
+
+    return () => {
+      line.style.transition = "";
+      line.style.strokeDasharray = "";
+      line.style.strokeDashoffset = "";
+      area.style.transition = "";
+      area.style.opacity = "";
+    };
+  }, [data, reduce]);
 
   if (loading) {
     return (
@@ -41,12 +73,12 @@ function AreaChart({
     return (
       <div
         className={cn(
-          "relative flex items-end gap-[2px] sm:gap-[3px] rounded-md bg-[repeating-linear-gradient(90deg,transparent_0_calc(10%-3px),color-mix(in_oklab,var(--color-elevated)_55%,transparent)_calc(10%-3px)_10%)]",
+          "relative flex items-end gap-[2px] sm:gap-[3px] rounded-md bg-[repeating-linear-gradient(90deg,transparent_0_calc(10%-3px),color-mix(in_oklab,var(--color-chart-track)_55%,transparent)_calc(10%-3px)_10%)]",
           heightClass,
         )}
       >
         {Array.from({ length: 14 }).map((_, i) => (
-          <span key={i} className="h-1 flex-1 rounded-t-[2px] bg-elevated" />
+          <span key={i} className="h-1 flex-1 rounded-t-[2px] bg-chart-track" />
         ))}
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 text-center">
           <p className="text-sm text-fg-secondary">{emptyTitle}</p>
@@ -77,11 +109,11 @@ function AreaChart({
         <>
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute top-0 bottom-7 w-px bg-border-strong"
+            className="pointer-events-none absolute top-0 bottom-7 w-px bg-border-strong transition-[left] duration-150 ease-out"
             style={{ left: `${((hover + 0.5) / data.length) * 100}%` }}
           />
           <div
-            className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-raised px-2.5 py-1.5 text-center shadow-lift"
+            className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-raised px-2.5 py-1.5 text-center shadow-lift transition-[left] duration-150 ease-out"
             style={{ left: `${((hover + 0.5) / data.length) * 100}%` }}
           >
             <p className="font-mono text-[10px] text-fg-muted">{fmtDay(data[hover].day)}</p>
@@ -116,11 +148,16 @@ function AreaChart({
         role="img"
         aria-label="Clicks over time"
       >
-        <path d={areaPath} fill="rgba(232,89,12,0.08)" />
         <path
+          ref={areaRef}
+          d={areaPath}
+          fill="color-mix(in oklab, var(--brand) 9%, transparent)"
+        />
+        <path
+          ref={lineRef}
           d={linePath}
           fill="none"
-          stroke="#E8590C"
+          stroke="var(--brand)"
           strokeWidth="2"
           vectorEffect="non-scaling-stroke"
           strokeLinejoin="round"

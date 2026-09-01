@@ -118,7 +118,7 @@ function SidebarContent({
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-5 pt-5 pb-6">
-        <Logo to="/app" />
+        <Logo to="/" />
         {headerAction}
       </div>
       <SidebarNav onNavigate={onNavigate} />

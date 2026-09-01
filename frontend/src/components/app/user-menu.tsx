@@ -1,8 +1,10 @@
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
-import { LogOut, Settings } from "lucide-react";
+import { LogOut, MessageSquarePlus, Settings } from "lucide-react";
+import { useState } from "react";
 import type { VariantProps } from "class-variance-authority";
 import { useSession } from "@/auth/session";
 import { Avatar } from "./avatar";
+import { FeedbackDialog } from "./feedback-dialog";
 import { Lamp, lampVariants } from "@/components/ui/lamp";
 
 type LampTone = VariantProps<typeof lampVariants>["tone"];
@@ -19,8 +21,10 @@ const itemClass =
 function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: () => void }) {
   const { user } = useSession();
   const plan = user?.plan.name ?? "FREE";
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   return (
+    <>
     <MenuPrimitive.Root>
       <MenuPrimitive.Trigger
         aria-label="Account menu"
@@ -50,6 +54,10 @@ function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: 
               <Settings className="size-3.5" />
               Settings
             </MenuPrimitive.Item>
+            <MenuPrimitive.Item className={itemClass} onClick={() => setFeedbackOpen(true)}>
+              <MessageSquarePlus className="size-3.5" />
+              Send feedback
+            </MenuPrimitive.Item>
             <MenuPrimitive.Item
               className={
                 "flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-fg-secondary outline-none transition-colors data-[highlighted]:bg-raised data-[highlighted]:text-destructive"
@@ -63,6 +71,8 @@ function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: 
         </MenuPrimitive.Positioner>
       </MenuPrimitive.Portal>
     </MenuPrimitive.Root>
+      <FeedbackDialog open={feedbackOpen} onOpenChange={setFeedbackOpen} />
+    </>
   );
 }
 

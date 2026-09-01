@@ -9,6 +9,8 @@ interface BreakdownItem {
 /**
  * Horizontal analytical bar list — label, proportional track, count.
  * The top item carries the ember accent; the rest stay muted.
+ * Bars grow in via the ls-bar-grow entrance; the list is keyed by dataset
+ * so a range/link change replays it. Reduced motion snaps (CSS).
  */
 function BreakdownPanel({
   title,
@@ -28,6 +30,7 @@ function BreakdownPanel({
   const visible = items.slice(0, maxItems);
   const max = Math.max(...visible.map((v) => v.count), 1);
   const total = visible.reduce((sum, v) => sum + v.count, 0);
+  const itemsKey = items.map((i) => `${i.label}:${i.count}`).join("|");
 
   return (
     <section
@@ -51,7 +54,7 @@ function BreakdownPanel({
       ) : visible.length === 0 || (visible.length === 1 && visible[0].label === "Unknown" && visible[0].count === 0) ? (
         <p className="px-5 py-6 text-center text-xs text-fg-muted">{emptyText}</p>
       ) : (
-        <ul className="divide-y divide-border-subtle">
+        <ul key={itemsKey} className="divide-y divide-border-subtle">
           {visible.map((item, i) => (
             <li key={item.label + i} className="px-5 py-2.5">
               <div className="flex items-baseline justify-between gap-3">
@@ -71,7 +74,7 @@ function BreakdownPanel({
               <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-elevated">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-[width] duration-500 ease-out",
+                    "ls-bar-grow h-full rounded-full",
                     i === 0 ? "bg-brand" : "bg-fg-secondary/50",
                   )}
                   style={{ width: `${Math.max((item.count / max) * 100, 2)}%` }}

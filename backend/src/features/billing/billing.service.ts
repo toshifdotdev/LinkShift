@@ -1872,6 +1872,12 @@ export const checkCsvExportAccess = async (userId: string) => {
     }
 };
 
+/* Plan ladder for analytics visualization tiers: range windows are metered
+   by analyticsDays, breakdown sections by this rank. */
+export const PLAN_ORDER = ["FREE", "STARTER", "CREATOR", "PRO", "ENTERPRISE"] as const;
+export const planRankOf = (name: string): number =>
+    (PLAN_ORDER as readonly string[]).indexOf(name);
+
 /* Deep linking is a Pro-tier capability (and any plan above Pro). */
 const DEEP_LINK_PLANS = ["PRO", "ENTERPRISE"];
 

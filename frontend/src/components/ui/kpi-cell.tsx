@@ -10,8 +10,8 @@ import { cn } from "@/lib/utils";
 
 function useRolledValue(value: number, active: boolean): number {
   const reduce = useReducedMotion();
-  const previousRef = useRef(value);
-  const [display, setDisplay] = useState(value);
+  const previousRef = useRef(0);
+  const [display, setDisplay] = useState(0);
   const rafRef = useRef(0);
 
   useEffect(() => {

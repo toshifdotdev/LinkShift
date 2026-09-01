@@ -363,13 +363,21 @@ function EditLinkDialog({
 
             {/* path forwarding */}
             <Field>
-              <FieldLabel>
+              <FieldLabel className="flex items-center gap-2">
                 Path forwarding
                 {!canUseDeepLink && (
-                  <span className="ml-2 inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-brand uppercase">
+                  <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-brand uppercase">
                     Pro only
                   </span>
                 )}
+                <a
+                  href="/docs/path-forwarding"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto font-mono text-[9px] tracking-[0.16em] text-brand uppercase transition-colors hover:text-brand-hover"
+                >
+                  How it works ↗
+                </a>
               </FieldLabel>
               {canUseDeepLink ? (
                 <>
@@ -403,13 +411,21 @@ function EditLinkDialog({
 
             {/* mobile app deep linking */}
             <Field>
-              <FieldLabel>
+              <FieldLabel className="flex items-center gap-2">
                 Mobile app deep linking
                 {!canUseDeepLink && (
-                  <span className="ml-2 inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-brand uppercase">
+                  <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-wide text-brand uppercase">
                     Pro only
                   </span>
                 )}
+                <a
+                  href="/docs/mobile-app-deep-linking"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-auto font-mono text-[9px] tracking-[0.16em] text-brand uppercase transition-colors hover:text-brand-hover"
+                >
+                  Setup guide ↗
+                </a>
               </FieldLabel>
               {canUseDeepLink ? (
                 <div className="flex flex-col gap-3">
@@ -425,6 +441,27 @@ function EditLinkDialog({
                   </label>
                   {appDeepLink && (
                     <>
+                      <p className="text-xs text-fg-muted">
+                        You provide your app's identifiers below — LinkShift can't infer
+                        them from a website URL.{" "}
+                        <a
+                          href="/docs/mobile-app-deep-linking"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand transition-colors hover:text-brand-hover"
+                        >
+                          How do I find these?
+                        </a>
+                        {" · "}
+                        <a
+                          href="/docs/mobile-app-deep-linking"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand transition-colors hover:text-brand-hover"
+                        >
+                          View example
+                        </a>
+                      </p>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <Field>
                           <FieldLabel htmlFor="edit-app-scheme">App URI scheme *</FieldLabel>
@@ -435,7 +472,11 @@ function EditLinkDialog({
                             placeholder="myapp"
                             maxLength={100}
                           />
-                          <FieldHint>The scheme your app registers, e.g. myapp://</FieldHint>
+                          <FieldHint>
+                            The scheme your app registers — just the name, e.g.{" "}
+                            <span className="font-mono">myapp</span> for{" "}
+                            <span className="font-mono">myapp://</span>.
+                          </FieldHint>
                         </Field>
                         <Field>
                           <FieldLabel htmlFor="edit-android-package">Android package</FieldLabel>
@@ -446,7 +487,11 @@ function EditLinkDialog({
                             placeholder="com.example.app"
                             maxLength={255}
                           />
-                          <FieldHint>Enables the native Chrome handoff on Android.</FieldHint>
+                          <FieldHint>
+                            Your app's package name, e.g.{" "}
+                            <span className="font-mono">com.example.app</span>. Enables
+                            Chrome's native handoff on Android.
+                          </FieldHint>
                         </Field>
                       </div>
                       <Field>
@@ -460,7 +505,10 @@ function EditLinkDialog({
                           placeholder="content/home"
                           maxLength={1024}
                         />
-                        <FieldHint>Placed before any path the visitor appends.</FieldHint>
+                        <FieldHint>
+                          The screen to open inside your app; any path the visitor
+                          appends is placed after it.
+                        </FieldHint>
                       </Field>
                       <div className="grid gap-3 sm:grid-cols-2">
                         <Field>
@@ -473,6 +521,7 @@ function EditLinkDialog({
                             onChange={(e) => setIosStoreUrl(e.target.value)}
                             placeholder="https://apps.apple.com/…"
                           />
+                          <FieldHint>Offered on iOS when the app isn't installed.</FieldHint>
                         </Field>
                         <Field>
                           <FieldLabel htmlFor="edit-android-store">
@@ -484,6 +533,9 @@ function EditLinkDialog({
                             onChange={(e) => setAndroidStoreUrl(e.target.value)}
                             placeholder="https://play.google.com/…"
                           />
+                          <FieldHint>
+                            Chrome's fallback on Android when the app isn't installed.
+                          </FieldHint>
                         </Field>
                       </div>
                       <p className="text-xs text-fg-muted">

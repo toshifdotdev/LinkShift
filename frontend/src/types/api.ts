@@ -61,6 +61,8 @@ export interface DashboardStats {
   inactiveLinks: number;
   totalScans: number;
   topLinks: TopLink[];
+  /** Account-level clicks per day; omitted by older cached payloads. */
+  dailyStats?: DailyPoint[];
 }
 
 /**
@@ -163,12 +165,18 @@ export interface DailyPoint {
   clicks: number;
 }
 
+/**
+ * Exact shape returned by the backend getAnalytics mapper. Gated sections
+ * are stripped server-side by plan tier (browsers/OS from STARTER,
+ * UTM/referrers from CREATOR) and arrive as empty arrays when locked.
+ */
 export interface LinkAnalytics {
   totalClicks: number;
-  browserStats: Array<{ browser: string | null; count: number }>;
-  deviceStats: Array<{ device: string | null; count: number }>;
-  countryStats: Array<{ country: string | null; count: number }>;
-  osStats: Array<{ os: string | null; count: number }>;
+  browserStats: Array<{ browser: string; count: number }>;
+  deviceStats: Array<{ device: string; count: number }>;
+  countryStats: Array<{ country: string; count: number }>;
+  osStats: Array<{ os: string; count: number }>;
+  referrerStats: Array<{ referrer: string | null; count: number }>;
   utmSource: Array<{ utmSource: string | null; count: number }>;
   utmMedium: Array<{ utmMedium: string | null; count: number }>;
   utmCampaign: Array<{ utmCampaign: string | null; count: number }>;

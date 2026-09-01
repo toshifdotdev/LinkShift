@@ -17,6 +17,7 @@ import { useToaster } from "@/components/ui/toaster";
 import { FadeIn } from "@/components/ui/motion";
 import { shortUrl, DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import { cn } from "@/lib/utils";
+import { UpgradeHint } from "@/pages/app/links/upgrade-hint";
 import { BreakdownPanel } from "./breakdown-panel";
 import { DonutChart } from "./donut-chart";
 import { AreaChart } from "./area-chart";
@@ -41,6 +42,42 @@ function LockedRangeBanner({ days, minPlan }: { days: number; minPlan: string })
         </Link>
       }
     />
+  );
+}
+
+function referrerLabel(referrer: string | null): string {
+  if (!referrer) return "Direct / none";
+  try {
+    return new URL(referrer).hostname.replace(/^www\./, "");
+  } catch {
+    return referrer;
+  }
+}
+
+/** Locked visualization slot: explains the upgrade path instead of
+    rendering an empty or misleading chart. */
+function LockedViz({
+  title,
+  feature,
+  requirement,
+  className,
+}: {
+  title: string;
+  feature: string;
+  requirement: string;
+  className?: string;
+}) {
+  return (
+    <section aria-label={title} className={cn("ls-plate relative overflow-hidden", className)}>
+      <span aria-hidden="true" className="ls-stripe" />
+      <header className="flex items-center justify-between border-b border-border-subtle px-5 py-3">
+        <p className="ls-marquee">{title}</p>
+        <Lock className="size-3 text-brand" aria-hidden="true" />
+      </header>
+      <div className="p-4">
+        <UpgradeHint feature={feature} requirement={requirement} />
+      </div>
+    </section>
   );
 }
 
@@ -96,6 +133,33 @@ function AccountView({ days }: { days: AnalyticsDays }) {
           <KpiCell label="Active" value={statsData?.activeLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
           <KpiCell label="Inactive" value={statsData?.inactiveLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
         </div>
+      </section>
+
+      {/* account-wide time series */}
+      <section
+        aria-label="Clicks over time"
+        className="mt-6 ls-plate relative overflow-hidden p-5"
+      >
+        <header className="mb-5 flex items-center justify-between">
+          <p className="ls-marquee">Clicks over time</p>
+          <span className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">
+            {days}D window
+          </span>
+        </header>
+        {stats.isError ? (
+          <ErrorState
+            title="Couldn't load the chart"
+            message={stats.error instanceof Error ? stats.error.message : undefined}
+            onRetry={() => void stats.refetch()}
+          />
+        ) : (
+          <AreaChart
+            data={statsData?.dailyStats ?? []}
+            loading={stats.isPending}
+            emptyTitle="No clicks in this window"
+            emptyHint="Share a link — account-wide activity charts here."
+          />
+        )}
       </section>
 
       {/* link drill-down — per-link time series & breakdowns live in the workspace */}
@@ -327,6 +391,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
   });
 
   const csvLocked = planRank(plan) < planRank("CREATOR");
+  const starterLocked = planRank(plan) < planRank("STARTER");
 
   async function handleExport() {
     setExporting(true);
@@ -353,6 +418,10 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
         ...(a.utmMedium ?? []).filter((u) => u.utmMedium).map((u) => ({ label: `medium · ${u.utmMedium}`, count: u.count })),
         ...(a.utmCampaign ?? []).filter((u) => u.utmCampaign).map((u) => ({ label: `campaign · ${u.utmCampaign}`, count: u.count })),
       ]
+    : [];
+
+  const referrerRows = a
+    ? (a.referrerStats ?? []).map((r) => ({ label: referrerLabel(r.referrer), count: r.count }))
     : [];
 
   return (
@@ -458,35 +527,63 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
           <>
             <DonutChart
               title="Devices"
-              items={(a?.deviceStats ?? []).map((d) => ({ label: d.device ?? "Unknown", count: d.count }))}
+              items={(a?.deviceStats ?? []).map((d) => ({ label: d.device, count: d.count }))}
               loading={analytics.isPending}
               emptyText="No device data yet."
             />
             <BreakdownPanel
               title="Countries"
-              items={(a?.countryStats ?? []).map((c) => ({ label: c.country ?? "Unknown", count: c.count }))}
+              items={(a?.countryStats ?? []).map((c) => ({ label: c.country, count: c.count }))}
               loading={analytics.isPending}
               emptyText="No geo data yet."
             />
-            <BreakdownPanel
-              title="Browsers"
-              items={(a?.browserStats ?? []).map((b) => ({ label: b.browser ?? "Unknown", count: b.count }))}
-              loading={analytics.isPending}
-              emptyText="No browser data yet."
-            />
-            <BreakdownPanel
-              title="Operating systems"
-              items={(a?.osStats ?? []).map((o) => ({ label: o.os ?? "Unknown", count: o.count }))}
-              loading={analytics.isPending}
-              emptyText="No OS data yet."
-            />
-            {utmRows.length > 0 && (
-              <BreakdownPanel
-                title="UTM campaigns"
-                items={utmRows}
-                loading={analytics.isPending}
+            {starterLocked ? (
+              <LockedViz
                 className="lg:col-span-2"
+                title="Clients"
+                feature="Browser and operating-system breakdowns"
+                requirement="Starter"
               />
+            ) : (
+              <>
+                <BreakdownPanel
+                  title="Browsers"
+                  items={(a?.browserStats ?? []).map((b) => ({ label: b.browser, count: b.count }))}
+                  loading={analytics.isPending}
+                  emptyText="No browser data yet."
+                />
+                <BreakdownPanel
+                  title="Operating systems"
+                  items={(a?.osStats ?? []).map((o) => ({ label: o.os, count: o.count }))}
+                  loading={analytics.isPending}
+                  emptyText="No OS data yet."
+                />
+              </>
+            )}
+            {csvLocked ? (
+              <LockedViz
+                className="lg:col-span-2"
+                title="Traffic sources"
+                feature="Referrer and UTM campaign breakdowns"
+                requirement="Creator"
+              />
+            ) : (
+              <>
+                <BreakdownPanel
+                  title="Referrers"
+                  items={referrerRows}
+                  loading={analytics.isPending}
+                  emptyText="No referrer data yet."
+                  className={utmRows.length > 0 ? undefined : "lg:col-span-2"}
+                />
+                {utmRows.length > 0 && (
+                  <BreakdownPanel
+                    title="UTM campaigns"
+                    items={utmRows}
+                    loading={analytics.isPending}
+                  />
+                )}
+              </>
             )}
           </>
         )}

@@ -32,7 +32,7 @@ export const sendEmail = async(data : SendEmailData) => {
  * via the result so it can degrade appropriately: registration rolls the
  * account back, while reset/resend keep their enumeration-neutral response.
  */
-const sendEmailSafely = async(data : SendEmailData) : Promise<EmailDeliveryResult> => {
+export const sendEmailSafely = async(data : SendEmailData) : Promise<EmailDeliveryResult> => {
     try {
         await sendEmail(data);
         return { delivered: true };

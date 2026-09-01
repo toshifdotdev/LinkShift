@@ -10,6 +10,20 @@ const productLinks = [
   { label: "Pricing", href: "/pricing" },
 ];
 
+const resourceLinks = [
+  { label: "Documentation", href: "/docs" },
+  { label: "FAQ", href: "/faq" },
+  { label: "Contact", href: "/contact" },
+];
+
+const legalLinks = [
+  { label: "Privacy Policy", href: "/privacy" },
+  { label: "Terms of Service", href: "/terms" },
+  { label: "Refund & Cancellation", href: "/refunds" },
+  { label: "Shipping & Delivery", href: "/shipping" },
+  { label: "Acceptable Use", href: "/acceptable-use" },
+];
+
 function Footer() {
   return (
     <footer className="border-t border-border bg-surface">
@@ -23,20 +37,52 @@ function Footer() {
           </p>
         </div>
 
-        <nav aria-label="Footer" className="md:justify-self-end">
-          <p className="ls-marquee">Product</p>
-          <ul className="mt-4 grid grid-cols-2 gap-x-10 gap-y-2.5 sm:flex sm:flex-col">
-            {productLinks.map((link) => (
-              <li key={link.label}>
-                <Link
-                  to={link.href}
-                  className="text-sm text-fg-secondary transition-colors hover:text-foreground"
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <nav aria-label="Footer" className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:justify-self-end">
+          <div>
+            <p className="ls-marquee">Product</p>
+            <ul className="mt-4 flex flex-col gap-2.5">
+              {productLinks.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-fg-secondary transition-colors hover:text-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="ls-marquee">Resources</p>
+            <ul className="mt-4 flex flex-col gap-2.5">
+              {resourceLinks.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-fg-secondary transition-colors hover:text-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="ls-marquee">Legal</p>
+            <ul className="mt-4 flex flex-col gap-2.5">
+              {legalLinks.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-fg-secondary transition-colors hover:text-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
         </nav>
       </div>
 

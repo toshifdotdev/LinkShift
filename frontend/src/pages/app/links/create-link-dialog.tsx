@@ -394,6 +394,14 @@ function CreateLinkDialog({
                         <Lock className="size-2.5" /> Pro only
                       </span>
                     )}
+                    <a
+                      href="/docs/path-forwarding"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-auto font-mono text-[9px] tracking-[0.16em] text-brand uppercase transition-colors hover:text-brand-hover"
+                    >
+                      How it works ↗
+                    </a>
                   </p>
                   {canUseDeepLink ? (
                     <div className="mt-3 flex flex-col gap-2">
@@ -431,6 +439,14 @@ function CreateLinkDialog({
                         <Lock className="size-2.5" /> Pro only
                       </span>
                     )}
+                    <a
+                      href="/docs/mobile-app-deep-linking"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-auto font-mono text-[9px] tracking-[0.16em] text-brand uppercase transition-colors hover:text-brand-hover"
+                    >
+                      Setup guide ↗
+                    </a>
                   </p>
                   {canUseDeepLink ? (
                     <div className="mt-3 flex flex-col gap-3">
@@ -446,6 +462,27 @@ function CreateLinkDialog({
                       </label>
                       {appDeepLink && (
                         <>
+                          <p className="text-xs text-fg-muted">
+                            You provide your app's identifiers below — LinkShift can't infer
+                            them from a website URL.{" "}
+                            <a
+                              href="/docs/mobile-app-deep-linking"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-brand transition-colors hover:text-brand-hover"
+                            >
+                              How do I find these?
+                            </a>
+                            {" · "}
+                            <a
+                              href="/docs/mobile-app-deep-linking"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-brand transition-colors hover:text-brand-hover"
+                            >
+                              View example
+                            </a>
+                          </p>
                           <div className="grid gap-3 sm:grid-cols-2">
                             <Field>
                               <FieldLabel htmlFor="create-app-scheme">App URI scheme *</FieldLabel>
@@ -456,7 +493,11 @@ function CreateLinkDialog({
                                 placeholder="myapp"
                                 maxLength={100}
                               />
-                              <FieldHint>The scheme your app registers, e.g. myapp://</FieldHint>
+                              <FieldHint>
+                                The scheme your app registers — just the name, e.g.{" "}
+                                <span className="font-mono">myapp</span> for{" "}
+                                <span className="font-mono">myapp://</span>.
+                              </FieldHint>
                             </Field>
                             <Field>
                               <FieldLabel htmlFor="create-android-package">Android package</FieldLabel>
@@ -467,7 +508,11 @@ function CreateLinkDialog({
                                 placeholder="com.example.app"
                                 maxLength={255}
                               />
-                              <FieldHint>Enables the native Chrome handoff on Android.</FieldHint>
+                              <FieldHint>
+                                Your app's package name, e.g.{" "}
+                                <span className="font-mono">com.example.app</span>. Enables
+                                Chrome's native handoff on Android.
+                              </FieldHint>
                             </Field>
                           </div>
                           <Field>
@@ -481,7 +526,10 @@ function CreateLinkDialog({
                               placeholder="content/home"
                               maxLength={1024}
                             />
-                            <FieldHint>Placed before any path the visitor appends.</FieldHint>
+                            <FieldHint>
+                              The screen to open inside your app; any path the visitor
+                              appends is placed after it.
+                            </FieldHint>
                           </Field>
                           <div className="grid gap-3 sm:grid-cols-2">
                             <Field>
@@ -494,6 +542,7 @@ function CreateLinkDialog({
                                 onChange={(e) => setIosStoreUrl(e.target.value)}
                                 placeholder="https://apps.apple.com/…"
                               />
+                              <FieldHint>Offered on iOS when the app isn't installed.</FieldHint>
                             </Field>
                             <Field>
                               <FieldLabel htmlFor="create-android-store">
@@ -505,6 +554,9 @@ function CreateLinkDialog({
                                 onChange={(e) => setAndroidStoreUrl(e.target.value)}
                                 placeholder="https://play.google.com/…"
                               />
+                              <FieldHint>
+                                Chrome's fallback on Android when the app isn't installed.
+                              </FieldHint>
                             </Field>
                           </div>
                           <p className="text-xs text-fg-muted">

@@ -16,7 +16,9 @@ interface DonutItem {
 
 /**
  * Ring visualization for small categorical sets (devices).
- * Segments are stroke-dasharray arcs; legend carries dot + label + count + %.
+ * Segments are stroke-dasharray arcs that sweep in via ls-donut-sweep;
+ * the SVG is keyed by dataset so a range/link change replays it.
+ * Legend carries dot + label + count + %. Reduced motion snaps (CSS).
  */
 function DonutChart({
   title,
@@ -33,6 +35,7 @@ function DonutChart({
 }) {
   const visible = items.filter((i) => i.count > 0).slice(0, SEGMENT_COLORS.length);
   const total = visible.reduce((s, i) => s + i.count, 0);
+  const itemsKey = items.map((i) => `${i.label}:${i.count}`).join("|");
 
   return (
     <section aria-label={title} className="ls-plate">
@@ -55,6 +58,7 @@ function DonutChart({
         <div className="flex items-center gap-6 px-5 py-5">
           {/* ring */}
           <svg
+            key={itemsKey}
             width={size}
             height={size}
             viewBox="0 0 120 120"
@@ -73,6 +77,7 @@ function DonutChart({
               return (
                 <circle
                   key={item.label}
+                  className="ls-donut-sweep"
                   cx="60"
                   cy="60"
                   r="48"
