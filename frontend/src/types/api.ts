@@ -63,6 +63,8 @@ export interface DashboardStats {
   topLinks: TopLink[];
   /** Account-level clicks per day; omitted by older cached payloads. */
   dailyStats?: DailyPoint[];
+  /** Account-level clicks per hour-of-day (UTC); STARTER+ only. */
+  hourlyStats?: HourPoint[];
 }
 
 /**
@@ -165,10 +167,23 @@ export interface DailyPoint {
   clicks: number;
 }
 
+export interface HourPoint {
+  hour: number;
+  count: number;
+}
+
+export interface HeatPoint {
+  /** Postgres DOW: 0 = Sunday … 6 = Saturday (UTC). */
+  dow: number;
+  hour: number;
+  count: number;
+}
+
 /**
  * Exact shape returned by the backend getAnalytics mapper. Gated sections
- * are stripped server-side by plan tier (browsers/OS from STARTER,
- * UTM/referrers from CREATOR) and arrive as empty arrays when locked.
+ * are stripped server-side by plan tier (browsers/OS and peak hours from
+ * STARTER, cities and UTM/referrers from CREATOR, the best-time heatmap
+ * from PRO) and arrive as empty arrays when locked.
  */
 export interface LinkAnalytics {
   totalClicks: number;
@@ -182,6 +197,9 @@ export interface LinkAnalytics {
   utmCampaign: Array<{ utmCampaign: string | null; count: number }>;
   utmTerm: Array<{ utmTerm: string | null; count: number }>;
   utmContent: Array<{ utmContent: string | null; count: number }>;
+  hourlyStats: HourPoint[];
+  cityStats: Array<{ city: string; count: number }>;
+  heatmapStats: HeatPoint[];
 }
 
 export interface LinkCharts {

@@ -17,3 +17,13 @@ if (typeof globalThis.ResizeObserver === "undefined") {
 if (typeof Element !== "undefined" && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
 }
+
+/* jsdom has no SVG geometry engine (and no SVGPathElement global — every
+   SVG node is a plain SVGElement); AreaChart's draw-in effect measures
+   path length. Return a stable value so effects run without throwing. */
+if (typeof SVGElement !== "undefined") {
+  const svgProto = SVGElement.prototype as unknown as { getTotalLength?: () => number };
+  if (!svgProto.getTotalLength) {
+    svgProto.getTotalLength = () => 100;
+  }
+}

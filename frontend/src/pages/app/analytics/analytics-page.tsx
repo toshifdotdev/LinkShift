@@ -21,6 +21,8 @@ import { UpgradeHint } from "@/pages/app/links/upgrade-hint";
 import { BreakdownPanel } from "./breakdown-panel";
 import { DonutChart } from "./donut-chart";
 import { AreaChart } from "./area-chart";
+import { HourBars } from "./hour-bars";
+import { HeatGrid } from "./heat-grid";
 import { RANGE_OPTIONS, RangeSelect, planRank, rangeLocked } from "./range-select";
 
 /* ---------- shared bits ---------- */
@@ -86,6 +88,9 @@ function LockedViz({
 function AccountView({ days }: { days: AnalyticsDays }) {
   const [, setSearchParams] = useSearchParams();
   const [drillSearch, setDrillSearch] = useState("");
+  const { user } = useSession();
+  const plan = user?.plan.name ?? "FREE";
+  const starterLocked = planRank(plan) < planRank("STARTER");
 
   const stats = useQuery({
     queryKey: ["stats", days],
@@ -161,6 +166,42 @@ function AccountView({ days }: { days: AnalyticsDays }) {
           />
         )}
       </section>
+
+      {/* account-wide peak hours — STARTER+ entitlement */}
+      {starterLocked ? (
+        <LockedViz
+          className="mt-6"
+          title="Peak hours"
+          feature="Hour-of-day peak analysis"
+          requirement="Starter"
+        />
+      ) : (
+        <section
+          aria-label="Peak hours"
+          className="mt-6 ls-plate relative overflow-hidden p-5"
+        >
+          <header className="mb-5 flex items-center justify-between">
+            <p className="ls-marquee">Peak hours</p>
+            <span className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">
+              {days}D window · UTC
+            </span>
+          </header>
+          {stats.isError ? (
+            <ErrorState
+              title="Couldn't load the chart"
+              message={stats.error instanceof Error ? stats.error.message : undefined}
+              onRetry={() => void stats.refetch()}
+            />
+          ) : (
+            <HourBars
+              data={statsData?.hourlyStats ?? []}
+              loading={stats.isPending}
+              emptyTitle="No clicks in this window"
+              emptyHint="Share a link — hourly activity charts here."
+            />
+          )}
+        </section>
+      )}
 
       {/* link drill-down — per-link time series & breakdowns live in the workspace */}
       <section
@@ -392,6 +433,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
 
   const csvLocked = planRank(plan) < planRank("CREATOR");
   const starterLocked = planRank(plan) < planRank("STARTER");
+  const proLocked = planRank(plan) < planRank("PRO");
 
   async function handleExport() {
     setExporting(true);
@@ -423,6 +465,13 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
   const referrerRows = a
     ? (a.referrerStats ?? []).map((r) => ({ label: referrerLabel(r.referrer), count: r.count }))
     : [];
+
+  /* derived KPIs — computed client-side from the daily series and total
+     already fetched for this view (no new API surface) */
+  const daily = charts.data?.dailyStats ?? [];
+  const avgPerDay = Math.round((a?.totalClicks ?? 0) / days);
+  const bestDay = daily.reduce((m, d) => Math.max(m, d.clicks), 0);
+  const activeDays = daily.filter((d) => d.clicks > 0).length;
 
   return (
     <>
@@ -462,7 +511,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
       />
 
       <section
-        aria-label="Total clicks"
+        aria-label="Headline numbers"
         className="ls-plate relative overflow-hidden"
       >
         <span aria-hidden="true" className="ls-stripe" />
@@ -472,18 +521,26 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
             {days}D window
           </span>
         </header>
-        <div className="px-4 py-5 sm:px-5 sm:py-6">
-          {analytics.isPending ? (
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="mt-1 h-7 w-20" />
+        <div className="grid grid-cols-2 divide-x divide-border-subtle sm:grid-cols-4">
+          {analytics.isPending || charts.isPending ? (
+            <div className="col-span-2 px-4 py-5 sm:col-span-4 sm:px-5 sm:py-6">
+              <div className="flex flex-col gap-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="mt-1 h-7 w-20" />
+              </div>
             </div>
           ) : (
-            <KpiCell
-              label="Total clicks"
-              value={a?.totalClicks ?? 0}
-              valueClassName="text-brand"
-            />
+            <>
+              <KpiCell
+                label="Total clicks"
+                value={a?.totalClicks ?? 0}
+                valueClassName="text-brand"
+                className="px-4 py-5 sm:px-5 sm:py-6"
+              />
+              <KpiCell label="Avg / day" value={avgPerDay} className="px-4 py-5 sm:px-5 sm:py-6" />
+              <KpiCell label="Best day" value={bestDay} className="px-4 py-5 sm:px-5 sm:py-6" />
+              <KpiCell label="Active days" value={activeDays} className="px-4 py-5 sm:px-5 sm:py-6" />
+            </>
           )}
         </div>
       </section>
@@ -513,6 +570,42 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
           />
         )}
       </section>
+
+      {/* per-link peak hours — STARTER+ entitlement */}
+      {starterLocked ? (
+        <LockedViz
+          className="mt-6"
+          title="Peak hours"
+          feature="Hour-of-day peak analysis"
+          requirement="Starter"
+        />
+      ) : (
+        <section
+          aria-label="Peak hours"
+          className="mt-6 ls-plate relative overflow-hidden p-5"
+        >
+          <header className="mb-5 flex items-center justify-between">
+            <p className="ls-marquee">Peak hours</p>
+            <span className="font-mono text-[9px] tracking-[0.16em] text-fg-muted uppercase">
+              {days}D window · UTC
+            </span>
+          </header>
+          {analytics.isError ? (
+            <ErrorState
+              title="Couldn't load the chart"
+              message={analytics.error instanceof Error ? analytics.error.message : undefined}
+              onRetry={() => void analytics.refetch()}
+            />
+          ) : (
+            <HourBars
+              data={a?.hourlyStats ?? []}
+              loading={analytics.isPending}
+              emptyTitle="No clicks in this window"
+              emptyHint="Share the short link. Hourly activity charts here."
+            />
+          )}
+        </section>
+      )}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {analytics.isError ? (
@@ -564,23 +657,29 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
               <LockedViz
                 className="lg:col-span-2"
                 title="Traffic sources"
-                feature="Referrer and UTM campaign breakdowns"
+                feature="City-level, referrer, and UTM campaign breakdowns"
                 requirement="Creator"
               />
             ) : (
               <>
                 <BreakdownPanel
+                  title="Cities"
+                  items={(a?.cityStats ?? []).map((c) => ({ label: c.city, count: c.count }))}
+                  loading={analytics.isPending}
+                  emptyText="No city data yet."
+                />
+                <BreakdownPanel
                   title="Referrers"
                   items={referrerRows}
                   loading={analytics.isPending}
                   emptyText="No referrer data yet."
-                  className={utmRows.length > 0 ? undefined : "lg:col-span-2"}
                 />
                 {utmRows.length > 0 && (
                   <BreakdownPanel
                     title="UTM campaigns"
                     items={utmRows}
                     loading={analytics.isPending}
+                    className="lg:col-span-2"
                   />
                 )}
               </>
@@ -588,6 +687,25 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
           </>
         )}
       </div>
+
+      {/* day × hour heatmap — PRO entitlement */}
+      {!analytics.isError &&
+        (proLocked ? (
+          <LockedViz
+            className="mt-6"
+            title="Best times"
+            feature="Day-and-hour activity heatmap"
+            requirement="Pro"
+          />
+        ) : (
+          <HeatGrid
+            className="mt-6"
+            title="Best times"
+            data={a?.heatmapStats ?? []}
+            loading={analytics.isPending}
+            emptyText="No clicks in this window yet."
+          />
+        ))}
     </>
   );
 }

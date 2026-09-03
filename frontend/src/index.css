@@ -454,6 +454,19 @@
   @keyframes ls-donut-sweep {
     from { stroke-dasharray: 0 301.59; stroke-dashoffset: 0; }
   }
+  .ls-col-grow {
+    animation: ls-col-grow 480ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    transform-origin: bottom;
+  }
+  @keyframes ls-col-grow {
+    from { transform: scaleY(0); }
+  }
+  .ls-heat-fade {
+    animation: ls-heat-fade 500ms ease-out backwards;
+  }
+  @keyframes ls-heat-fade {
+    from { opacity: 0; }
+  }
 
   @media (prefers-reduced-motion: reduce) {
     .ls-skeleton,
@@ -461,6 +474,8 @@
     .ls-ping,
     .ls-bar-grow,
     .ls-donut-sweep,
+    .ls-col-grow,
+    .ls-heat-fade,
     .ls-reveal {
       animation: none !important;
     }
