@@ -16,14 +16,25 @@ interface SendEmailData {
 export type EmailDeliveryResult = { delivered: boolean };
 
 export const sendEmail = async(data : SendEmailData) => {
-    await resend.emails.send({
+    const payload = {
         // Must be a verified sender on this Resend account. Production requires
         // a domain you own (see EMAIL_FROM in .env.example / ENVIRONMENT.md).
         from : config.emailFrom!,
         to : data.to,
         subject : data.subject,
         html : data.html
-    })
+    };
+
+    // Resend's SDK resolves with { data, error } instead of throwing on
+    // API-level failures — inspect `error` explicitly so a rejected send
+    // propagates to sendEmailSafely rather than looking successful.
+    const { data: result, error } = await resend.emails.send(payload);
+
+    if (error) {
+        throw new Error(`Resend send failed [${error.name}]: ${error.message}`);
+    }
+
+    return result;
 }
 
 /**
