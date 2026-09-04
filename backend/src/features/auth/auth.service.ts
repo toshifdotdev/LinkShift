@@ -16,11 +16,40 @@ export const registerUser = async (name : string, email : string, password : str
             email
         }
     })
-    if(existingUser !== null) {
+    const hashPassword = await bcrypt.hash(password , 10); // saltRounds = 10
+
+    // Reuse an abandoned unverified LOCAL account: the user never completed
+    // verification, so the account holds no data. Update name + password and
+    // re-issue a fresh verification email (sendVerificationEmail deletes the
+    // previous token and issues a new 30-minute one). Verified accounts and
+    // Google-linked accounts still 409 — never overwrite an active identity.
+    if (existingUser !== null) {
+        if (existingUser.verified === false && existingUser.provider === "LOCAL") {
+            await prisma.user.update({
+                where: { id: existingUser.id },
+                data: {
+                    name,
+                    passwordHash: hashPassword,
+                },
+            });
+
+            const { delivered } = await sendVerificationEmail(existingUser.id, existingUser.email, name);
+
+            if (!delivered) {
+                // The pre-existing account is kept (it already exists); the
+                // user can retry via resend-verification. Surface the failure
+                // so they know the email did not go out.
+                throw new AppError("We couldn't send the verification email. Please try again.", 503);
+            }
+
+            return {
+                email: existingUser.email,
+                message: "We've sent a verification email."
+            };
+        }
+
         throw new AppError("An account with this email already exists.", 409);
     }
-
-    const hashPassword = await bcrypt.hash(password , 10); // saltRounds = 10
 
     
 

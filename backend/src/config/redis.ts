@@ -23,6 +23,9 @@ const reconnectStrategy = (retries: number) => {
 };
 
 export const redisClient = createClient({
+    // REDIS_URL (e.g. a managed Redis) when provided; omitted → the client's
+    // own default (redis://localhost:6379) so local development is unchanged.
+    ...(process.env.REDIS_URL ? { url: process.env.REDIS_URL } : {}),
     socket: { reconnectStrategy },
     disableOfflineQueue: true,
 });

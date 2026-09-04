@@ -24,7 +24,7 @@ export interface LegalDoc {
   sections: LegalSection[];
 }
 
-export const LEGAL_UPDATED = "31 August 2026";
+export const LEGAL_UPDATED = "4 September 2026";
 
 export const LEGAL_DOCS: LegalDoc[] = [
   {
@@ -122,11 +122,11 @@ export const LEGAL_DOCS: LegalDoc[] = [
             kind: "p",
             text: "If this policy changes materially we will note it on this page with a new update date. Questions and requests go to:",
           },
-          { kind: "todo", text: "Support email address (e.g. support@yourdomain)." },
+          { kind: "p", text: "Support email: linkshift.admin@gmail.com" },
           { kind: "todo", text: "Operator legal name and postal address (also required on Terms and receipts)." },
           {
-            kind: "todo",
-            text: "Grievance officer name and contact, if required for your operating jurisdiction.",
+            kind: "p",
+            text: "For privacy-related concerns or complaints, please contact us at linkshift.admin@gmail.com. We will review and respond to complaints through this support channel.",
           },
         ],
       },
@@ -210,7 +210,11 @@ export const LEGAL_DOCS: LegalDoc[] = [
       {
         heading: "Governing law",
         blocks: [
-          { kind: "todo", text: "Governing law and courts (suggest: laws of India, courts of <city>)." },
+          { kind: "p", text: "These terms are governed by the laws of India." },
+          {
+            kind: "p",
+            text: "Subject to applicable law and any rights available to consumers under applicable law, the courts at Dehradun, Uttarakhand, India shall have jurisdiction over disputes arising out of or relating to these Terms.",
+          },
         ],
       },
       {
@@ -220,7 +224,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
             kind: "p",
             text: "We may update these terms; material changes get a new update date on this page and, where practical, an email notice. Continued use after changes means acceptance.",
           },
-          { kind: "todo", text: "Support email address for legal notices." },
+          { kind: "p", text: "Support email: linkshift.admin@gmail.com" },
         ],
       },
     ],
@@ -262,8 +266,8 @@ export const LEGAL_DOCS: LegalDoc[] = [
             ],
           },
           {
-            kind: "todo",
-            text: "Refund window for first-time purchases (e.g. “within 7 days of the first charge”) — a business decision only the owner can set.",
+            kind: "p",
+            text: "First-time paid subscriptions may be eligible for a refund if requested within 7 days of the initial charge, subject to the conditions described in this policy.",
           },
         ],
       },
@@ -274,13 +278,16 @@ export const LEGAL_DOCS: LegalDoc[] = [
             kind: "p",
             text: "Checkout is offered in INR or USD based on your region. Your card issuer or bank may apply its own foreign-conversion fees on cross-border transactions; those are charged by the issuer, not by LinkShift. Taxes, where applicable, are stated at checkout and on receipts.",
           },
-          { kind: "todo", text: "Tax/GST treatment statement once the operator's registration is settled." },
+          {
+            kind: "p",
+            text: "Applicable taxes, including GST where required by law, may be added to charges. LinkShift will apply and collect applicable taxes based on the operator's registration status and the requirements of applicable law.",
+          },
         ],
       },
       {
         heading: "Questions",
         blocks: [
-          { kind: "todo", text: "Support email address for billing questions." },
+          { kind: "p", text: "Support email: linkshift.admin@gmail.com" },
         ],
       },
     ],
@@ -334,7 +341,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
             kind: "p",
             text: "First check the Billing page and your receipt email. If the payment shows as captured but your plan has not changed, write to us with the payment ID from the receipt and we will reconcile it.",
           },
-          { kind: "todo", text: "Support email address for delivery/billing issues." },
+          { kind: "p", text: "Support email: linkshift.admin@gmail.com" },
         ],
       },
     ],
@@ -378,7 +385,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
             kind: "p",
             text: "To report a LinkShift short link that violates this policy, send the link itself and what is wrong with it to the contact address below; we act on credible reports promptly.",
           },
-          { kind: "todo", text: "Abuse reporting email address (e.g. abuse@yourdomain)." },
+          { kind: "p", text: "Abuse reports: linkshift.admin@gmail.com" },
         ],
       },
     ],
@@ -410,9 +417,12 @@ export const LEGAL_DOCS: LegalDoc[] = [
               "Privacy: include the account email the request concerns.",
             ],
           },
-          { kind: "todo", text: "Support email address." },
+          { kind: "p", text: "Support email: linkshift.admin@gmail.com" },
           { kind: "todo", text: "Postal address and operator legal name." },
-          { kind: "todo", text: "Response-time target (e.g. “within 2 business days”)." },
+          {
+            kind: "p",
+            text: "We aim to respond to support requests within 2 business days.",
+          },
         ],
       },
     ],

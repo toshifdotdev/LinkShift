@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "tsc -b --force && node ./dist/server.js",
+    "build": "prisma generate && tsc -b",
+    "start": "node dist/server.js",
     "test": "vitest run",
     "test:integration": "RUN_INTEGRATION=1 vitest run",
     "test:e2e": "RUN_E2E=1 node tests/e2e/qr-studio.spec.mjs",
