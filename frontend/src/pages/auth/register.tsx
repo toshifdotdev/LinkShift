@@ -211,7 +211,21 @@ function RegisterPage() {
       </form>
 
       <p className="mt-4 text-xs leading-relaxed text-fg-muted">
-        We'll email you a verification link before your account activates.
+        By creating an account, you agree to our{" "}
+        <Link
+          to="/terms"
+          className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+        >
+          Terms of Service
+        </Link>{" "}
+        and{" "}
+        <Link
+          to="/privacy"
+          className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+        >
+          Privacy Policy
+        </Link>
+        . We'll email you a verification link before your account activates.
       </p>
     </AuthLayout>
   );

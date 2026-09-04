@@ -162,6 +162,24 @@ function LoginPage() {
           </>
         )}
       </Button>
+
+      <p className="mt-5 text-center text-xs leading-relaxed text-fg-muted">
+        By continuing you agree to our{" "}
+        <Link
+          to="/terms"
+          className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+        >
+          Terms of Service
+        </Link>{" "}
+        and{" "}
+        <Link
+          to="/privacy"
+          className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+        >
+          Privacy Policy
+        </Link>
+        .
+      </p>
     </AuthLayout>
   );
 }
