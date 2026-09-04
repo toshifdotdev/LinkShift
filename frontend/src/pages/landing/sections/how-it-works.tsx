@@ -28,14 +28,14 @@ function HowItWorks() {
   return (
     <section id="how-it-works" className="scroll-mt-20 py-24 sm:py-32">
       <Container>
-        <Reveal>
+        <Reveal once={false}>
           <Kicker>How it works</Kicker>
           <h2 className="font-display mt-5 max-w-xl text-balance text-[clamp(2rem,4vw,3rem)] leading-[1.08] font-medium tracking-[-0.01em]">
             Three steps. No ceremony.
           </h2>
         </Reveal>
 
-        <Reveal delay={0.1}>
+        <Reveal once={false} delay={0.1}>
           <ol className="ls-plate mt-14 divide-y divide-border overflow-hidden">
             {steps.map((s) => (
               <li

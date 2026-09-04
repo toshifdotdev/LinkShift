@@ -8,7 +8,7 @@ function PricingPreview() {
   return (
     <section className="border-t border-border bg-surface py-20 sm:py-24">
       <Container>
-        <Reveal>
+        <Reveal once={false}>
           <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
             <div className="max-w-xl">
               <Kicker>Pricing</Kicker>
