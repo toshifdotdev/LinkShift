@@ -2,21 +2,48 @@ import { Image } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { useSeo, buildBreadcrumbJsonLd } from "@/lib/seo";
 import { Container } from "@/components/ui/container";
+import { ProductScreenshot, type ProductShot } from "@/components/product-screenshot";
 import { PublicShell } from "@/components/public-shell";
 import { findTopic, type DocBlock } from "./docs-data";
 
-function MediaPlaceholder({ label }: { label: string }) {
+/* Media labels that map to real product captures. Unmapped labels fall back
+   to the dashed placeholder slot below. */
+const MEDIA_SHOTS: Record<string, ProductShot> = {
+  "The create-link dialog with destination, slug preview and domain picker":
+    "create-link",
+  "QR Studio split view: style controls left, live preview right": "qr-studio",
+  "The Domains ledger with DNS target and verification status lamp": "domains",
+  "The analytics desk with headline numbers and the clicks-over-time chart":
+    "analytics",
+};
+
+function MediaBlock({ label }: { label: string }) {
+  const shot = MEDIA_SHOTS[label];
+
+  if (!shot) {
+    return (
+      <figure className="mt-6">
+        <div
+          role="img"
+          aria-label={`Media placeholder: ${label}`}
+          className="flex aspect-video flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border-strong bg-elevated/40 px-6 text-center"
+        >
+          <Image className="size-5 text-fg-muted" aria-hidden="true" />
+          <p className="font-mono text-[10px] font-medium tracking-[0.16em] text-fg-muted uppercase">
+            Media placeholder
+          </p>
+        </div>
+        <figcaption className="mt-2 font-mono text-[11px] text-fg-muted">
+          FIG — {label}
+        </figcaption>
+      </figure>
+    );
+  }
+
   return (
     <figure className="mt-6">
-      <div
-        role="img"
-        aria-label={`Media placeholder: ${label}`}
-        className="flex aspect-video flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border-strong bg-elevated/40 px-6 text-center"
-      >
-        <Image className="size-5 text-fg-muted" aria-hidden="true" />
-        <p className="font-mono text-[10px] font-medium tracking-[0.16em] text-fg-muted uppercase">
-          Media placeholder
-        </p>
+      <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-[0_16px_40px_-20px_rgba(0,0,0,0.7)]">
+        <ProductScreenshot shot={shot} />
       </div>
       <figcaption className="mt-2 font-mono text-[11px] text-fg-muted">
         FIG — {label}
@@ -64,7 +91,7 @@ function Block({ block }: { block: DocBlock }) {
         </p>
       );
     case "media":
-      return <MediaPlaceholder label={block.label} />;
+      return <MediaBlock label={block.label} />;
   }
 }
 

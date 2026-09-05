@@ -65,7 +65,7 @@ function CreateLinkDialog({
   const domains = useDomains({ enabled: open });
 
   /* effective domain = user choice, else the default domain once loaded */
-  const defaultDomain = domains.data?.find((d) => d.isDefault) ?? domains.data?.[0];
+  const defaultDomain = domains.data?.find((d) => d.host === DEFAULT_SHORT_DOMAIN) ?? domains.data?.find((d) => d.isDefault) ?? domains.data?.[0];
   const effectiveDomainId = domainId || defaultDomain?.id || "";
   const domainHost = domains.data?.find((d) => d.id === effectiveDomainId)?.host ?? DEFAULT_SHORT_DOMAIN;
 

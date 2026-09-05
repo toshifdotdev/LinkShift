@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { Check } from "lucide-react";
 import { Container } from "@/components/ui/container";
+import { ProductScreenshot } from "@/components/product-screenshot";
 import { useScramble } from "@/lib/use-scramble";
 import { Kicker, Reveal } from "../components/reveal";
 
@@ -134,6 +135,13 @@ function Features() {
               </p>
             </Reveal>
             <StageReadout activeIndex={active} />
+            
+            {/* Product screenshot - Create Link */}
+            <Reveal delay={0.15}>
+              <figure className="mt-8 overflow-hidden rounded-lg border border-border bg-surface shadow-[0_16px_40px_-20px_rgba(0,0,0,0.7)]">
+                <ProductScreenshot shot="create-link" />
+              </figure>
+            </Reveal>
           </div>
 
           {/* progressive ledger */}

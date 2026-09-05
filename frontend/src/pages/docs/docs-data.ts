@@ -1,7 +1,8 @@
 /*
  * Documentation information architecture.
  * Categories → topics → blocks. Copy stays factual and short; media blocks
- * are labeled placeholder slots, never embedded screenshots.
+ * reference real product captures where one exists (see MediaBlock in
+ * docs-topic-page.tsx) and fall back to a labeled placeholder slot otherwise.
  */
 
 export type DocBlock =
@@ -361,6 +362,10 @@ export const DOC_CATEGORIES: DocCategory[] = [
           {
             kind: "p",
             text: "Clicks over time plots completed redirects per day. Devices, countries, browsers and operating systems break those clicks down by the signals visitors' browsers send. Referrers show where clicks came from; UTM parameters show what your own campaigns tagged.",
+          },
+          {
+            kind: "media",
+            label: "The analytics desk with headline numbers and the clicks-over-time chart",
           },
           {
             kind: "note",
