@@ -1,5 +1,6 @@
 import { ChevronDown } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useSeo, ROUTE_SEO, buildFaqJsonLd } from "@/lib/seo";
 import { Container } from "@/components/ui/container";
 import { PublicShell } from "@/components/public-shell";
 import { Kicker } from "@/pages/landing/components/reveal";
@@ -123,6 +124,8 @@ const FAQ_GROUPS: FaqGroup[] = [
 ];
 
 function FaqPage() {
+  const faqEntries = FAQ_GROUPS.flatMap((g) => g.entries);
+  useSeo({ ...ROUTE_SEO["/faq"], jsonLd: buildFaqJsonLd(faqEntries) });
   return (
     <PublicShell>
       <Container>

@@ -96,7 +96,7 @@ function LogoCrop({
 
     const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/png"));
     if (!blob) {
-      setError("Could not process the image — try a different file.");
+      setError("Could not process the image. Try a different file.");
       return;
     }
     setError(null);
@@ -125,7 +125,7 @@ function LogoCrop({
           src={src}
           alt="Crop source"
           onLoad={onImgLoad}
-          onError={() => setError("Could not load the image — please pick another file.")}
+          onError={() => setError("Could not load the image. Please pick another file.")}
           draggable={false}
           className="pointer-events-none absolute select-none"
           style={{

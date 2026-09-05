@@ -169,11 +169,11 @@ function ShortenDemo() {
   async function handleCopy() {
     if (!result) return;
     try {
-      await navigator.clipboard.writeText(`https://lshift.io/${result.slug}`);
+      await navigator.clipboard.writeText(`https://go.linkshift.in/${result.slug}`);
       setCopied(true);
       toast({
         title: "Copied to clipboard",
-        description: `${result.slug} is a preview — real links live inside your account.`,
+        description: `${result.slug} is a preview. Real links live inside your account.`,
         variant: "success",
       });
     } catch {
@@ -319,7 +319,7 @@ function ShortenDemo() {
                     <p className="min-w-0 truncate font-mono text-base tabular-nums sm:text-lg">
                       <span className="text-fg-muted">https://</span>
                       <span className="font-medium text-brand">
-                        lshift.io/
+                        go.linkshift.in/
                         <SlugText slug={result.slug} active={state === "expanded"} />
                       </span>
                     </p>
@@ -365,7 +365,7 @@ function ShortenDemo() {
                   </div>
                   <div className="mt-3 flex items-center justify-between">
                     <p className="font-mono text-[10px] tracking-wide text-fg-muted uppercase">
-                      Preview — sign up to create real links
+                      Preview. Sign up to create real links
                     </p>
                     <button
                       type="button"

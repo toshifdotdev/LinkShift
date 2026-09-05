@@ -37,6 +37,7 @@ export const renderUnlockPage = (opts: {
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="color-scheme" content="dark" />
 <meta name="robots" content="noindex,nofollow" />
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F9F9F9'/%3E%3Cg transform='translate(8.32,11.4) scale(.4643)' fill='none' stroke='%23141A22' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M61.54,60.37L38.87,81.51A13,13,0,0,1,30,85L24,85A19,21.5,0,0,1,24,42L64,42'/%3E%3Cpath d='M39.53,27.27A29,29,0,1,1,77.2,60.3'/%3E%3Cpath d='M66.32,32.4L75.68,40.1Q78,42,75.68,43.9L66.32,51.6Q64,53.5,64,50.5L64,33.5Q64,30.5,66.32,32.4Z' fill='%23141A22' stroke='%23141A22' stroke-width='5' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E" />
 <title>LinkShift — Protected link</title>
 <style>
   :root { color-scheme: dark; }

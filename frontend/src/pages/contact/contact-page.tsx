@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Send } from "lucide-react";
+import { useSeo, ROUTE_SEO } from "@/lib/seo";
 import { Container } from "@/components/ui/container";
 import { PublicShell } from "@/components/public-shell";
 import { Button } from "@/components/ui/button";
@@ -95,7 +96,7 @@ function ContactForm() {
         <p className="ls-marquee">Received</p>
         <p className="mt-3 text-[15px] leading-relaxed text-fg-secondary">
           Your message is on its way to the team. Keep an eye on{" "}
-          <span className="font-medium text-foreground">{form.email.trim()}</span> — replies
+          <span className="font-medium text-foreground">{form.email.trim()}</span>. Replies
           go to the address you provided.
         </p>
         <Button
@@ -201,6 +202,7 @@ function ContactForm() {
 }
 
 function ContactPage() {
+  useSeo(ROUTE_SEO["/contact"]);
   const doc = findLegalDoc("contact");
 
   return (

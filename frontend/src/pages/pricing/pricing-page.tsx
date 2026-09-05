@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useSeo, ROUTE_SEO } from "@/lib/seo";
 import { LandingNavbar } from "@/pages/landing/landing-navbar";
 import { Footer } from "@/pages/landing/sections/footer";
 import { Container } from "@/components/ui/container";
@@ -36,6 +37,7 @@ const NOTES: Array<[string, string]> = [
 ];
 
 function PricingPage() {
+  useSeo(ROUTE_SEO["/pricing"]);
   const { toast } = useToaster();
   const navigate = useNavigate();
   const { isAuthenticated } = useSession();
@@ -147,7 +149,7 @@ function PricingPage() {
 
       const RazorpayCtor = window.Razorpay;
       if (!RazorpayCtor) {
-        throw new ApiError(0, "Payment library failed to load — check your connection.");
+        throw new ApiError(0, "Payment library failed to load. Check your connection.");
       }
 
       const checkout = new RazorpayCtor({

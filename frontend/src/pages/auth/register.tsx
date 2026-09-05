@@ -4,6 +4,7 @@ import { register, resendVerification } from "@/api/auth";
 import { useSession } from "@/auth/session";
 import { ApiError } from "@/api/client";
 import { devSlow } from "@/lib/dev-delay";
+import { useSeo, ROUTE_SEO } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ const RULES = [
 ] as const;
 
 function RegisterPage() {
+  useSeo(ROUTE_SEO["/register"]);
   const navigate = useNavigate();
   const { toast } = useToaster();
   const { isAuthenticated } = useSession();

@@ -145,12 +145,12 @@ export async function getBillingUsage() {
   const res = await apiFetch<{ success: true; data: Partial<BillingUsage> }>("/billing/usage");
   const data = res.data;
   if (!data || typeof data.periodStart !== "string" || typeof data.analyticsDays !== "number") {
-    throw new ApiError(502, "Billing usage data is invalid — please try again.");
+    throw new ApiError(502, "Billing usage data is invalid. Please try again.");
   }
   for (const key of USAGE_CATEGORIES) {
     const cat = data[key];
     if (!cat || typeof cat.used !== "number" || (cat.cap !== null && typeof cat.cap !== "number")) {
-      throw new ApiError(502, `Billing usage data is incomplete (${key}) — please try again.`);
+      throw new ApiError(502, `Billing usage data is incomplete (${key}). Please try again.`);
     }
   }
   return res as { success: true; data: BillingUsage };

@@ -171,7 +171,7 @@ describe("AnalyticsPage account view — peak hours gating", () => {
 
     renderPage();
 
-    expect(await screen.findAllByText(/requires Starter/)).not.toHaveLength(0);
+    expect(await screen.findAllByText(/Requires Starter/)).not.toHaveLength(0);
     expect(screen.getByText("Your current plan is Free.")).toBeInTheDocument();
   });
 
@@ -196,7 +196,7 @@ describe("AnalyticsPage account view — peak hours gating", () => {
     renderPage();
 
     expect(await screen.findByText(/peak 10:00 · 7/)).toBeInTheDocument();
-    expect(screen.queryByText(/requires Starter/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Requires Starter/)).not.toBeInTheDocument();
   });
 });
 
@@ -262,13 +262,13 @@ describe("AnalyticsPage link workspace — viz + plan gating", () => {
 
     /* Peak hours + Clients both gate on Starter */
     await waitFor(() => {
-      expect(screen.getAllByText(/requires Starter/)).toHaveLength(2);
+      expect(screen.getAllByText(/Requires Starter/)).toHaveLength(2);
     });
     /* Traffic sources (cities/referrers/UTM) gates on Creator */
-    expect(screen.getByText("City-level, referrer, and UTM campaign breakdowns")).toBeInTheDocument();
-    expect(screen.getByText(/requires Creator/)).toBeInTheDocument();
+    expect(screen.getByText("City-level, referrer, and UTM campaign breakdowns.")).toBeInTheDocument();
+    expect(screen.getByText(/Requires Creator/)).toBeInTheDocument();
     /* Best-time heatmap gates on Pro */
-    expect(screen.getByText(/requires Pro/)).toBeInTheDocument();
+    expect(screen.getByText(/Requires Pro/)).toBeInTheDocument();
 
     /* no gated chart content leaks through (locked slots keep their titles) */
     expect(screen.queryByText("Cities")).not.toBeInTheDocument();
@@ -292,8 +292,8 @@ describe("AnalyticsPage link workspace — viz + plan gating", () => {
 
     expect(await screen.findByText(/peak 14:00 · 10/)).toBeInTheDocument();
     expect(screen.getByText("Browsers")).toBeInTheDocument();
-    expect(screen.getByText(/requires Creator/)).toBeInTheDocument();
-    expect(screen.getByText(/requires Pro/)).toBeInTheDocument();
+    expect(screen.getByText(/Requires Creator/)).toBeInTheDocument();
+    expect(screen.getByText(/Requires Pro/)).toBeInTheDocument();
     expect(screen.queryByText("Cities")).not.toBeInTheDocument();
   });
 });

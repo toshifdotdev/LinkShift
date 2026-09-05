@@ -30,7 +30,7 @@ function UpgradeHint({
       <Lock className="mt-0.5 size-3.5 shrink-0 text-brand" aria-hidden="true" />
       <div className="min-w-0 flex-1">
         <p className="text-[13px] leading-snug text-foreground">
-          {feature} <span className="text-fg-muted">— requires {requirement}.</span>
+          {feature}. <span className="text-fg-muted">Requires {requirement}.</span>
         </p>
         <p className="mt-0.5 text-xs leading-snug text-fg-muted">
           Your current plan is {plan.charAt(0) + plan.slice(1).toLowerCase()}.

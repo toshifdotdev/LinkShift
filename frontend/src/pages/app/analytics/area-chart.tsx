@@ -15,7 +15,7 @@ function AreaChart({
   data,
   loading,
   emptyTitle = "No clicks in this period",
-  emptyHint = "Share a link — activity will chart here.",
+  emptyHint = "Share a link and activity will chart here.",
   heightClass = "h-64",
 }: {
   data: DailyPoint[];

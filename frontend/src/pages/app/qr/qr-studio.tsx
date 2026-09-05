@@ -174,7 +174,7 @@ function QrStudio({
     } catch (err) {
       /* keep cropSrc — the user can retry Apply without re-picking */
       setLogoError(
-        err instanceof ApiError ? err.message : "Logo upload failed — please try again.",
+        err instanceof ApiError ? err.message : "Logo upload failed. Please try again.",
       );
     } finally {
       uploadingRef.current = false;
@@ -363,7 +363,7 @@ function QrStudio({
                     )}
                     {linksQuery.data?.data.length === 0 && (
                       <p className="px-3.5 py-3 text-xs text-fg-muted">
-                        No links found — create one in Links first.
+                        No links found. Create one in Links first.
                       </p>
                     )}
                     {linksQuery.data?.data.map((l) => (
@@ -412,7 +412,7 @@ function QrStudio({
                       type="button"
                       onClick={() => {
                         if (locked) {
-                          setLockMsg(`The "${p.name}" preset includes a frame — Creator and Pro plans only.`);
+                          setLockMsg(`The "${p.name}" preset includes a frame. Creator and Pro plans only.`);
                           return;
                         }
                         setLockMsg(null);
@@ -578,7 +578,7 @@ function QrStudio({
                 onValueChange={(v) => {
                   const frame = v as FrameStyle;
                   if (frame !== "none" && !canBrand) {
-                    setLockMsg("QR frames — Creator and Pro plans only.");
+                    setLockMsg("QR frames are available on Creator and Pro plans.");
                     return;
                   }
                   setLockMsg(null);
@@ -680,7 +680,7 @@ function QrStudio({
                     return;
                   }
                   if (f.size > 8 * 1024 * 1024) {
-                    setLogoError("Image is too large — pick one under 8 MB.");
+                    setLogoError("Image is too large. Pick one under 8 MB.");
                     return;
                   }
                   setLogoError(null);
@@ -709,7 +709,7 @@ function QrStudio({
                   </div>
                   {lowContrast && (
                     <p className="mt-2 text-center text-[11px] text-warning">
-                      Low contrast — scanners may struggle.
+                      Low contrast. Scanners may struggle.
                     </p>
                   )}
                 </>

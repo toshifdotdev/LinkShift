@@ -162,7 +162,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
             data={statsData?.dailyStats ?? []}
             loading={stats.isPending}
             emptyTitle="No clicks in this window"
-            emptyHint="Share a link — account-wide activity charts here."
+            emptyHint="Share a link and your account-wide activity charts here."
           />
         )}
       </section>
@@ -197,7 +197,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
               data={statsData?.hourlyStats ?? []}
               loading={stats.isPending}
               emptyTitle="No clicks in this window"
-              emptyHint="Share a link — hourly activity charts here."
+              emptyHint="Share a link and your hourly activity charts here."
             />
           )}
         </section>

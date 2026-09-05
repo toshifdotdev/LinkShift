@@ -3,12 +3,14 @@ import { Link } from "react-router-dom";
 import { forgotPassword } from "@/api/auth";
 import { ApiError } from "@/api/client";
 import { devSlow } from "@/lib/dev-delay";
+import { useSeo } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { AuthLayout } from "./auth-layout";
 
 function ForgotPasswordPage() {
+  useSeo({ title: "Forgot password — LinkShift", robots: "noindex,nofollow" });
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);

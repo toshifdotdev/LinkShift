@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { resetPassword } from "@/api/auth";
 import { ApiError } from "@/api/client";
 import { devSlow } from "@/lib/dev-delay";
+import { useSeo } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -18,6 +19,7 @@ const RULES = [
 ] as const;
 
 function ResetPasswordPage() {
+  useSeo({ title: "Reset password — LinkShift", robots: "noindex,nofollow" });
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const token = params.get("token") ?? "";

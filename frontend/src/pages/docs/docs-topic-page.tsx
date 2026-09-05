@@ -1,5 +1,6 @@
 import { Image } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
+import { useSeo, buildBreadcrumbJsonLd } from "@/lib/seo";
 import { Container } from "@/components/ui/container";
 import { PublicShell } from "@/components/public-shell";
 import { findTopic, type DocBlock } from "./docs-data";
@@ -70,6 +71,24 @@ function Block({ block }: { block: DocBlock }) {
 function DocsTopicPage() {
   const { slug } = useParams();
   const entry = findTopic(slug ?? "");
+
+  useSeo(
+    entry
+      ? {
+          title: `${entry.topic.title} — LinkShift Docs`,
+          description: entry.topic.summary,
+          canonicalPath: `/docs/${entry.topic.slug}`,
+          jsonLd: buildBreadcrumbJsonLd([
+            { name: "Docs", path: "/docs" },
+            { name: entry.category.title, path: `/docs` },
+            { name: entry.topic.title, path: `/docs/${entry.topic.slug}` },
+          ]),
+        }
+      : {
+          title: "Documentation — LinkShift",
+          canonicalPath: "/docs",
+        },
+  );
 
   if (!entry) return <Navigate to="/docs" replace />;
 

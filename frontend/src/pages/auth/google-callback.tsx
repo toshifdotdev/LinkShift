@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { setAccessToken } from "@/api/token";
+import { useSeo } from "@/lib/seo";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { useQueryClient } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ import { useQueryClient } from "@tanstack/react-query";
  * sign-in instead of spinning forever.
  */
 function GoogleCallbackPage() {
+  useSeo({ title: "Google sign-in — LinkShift", robots: "noindex,nofollow" });
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const queryClient = useQueryClient();

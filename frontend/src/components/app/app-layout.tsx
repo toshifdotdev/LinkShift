@@ -6,6 +6,7 @@ import { MobileNav } from "./mobile-nav";
 import { Topbar } from "./topbar";
 import { APP_NAV } from "./nav-config";
 import { useSession } from "@/auth/session";
+import { useSeo } from "@/lib/seo";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -20,6 +21,7 @@ function useActiveNav() {
 }
 
 function AppLayout() {
+  useSeo({ title: "LinkShift", robots: "noindex,nofollow" });
   const location = useLocation();
   const { user } = useSession();
   const [navOpen, setNavOpen] = useState(false);

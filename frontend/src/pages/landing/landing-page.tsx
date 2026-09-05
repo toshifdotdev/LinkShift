@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useSeo, ROUTE_SEO, buildLandingJsonLd } from "@/lib/seo";
 import { LandingNavbar } from "./landing-navbar";
 import { Hero } from "./sections/hero";
 import { JourneyStrip } from "./sections/journey-strip";
@@ -29,6 +30,7 @@ function useSectionHashScroll() {
 
 function LandingPage() {
   useSectionHashScroll();
+  useSeo({ ...ROUTE_SEO["/"], jsonLd: buildLandingJsonLd() });
 
   return (
     <div className="min-h-screen bg-background text-foreground">

@@ -96,7 +96,7 @@ async function apiFetch<T>(pathStr: string, options: RequestOptions = {}): Promi
     });
   } catch {
     // fetch only throws on network-level failures
-    throw new ApiError(0, "Network error — could not reach the server");
+    throw new ApiError(0, "Network error: could not reach the server.");
   }
 
   if (response.status === 204 || response.headers.get("content-length") === "0") {

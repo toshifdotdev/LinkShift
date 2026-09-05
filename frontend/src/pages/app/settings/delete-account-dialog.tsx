@@ -109,7 +109,7 @@ function DeleteAccountDialog({
               Custom domains you own are released; the shared default domain stays.
             </DeleteDetail>
             <DeleteDetail label="Subscriptions">
-              Any active plan is cancelled at the payment provider before deletion starts — a failed
+              Any active plan is cancelled at the payment provider before deletion starts. A failed
               cancellation aborts everything.
             </DeleteDetail>
             <DeleteDetail label="Emails">

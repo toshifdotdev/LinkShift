@@ -19,7 +19,7 @@ function HourBars({
   data,
   loading,
   emptyTitle = "No clicks in this period",
-  emptyHint = "Share a link — hourly activity will chart here.",
+  emptyHint = "Share a link and hourly activity will chart here.",
   heightClass = "h-40",
 }: {
   data: HourPoint[];

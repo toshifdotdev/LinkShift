@@ -83,7 +83,7 @@ function QrSection() {
                   ))}
                 </div>
                 <figcaption className="mt-4 flex items-center justify-between font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
-                  <span>lshift.io/xK7q2m</span>
+                  <span>go.linkshift.in/xK7q2m</span>
                   <span className="flex gap-1" aria-hidden="true">
                     <span className="size-1.5 rounded-full bg-brand" />
                     <span className="size-1.5 rounded-full bg-border-strong" />

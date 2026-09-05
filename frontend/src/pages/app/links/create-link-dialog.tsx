@@ -137,7 +137,7 @@ function CreateLinkDialog({
         return;
       }
       if (androidPackage.trim() && !ANDROID_PACKAGE_RE.test(androidPackage.trim())) {
-        setFieldError("Android package looks invalid — expected something like com.example.app.");
+        setFieldError("Android package looks invalid. Expected something like com.example.app.");
         return;
       }
     }
@@ -463,7 +463,7 @@ function CreateLinkDialog({
                       {appDeepLink && (
                         <>
                           <p className="text-xs text-fg-muted">
-                            You provide your app's identifiers below — LinkShift can't infer
+                            You provide your app's identifiers below. LinkShift can't infer
                             them from a website URL.{" "}
                             <a
                               href="/docs/mobile-app-deep-linking"
@@ -494,7 +494,7 @@ function CreateLinkDialog({
                                 maxLength={100}
                               />
                               <FieldHint>
-                                The scheme your app registers — just the name, e.g.{" "}
+                                The scheme your app registers. Just the name, e.g.{" "}
                                 <span className="font-mono">myapp</span> for{" "}
                                 <span className="font-mono">myapp://</span>.
                               </FieldHint>
@@ -569,7 +569,7 @@ function CreateLinkDialog({
                   ) : (
                     <div className="mt-2">
                       <UpgradeHint
-                        feature="Send mobile visitors straight into your app — with a web fallback when it isn't installed."
+                        feature="Send mobile visitors straight into your app, with a web fallback when it isn't installed."
                         requirement="Pro"
                       />
                     </div>

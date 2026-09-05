@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
+import { useSeo, ROUTE_SEO } from "@/lib/seo";
 import { Container } from "@/components/ui/container";
 import { PublicShell } from "@/components/public-shell";
 import { Kicker } from "@/pages/landing/components/reveal";
 import { DOC_CATEGORIES } from "./docs-data";
 
 function DocsPage() {
+  useSeo(ROUTE_SEO["/docs"]);
   return (
     <PublicShell>
       <Container>

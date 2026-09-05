@@ -22,6 +22,7 @@ import { AnalyticsPage } from "@/pages/app/analytics/analytics-page";
 import { DomainsPage } from "@/pages/app/domains/domains-page";
 import { BillingPage } from "@/pages/app/billing/billing-page";
 import { SettingsPage } from "@/pages/app/settings/settings-page";
+import { useSeo } from "@/lib/seo";
 
 /* Cross-page navigation opens the destination at the top. Hash navigations
    are section jumps on the landing page — its own hook owns those. */
@@ -35,6 +36,7 @@ function ScrollToTop() {
 }
 
 function NotFound() {
+  useSeo({ title: "Page not found — LinkShift", robots: "noindex,nofollow" });
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-5">
       <span

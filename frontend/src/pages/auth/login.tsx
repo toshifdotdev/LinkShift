@@ -5,6 +5,7 @@ import { login, GOOGLE_AUTH_URL } from "@/api/auth";
 import { setAccessToken } from "@/api/token";
 import { ApiError } from "@/api/client";
 import { devSlow } from "@/lib/dev-delay";
+import { useSeo, ROUTE_SEO } from "@/lib/seo";
 import { useSession } from "@/auth/session";
 import { Button } from "@/components/ui/button";
 import { Banner } from "@/components/ui/banner";
@@ -14,6 +15,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { AuthLayout } from "./auth-layout";
 
 function LoginPage() {
+  useSeo(ROUTE_SEO["/login"]);
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();

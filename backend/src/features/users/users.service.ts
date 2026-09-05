@@ -58,7 +58,7 @@ async function cancelLiveProviderSubscriptions(userId: string, sdk: typeof razor
 
     if (failedProviderIds.length > 0) {
         throw new AppError(
-            `Payment provider could not cancel subscription(s): ${failedProviderIds.join(", ")}. Your account has NOT been deleted — please resolve payment issues and try again.`,
+            `Payment provider could not cancel subscription(s): ${failedProviderIds.join(", ")}. Your account has NOT been deleted. Please resolve the payment issue and try again.`,
             502
         );
     }

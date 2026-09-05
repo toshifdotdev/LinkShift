@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import { useSeo, ROUTE_SEO } from "@/lib/seo";
 import { Container } from "@/components/ui/container";
 import { PublicShell } from "@/components/public-shell";
 import { findLegalDoc, LEGAL_UPDATED, type LegalBlock, type LegalDoc } from "./legal-data";
@@ -58,6 +59,13 @@ function LegalSections({ doc }: { doc: LegalDoc }) {
 
 function LegalPage({ slug }: { slug: string }) {
   const doc = findLegalDoc(slug);
+
+  const routeSeo = ROUTE_SEO[`/${slug}`];
+  useSeo(
+    doc && routeSeo
+      ? { title: routeSeo.title, description: doc.intro, canonicalPath: routeSeo.canonicalPath }
+      : { title: doc ? `${doc.title} — LinkShift` : "LinkShift", canonicalPath: `/${slug}` },
+  );
 
   if (!doc) return <Navigate to="/" replace />;
 

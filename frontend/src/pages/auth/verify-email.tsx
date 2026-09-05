@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { resendVerification } from "@/api/auth";
 import { ApiError } from "@/api/client";
+import { useSeo } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import { AuthLayout } from "./auth-layout";
  * Direct visits (no params) get the resend form.
  */
 function VerifyEmailPage() {
+  useSeo({ title: "Verify email — LinkShift", robots: "noindex,nofollow" });
   const [params] = useSearchParams();
   const expired = params.get("error") === "expired";
   const { toast } = useToaster();
