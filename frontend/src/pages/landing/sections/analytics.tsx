@@ -3,11 +3,13 @@ import { ProductScreenshot } from "@/components/product-screenshot";
 import { GhostNumeral } from "../components/ghost-numeral";
 import { Reveal, Kicker } from "../components/reveal";
 
+/* Readouts mirror the real product screenshot beside them (screenshot-test
+   account, 30-day window) so the panel and the product shot tell one story. */
 const readouts = [
-  { label: "TOTAL CLICKS · 30D", value: "18,402" },
-  { label: "UNIQUE VISITORS", value: "11,237" },
-  { label: "QR SCANS", value: "1,984" },
-  { label: "TOP REFERRER", value: "x.com" },
+  { label: "TOTAL CLICKS · 30D", value: "697" },
+  { label: "TOP LINK · 30D", value: "249" },
+  { label: "PEAK DAY · 30D", value: "33" },
+  { label: "TOTAL LINKS", value: "5" },
 ];
 
 function Analytics() {

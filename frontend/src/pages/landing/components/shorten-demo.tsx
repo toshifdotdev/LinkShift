@@ -57,6 +57,12 @@ function ShortenDemo() {
   const [engaged, setEngaged] = useState(false);
   const [pendingShift, setPendingShift] = useState(false);
 
+  /* Mirror of `engaged` the self-typing timers read directly: a tick that was
+     already queued when the user's first keystroke landed must not fire its
+     setUrl afterwards and clobber the controlled input (e.g. swallow a
+     character typed right after "https://"). */
+  const engagedRef = useRef(false);
+
   /* Every scheduled callback lives here — cleared on reset/unmount so
      rapid clicks, mid-transition resets and unmounts can never leave
      stale animation state behind. */
@@ -97,6 +103,7 @@ function ShortenDemo() {
 
   const reset = useCallback(() => {
     clearTimers();
+    engagedRef.current = true;
     setEngaged(true);
     setPendingShift(false);
     setCopied(false);
@@ -107,9 +114,14 @@ function ShortenDemo() {
   }, [clearTimers]);
 
   const engage = useCallback(() => {
+    /* Kill the demo's scheduled writers synchronously — the effect cleanup
+       runs too late to stop a tick that fired between the keystroke and the
+       render, and that tick must never overwrite the user's value. */
+    engagedRef.current = true;
+    clearTimers();
     setEngaged(true);
     setPendingShift(false);
-  }, []);
+  }, [clearTimers]);
 
   /* Auto-demo: the URL types itself, then shifts. Any engagement cancels
      it; under reduced motion it runs almost immediately. */
@@ -119,6 +131,7 @@ function ShortenDemo() {
     if (reduce) {
       const timers = timersRef.current;
       const t = window.setTimeout(() => {
+        if (engagedRef.current) return;
         setUrl(DEMO_URL);
         setPendingShift(true);
       }, 400);
@@ -131,6 +144,11 @@ function ShortenDemo() {
 
     let i = 0;
     const typeTimer = window.setInterval(() => {
+      if (engagedRef.current) {
+        window.clearInterval(typeTimer);
+        timersRef.current.delete(typeTimer);
+        return;
+      }
       i += 4;
       setUrl(DEMO_URL.slice(0, i));
       if (i >= DEMO_URL.length) {
@@ -148,7 +166,7 @@ function ShortenDemo() {
     const t = window.setTimeout(() => {
       timers.delete(t);
       setPendingShift(false);
-      if (engaged) return;
+      if (engagedRef.current) return;
       setUrl(DEMO_URL);
       runShift(DEMO_URL);
     }, 0);
@@ -222,9 +240,13 @@ function ShortenDemo() {
                 setUrl(e.target.value);
                 setError(null);
               }}
+              onFocus={engage}
               placeholder="Paste a long URL…"
               aria-invalid={!!error}
-              className={`h-11 w-full rounded-md border bg-raised px-4 font-mono text-[13px] text-foreground caret-brand placeholder:text-fg-muted transition-colors hover:border-border-strong focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring/40 ${
+              /* Ligatures off: JetBrains Mono joins "//" into one glyph, so a
+                 typed https:// visually reads as https:/ even though the value
+                 is correct. Every character must render on its own. */
+              className={`h-11 w-full rounded-md border bg-raised px-4 font-mono text-[13px] text-foreground caret-brand placeholder:text-fg-muted transition-colors hover:border-border-strong focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring/40 [font-variant-ligatures:none] ${
                 state === "shifting" ? "opacity-70" : ""
               } ${error ? "border-destructive" : "border-input"}`}
             />
@@ -306,7 +328,7 @@ function ShortenDemo() {
                   <p className="font-mono text-[10px] tracking-[0.16em] text-fg-muted uppercase">
                     Long URL
                   </p>
-                  <p className="mt-1 truncate font-mono text-xs text-fg-secondary">
+                  <p className="mt-1 truncate font-mono text-xs text-fg-secondary [font-variant-ligatures:none]">
                     {result.source}
                   </p>
 

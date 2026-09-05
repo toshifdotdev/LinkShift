@@ -261,7 +261,9 @@ function DomainsPage() {
   const rows = domains.data ?? [];
   const own = rows.filter((d) => d.userId !== null);
   const shared = rows.filter((d) => d.userId === null);
-  const atCap = cap !== null && own.length >= cap;
+  /* cap === 0 plans (Free) speak through the dedicated empty state below —
+     the at-cap banner only makes sense once the plan includes domains. */
+  const atCap = cap !== null && cap > 0 && own.length >= cap;
 
   const verify = useMutation({
     mutationFn: (id: string) => verifyDomain(id),
