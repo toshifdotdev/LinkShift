@@ -20,8 +20,11 @@ node_modules
 # frontend/node_modules/
 
 backend/tests/**/*.js
+backend/prisma/*.js
 backend/vitest.config.js
 
+# EC2 host runtime env for the deploy/ compose stack (contains secrets)
+deploy/.env
 
 /capture-all-themes.cjs
 /capture-all-themes.mjs

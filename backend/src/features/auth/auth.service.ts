@@ -278,9 +278,14 @@ export const resetPasswordService = async(token : string, password : string) => 
                     data : {
                         passwordHash : hashedPass,
                         resetPasswordToken : null,
-                        resetPasswordExpires : null
+                        resetPasswordExpires : null,
+                        // Same contract as changePasswordService: a credential
+                        // reset must end any live session so a stolen refresh
+                        // token cannot survive the new password.
+                        refreshTokenHash : null,
+                        refreshTokenExpiresAt : null,
                     }
-                })  
+                })
 }
 
 export const refreshService = async(token : string) : Promise<RefreshedTokens> => {

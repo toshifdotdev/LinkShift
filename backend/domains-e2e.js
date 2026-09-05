@@ -57,7 +57,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   console.log("6 verify (no DNS):", verify.message && /pointing|resolve|DNS/i.test(verify.message) ? "✓ correctly reports: " + verify.message : JSON.stringify(verify).slice(0, 90));
 
   /* 7) ownership: second user cannot see/manage this domain */
-  const otherLogin = await j(await fetch(B + "/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "mdtoshif381@gmail.com", password: "WrongPass1!" }) }));
+  const otherLogin = await j(await fetch(B + "/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "other-user@example.com", password: "WrongPass1!" }) }));
   console.log("7 ownership: other-login rejected =", otherLogin.message ? "✓ (cannot test cross-user without second account — enforced by userId scoping in every query)" : "?");
 
   /* 8) delete guards: in-use check (domain has no links yet → deletable) */

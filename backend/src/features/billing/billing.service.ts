@@ -48,7 +48,14 @@ export const getPlansService = async(currency : "INR" | "USD") => {
 
 
 export const razorpayWebhookService = async(signature : string, data : Buffer, eventId: string) => {
-    const expectedSignature = crypto.createHmac("sha256", config.razorpayWebhookSecret!)
+    // Fail closed, cleanly: without the dashboard-configured secret no
+    // signature can be verified, and `createHmac("sha256", undefined)` would
+    // otherwise surface as a raw TypeError instead of a deliberate refusal.
+    if (!config.razorpayWebhookSecret) {
+        throw new AppError("Razorpay webhook secret is not configured", 500);
+    }
+
+    const expectedSignature = crypto.createHmac("sha256", config.razorpayWebhookSecret)
                               .update(data).digest("hex");
 
     // Length pre-check: timingSafeEqual throws RangeError on length mismatch,

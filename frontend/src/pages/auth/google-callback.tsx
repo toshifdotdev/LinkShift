@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { setAccessToken } from "@/api/token";
 import { useSeo } from "@/lib/seo";
 import { Logo } from "@/components/brand/logo";
@@ -9,18 +9,24 @@ import { useQueryClient } from "@tanstack/react-query";
 /**
  * Landing point for the Google OAuth handoff.
  *
- * Contract: the backend's Google callback redirects the browser here with
- * `?accessToken=…`. The access token is stored, the session is primed, and
- * the user lands in /app. If the token is missing (interrupted login, stale
- * or tampered handoff) we render a clean recovery state with a way back to
- * sign-in instead of spinning forever.
+ * Contract: the backend's Google callback redirects the browser here with the
+ * access token in the URL FRAGMENT (`#accessToken=…`) — fragments are never
+ * sent to any server, keeping the token out of history submissions and access
+ * logs. The access token is stored, the session is primed, and the user lands
+ * in /app. If the token is missing (interrupted login, stale or tampered
+ * handoff) we render a clean recovery state with a way back to sign-in
+ * instead of spinning forever.
  */
 function GoogleCallbackPage() {
   useSeo({ title: "Google sign-in — LinkShift", robots: "noindex,nofollow" });
   const navigate = useNavigate();
-  const [params] = useSearchParams();
   const queryClient = useQueryClient();
-  const accessToken = params.get("accessToken");
+
+  // The fragment is not part of the router location — read it from the real
+  // window location; navigating away below also drops it from the address bar.
+  const accessToken = new URLSearchParams(
+    window.location.hash.replace(/^#/, ""),
+  ).get("accessToken");
 
   useEffect(() => {
     if (!accessToken) return;

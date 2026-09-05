@@ -123,7 +123,10 @@ export const LEGAL_DOCS: LegalDoc[] = [
             text: "If this policy changes materially we will note it on this page with a new update date. Questions and requests go to:",
           },
           { kind: "p", text: "Support email: linkshift.admin@gmail.com" },
-          { kind: "todo", text: "Operator legal name and postal address (also required on Terms and receipts)." },
+          {
+            kind: "p",
+            text: "LinkShift is operated as a sole proprietorship from Dehradun, Uttarakhand, India.",
+          },
           {
             kind: "p",
             text: "For privacy-related concerns or complaints, please contact us at linkshift.admin@gmail.com. We will review and respond to complaints through this support channel.",
@@ -146,7 +149,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
             kind: "p",
             text: "These terms govern your use of LinkShift, operated by the entity named below. Creating an account or using the service means you accept them. If you use LinkShift on behalf of an organisation, you represent that you can bind it.",
           },
-          { kind: "todo", text: "Operator legal name (the contracting party)." },
+          { kind: "p", text: "LinkShift, a sole proprietorship, operating from Dehradun, Uttarakhand, India." },
         ],
       },
       {
@@ -418,7 +421,10 @@ export const LEGAL_DOCS: LegalDoc[] = [
             ],
           },
           { kind: "p", text: "Support email: linkshift.admin@gmail.com" },
-          { kind: "todo", text: "Postal address and operator legal name." },
+          {
+            kind: "p",
+            text: "Postal address: LinkShift, a sole proprietorship, Dehradun, Uttarakhand, India.",
+          },
           {
             kind: "p",
             text: "We aim to respond to support requests within 2 business days.",

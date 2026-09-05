@@ -1,0 +1,14 @@
+# LinkShift public API + short links.
+#
+# Caddy owns TLS for go.linkshift.in: on first start it obtains a Let's
+# Encrypt certificate over the HTTP-01 challenge (port 80 must be reachable)
+# and renews it automatically. No Certbot, no manual certificate files.
+#
+# The app container is resolved by the compose service name `app` on the
+# compose-internal network; 3000 is the backend's PORT (backend/Dockerfile).
+
+go.linkshift.in {
+	encode zstd gzip
+
+	reverse_proxy app:3000
+}

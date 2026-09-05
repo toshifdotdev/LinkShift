@@ -266,76 +266,77 @@ function PricingPage() {
           )}
 
           {status === "ready" && currency && (
-            <>
-              <div className="mt-12 md:mt-16">
-                <PlanMatrix
-                  plans={plans}
-                  cycle={cycle}
-                  currency={currency}
-                  subscription={subscription}
-                  loadingPlan={loadingPlan}
-                  onSubscribe={(name) => void handleSubscribe(name)}
-                />
-                <PlanStack
-                  plans={plans}
-                  cycle={cycle}
-                  currency={currency}
-                  subscription={subscription}
-                  loadingPlan={loadingPlan}
-                  onSubscribe={(name) => void handleSubscribe(name)}
-                />
-              </div>
-
-              <div className="mt-10">
-                <IncludesBand />
-              </div>
-
-              {/* billing behaviour notes */}
-              <div className="mt-8 grid gap-x-10 gap-y-4 border-t border-border pt-8 sm:grid-cols-2 lg:grid-cols-3">
-                {NOTES.map(([label, note]) => (
-                  <div key={label}>
-                    <p className="font-mono text-[10px] tracking-[0.16em] text-brand uppercase">
-                      {label}
-                    </p>
-                    <p className="mt-1.5 text-[13px] leading-snug text-fg-secondary">{note}</p>
-                  </div>
-                ))}
-              </div>
-
-              <p className="mt-8 border-t border-border pt-6 text-xs leading-relaxed text-fg-muted">
-                Payments are processed securely by Razorpay — card details never touch
-                LinkShift servers. By subscribing you agree to the{" "}
-                <Link
-                  to="/terms"
-                  className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
-                >
-                  Terms of Service
-                </Link>
-                ,{" "}
-                <Link
-                  to="/privacy"
-                  className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
-                >
-                  Privacy Policy
-                </Link>{" "}
-                and{" "}
-                <Link
-                  to="/refunds"
-                  className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
-                >
-                  Refund &amp; Cancellation Policy
-                </Link>
-                , and the{" "}
-                <Link
-                  to="/shipping"
-                  className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
-                >
-                  Shipping &amp; Delivery Policy
-                </Link>
-                .
-              </p>
-            </>
+            <div className="mt-12 md:mt-16">
+              <PlanMatrix
+                plans={plans}
+                cycle={cycle}
+                currency={currency}
+                subscription={subscription}
+                loadingPlan={loadingPlan}
+                onSubscribe={(name) => void handleSubscribe(name)}
+              />
+              <PlanStack
+                plans={plans}
+                cycle={cycle}
+                currency={currency}
+                subscription={subscription}
+                loadingPlan={loadingPlan}
+                onSubscribe={(name) => void handleSubscribe(name)}
+              />
+            </div>
           )}
+
+          {/* Static, price-independent information — rendered in every status
+              so the content exists before JavaScript runs (prerendered HTML)
+              and stays visible if plan loading fails. */}
+          <div className="mt-10">
+            <IncludesBand />
+          </div>
+
+          {/* billing behaviour notes */}
+          <div className="mt-8 grid gap-x-10 gap-y-4 border-t border-border pt-8 sm:grid-cols-2 lg:grid-cols-3">
+            {NOTES.map(([label, note]) => (
+              <div key={label}>
+                <p className="font-mono text-[10px] tracking-[0.16em] text-brand uppercase">
+                  {label}
+                </p>
+                <p className="mt-1.5 text-[13px] leading-snug text-fg-secondary">{note}</p>
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-8 border-t border-border pt-6 text-xs leading-relaxed text-fg-muted">
+            Payments are processed securely by Razorpay — card details never touch
+            LinkShift servers. By subscribing you agree to the{" "}
+            <Link
+              to="/terms"
+              className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+            >
+              Terms of Service
+            </Link>
+            ,{" "}
+            <Link
+              to="/privacy"
+              className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+            >
+              Privacy Policy
+            </Link>{" "}
+            and{" "}
+            <Link
+              to="/refunds"
+              className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+            >
+              Refund &amp; Cancellation Policy
+            </Link>
+            , and the{" "}
+            <Link
+              to="/shipping"
+              className="underline decoration-border-strong underline-offset-2 transition-colors hover:text-foreground"
+            >
+              Shipping &amp; Delivery Policy
+            </Link>
+            .
+          </p>
         </Container>
       </main>
 

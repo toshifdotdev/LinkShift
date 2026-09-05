@@ -166,7 +166,8 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
 /*  JSON-LD structured-data builders                                  */
 /* ------------------------------------------------------------------ */
 
-/** Landing page: WebSite + WebApplication (truthful, no fake reviews). */
+/** Landing page: WebSite + WebApplication + Organization (truthful — identity
+ *  facts mirror the public legal pages; no registrations or fake claims). */
 export function buildLandingJsonLd(): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
@@ -188,6 +189,19 @@ export function buildLandingJsonLd(): Record<string, unknown> {
           price: "0",
           priceCurrency: "INR",
           name: "Free plan",
+        },
+      },
+      {
+        "@type": "Organization",
+        name: "LinkShift",
+        url: ORIGIN,
+        logo: `${ORIGIN}/brand/logo-mark.svg`,
+        email: "linkshift.admin@gmail.com",
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Dehradun",
+          addressRegion: "Uttarakhand",
+          addressCountry: "IN",
         },
       },
     ],

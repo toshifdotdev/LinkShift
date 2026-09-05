@@ -16,7 +16,7 @@ interface FaqGroup {
   entries: FaqEntry[];
 }
 
-const FAQ_GROUPS: FaqGroup[] = [
+export const FAQ_GROUPS: FaqGroup[] = [
   {
     index: "01",
     title: "General",

@@ -1,0 +1,51 @@
+# ============================================================================
+# Docker build context exclusions for the LinkShift backend.
+#
+# The Dockerfile COPYs selectively, so this file is defense-in-depth: it
+# shrinks the build context and guarantees secrets/logs never even reach
+# the daemon.
+#
+# NEVER exclude: prisma/ (schema + migrations, used by generate + migrate),
+# prisma.config.ts, GeoLite2-City.mmdb (runtime dependency), package*.json,
+# tsconfig.json, src/.
+# ============================================================================
+
+# --- secrets: must never enter the image ------------------------------------
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# --- dependencies & build output (rebuilt inside the image) ------------------
+node_modules/
+dist/
+src/generated/
+
+# --- version control & CI ----------------------------------------------------
+.git/
+.gitignore
+.github/
+
+# --- tests & tooling artifacts (not needed at runtime) -----------------------
+tests/
+coverage/
+vitest.config.ts
+backend/tests/e2e/
+
+# --- local dev/debug leftovers ------------------------------------------------
+*.log
+logs/
+server.err.log
+server.out.log
+_gen-token.*
+_repro-billing.*
+*.tsbuildinfo
+.DS_Store
+Thumbs.db
+
+# --- docs ---------------------------------------------------------------------
+ENVIRONMENT.md
+Design.md
+README*

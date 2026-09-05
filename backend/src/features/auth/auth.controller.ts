@@ -49,13 +49,15 @@ export const googleCallbackController = (req : Request, res : Response) => {
 
     // Session handoff to the frontend: refresh cookie is set on this origin
     // (cookies are host-scoped, so the SPA's proxied /api calls send it),
-    // and the short-lived access token travels via the redirect target,
-    // where the SPA stores it and primes users/me.
+    // and the short-lived access token travels via the redirect target's
+    // FRAGMENT — fragments are never sent to any server, so the token stays
+    // out of browser history submissions and access logs. The SPA reads it
+    // from window.location.hash, stores it, and primes users/me.
     setRefreshCookie(res,
         authResponse.refreshToken
     )
     return res.redirect(
-        `${config.frontendUrl}/auth/google/callback?accessToken=${encodeURIComponent(authResponse.accessToken)}`
+        `${config.frontendUrl}/auth/google/callback#accessToken=${encodeURIComponent(authResponse.accessToken)}`
     );
 
 }

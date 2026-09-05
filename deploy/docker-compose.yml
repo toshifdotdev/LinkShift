@@ -1,0 +1,59 @@
+# ============================================================================
+# LinkShift — single-EC2 production stack (initial deployment shape)
+#
+#   Internet → https://go.linkshift.in → Caddy (HTTPS/ACME) → app (Node) →
+#   external services: Neon PostgreSQL · Upstash Redis · Cloudinary ·
+#   Razorpay · Resend · Google OAuth
+#
+# Statelessness rules:
+#   - NO database, NO Redis, NO other service runs here. Neon, Upstash,
+#     Cloudinary, Razorpay, Resend and Google are external.
+#   - The app container is internal-only (no published ports); Caddy is the
+#     single public entry point on 80/443.
+#   - The app image contains NO secrets: everything is injected at runtime
+#     via the `.env` file next to this compose file (never committed).
+#
+# The image lives in Docker Hub (docker.io/<DOCKER_HUB_USERNAME>/linkshift-backend);
+# this host only pulls and runs it. The stack is registry-agnostic — any
+# registry URI works via APP_IMAGE.
+# Build/push flow: see DEPLOYMENT.md.
+# ============================================================================
+
+services:
+  app:
+    # Image reference comes from the host's .env
+    # (APP_IMAGE=docker.io/<DOCKER_HUB_USERNAME>/linkshift-backend:<tag>).
+    # Build it with the Dockerfile in backend/ and push to Docker Hub first.
+    image: ${APP_IMAGE:?set APP_IMAGE in .env to your Docker Hub image URI}
+    env_file:
+      - .env
+    expose:
+      - "3000" # internal only — Caddy fronts all public traffic
+    restart: unless-stopped
+    # The image already defines the same healthcheck; this mirrors it for
+    # `docker compose ps` visibility.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80" # ACME HTTP-01 challenge + HTTP→HTTPS redirect
+      - "443:443" # HTTPS for go.linkshift.in
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates + ACME account must survive restarts, or Let's Encrypt
+      # gets re-challenged on every deploy (rate-limit risk).
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    depends_on:
+      - app
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -33,5 +33,8 @@ export const config = {
     cloudinaryApiSecret : process.env.CLOUDINARY_API_SECRET,
     razorpayKeyId : process.env.RAZORPAY_KEY_ID,
     razorpayKeySecret : process.env.RAZORPAY_KEY_SECRET,
-    razorpayWebhookSecret : process.env.RAZORPAY_WEBHOOK_SECRET
+    razorpayWebhookSecret : process.env.RAZORPAY_WEBHOOK_SECRET,
+    // Shared secret for the internal reconciliation trigger endpoint
+    // (x-recon-secret header). Unset → the endpoint rejects everything.
+    reconSecret : process.env.RECON_SECRET
 }
