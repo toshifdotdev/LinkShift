@@ -47,12 +47,12 @@ export const loginController = asyncHandler(async(req : Request, res : Response)
 export const googleCallbackController = (req : Request, res : Response) => {
     const authResponse = req.user as AuthResponse;
 
-    // Session handoff to the frontend: refresh cookie is set on this origin
-    // (cookies are host-scoped, so the SPA's proxied /api calls send it),
-    // and the short-lived access token travels via the redirect target's
-    // FRAGMENT — fragments are never sent to any server, so the token stays
-    // out of browser history submissions and access logs. The SPA reads it
-    // from window.location.hash, stores it, and primes users/me.
+    
+    
+    
+    
+    
+    
     setRefreshCookie(res,
         authResponse.refreshToken
     )
@@ -116,7 +116,7 @@ export const changePasswordController = asyncHandler(async(req : Request, res : 
 
     await changePasswordService(auth.id, body.currentPassword, body.newPassword);
 
-    // The single-slot refresh session was revoked server-side; drop the stale cookie.
+    
     res.clearCookie("refreshToken");
 
     res.status(200).json({

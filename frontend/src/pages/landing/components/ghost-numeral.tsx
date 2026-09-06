@@ -1,9 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/**
- * Oversized ghost stage numeral — quiet editorial wayfinding tying the
- * 01–04 journey sections together. Purely decorative.
- */
+
 function GhostNumeral({
   children,
   tone = "ink",

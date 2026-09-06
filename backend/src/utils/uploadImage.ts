@@ -19,8 +19,8 @@ const performUpload = (file: Express.Multer.File, folder: string): Promise<Uploa
             },
             (error, result : UploadApiResponse | undefined) => {
                 if(error) {
-                    // Surface the real Cloudinary cause — a swallowed error
-                    // here made logo uploads impossible to diagnose.
+                    
+                    
                     return reject(new AppError(`Image upload failed: ${error.message || "unknown error"}`, 502));
                 }
                 if (!result) {

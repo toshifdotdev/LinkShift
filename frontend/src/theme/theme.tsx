@@ -37,9 +37,9 @@ function applyTheme(theme: ResolvedTheme) {
 }
 
 interface ThemeValue {
-  /** The theme actually applied to the document (mode resolved against system). */
+  
   theme: ResolvedTheme;
-  /** The user's selection: light, dark, or system. */
+  
   mode: ThemeMode;
   setMode: (mode: ThemeMode) => void;
 }
@@ -50,7 +50,7 @@ function ThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<ThemeMode>(() => getStoredMode());
   const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => getSystemTheme());
 
-  /* Track OS-level preference so `system` mode stays live without a reload. */
+  
   useEffect(() => {
     if (typeof window === "undefined" || typeof window.matchMedia !== "function") return;
     const mq = window.matchMedia("(prefers-color-scheme: light)");

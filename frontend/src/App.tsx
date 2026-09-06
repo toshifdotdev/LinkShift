@@ -24,8 +24,7 @@ import { BillingPage } from "@/pages/app/billing/billing-page";
 import { SettingsPage } from "@/pages/app/settings/settings-page";
 import { useSeo } from "@/lib/seo";
 
-/* Cross-page navigation opens the destination at the top. Hash navigations
-   are section jumps on the landing page — its own hook owns those. */
+
 function ScrollToTop() {
   const location = useLocation();
   useEffect(() => {

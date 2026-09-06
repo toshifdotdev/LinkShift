@@ -64,7 +64,7 @@ function CreateLinkDialog({
 
   const domains = useDomains({ enabled: open });
 
-  /* effective domain = user choice, else the default domain once loaded */
+  
   const defaultDomain = domains.data?.find((d) => d.host === DEFAULT_SHORT_DOMAIN) ?? domains.data?.find((d) => d.isDefault) ?? domains.data?.[0];
   const effectiveDomainId = domainId || defaultDomain?.id || "";
   const domainHost = domains.data?.find((d) => d.id === effectiveDomainId)?.host ?? DEFAULT_SHORT_DOMAIN;
@@ -164,7 +164,7 @@ function CreateLinkDialog({
     });
   }
 
-  /* surface backend 403s as upgrade moments */
+  
   const backendError = mutation.error instanceof ApiError ? mutation.error : null;
   const is403 = backendError?.status === 403;
   const backendMessage = backendError?.message ?? null;
@@ -177,9 +177,7 @@ function CreateLinkDialog({
           Paste a destination. Everything else is optional.
         </p>
 
-        {/* The live slug preview — a single line that always reads as
-            `go.linkshift.in/<slug>` and updates as the user types or as
-            the auto-generated slug changes. The slug slot is the chip. */}
+        
         <div
           aria-label="Short link preview"
           className="mt-4 flex items-center gap-2 rounded-md border border-border bg-sunken/50 px-3 py-2 font-mono text-[12.5px]"
@@ -241,7 +239,7 @@ function CreateLinkDialog({
             </Field>
           </div>
 
-          {/* advanced */}
+          
           <div className="rounded-md border border-border">
             <button
               type="button"
@@ -263,7 +261,7 @@ function CreateLinkDialog({
 
             {advanced && (
               <div className="flex flex-col gap-4 border-t border-border px-4 py-4">
-                {/* custom slug */}
+                
                 <Field>
                   <FieldLabel htmlFor="create-slug">
                     Custom slug
@@ -299,7 +297,7 @@ function CreateLinkDialog({
                   )}
                 </Field>
 
-                {/* expiry */}
+                
                 <Field>
                   <FieldLabel htmlFor="create-expiry">
                     Expires at <span className="text-fg-muted">(optional)</span>
@@ -314,7 +312,7 @@ function CreateLinkDialog({
                   <FieldHint>The link stops resolving (410) after this moment.</FieldHint>
                 </Field>
 
-                {/* password */}
+                
                 <Field>
                   <label htmlFor="create-use-password" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
                     <input
@@ -354,7 +352,7 @@ function CreateLinkDialog({
                   )}
                 </Field>
 
-                {/* UTM */}
+                
                 <div className="rounded-md border border-border p-3.5">
                   <p className="flex items-center gap-2 text-[13px] font-medium text-fg-secondary">
                     UTM campaign tagging
@@ -385,7 +383,7 @@ function CreateLinkDialog({
                   )}
                 </div>
 
-                {/* path forwarding */}
+                
                 <div className="rounded-md border border-border p-3.5">
                   <p className="flex items-center gap-2 text-[13px] font-medium text-fg-secondary">
                     Path forwarding
@@ -430,7 +428,7 @@ function CreateLinkDialog({
                   )}
                 </div>
 
-                {/* mobile app deep linking */}
+                
                 <div className="rounded-md border border-border p-3.5">
                   <p className="flex items-center gap-2 text-[13px] font-medium text-fg-secondary">
                     Mobile app deep linking

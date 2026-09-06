@@ -25,7 +25,7 @@ import { HourBars } from "./hour-bars";
 import { HeatGrid } from "./heat-grid";
 import { RANGE_OPTIONS, RangeSelect, planRank, rangeLocked } from "./range-select";
 
-/* ---------- shared bits ---------- */
+
 
 function LockedRangeBanner({ days, minPlan }: { days: number; minPlan: string }) {
   const label = RANGE_OPTIONS.find((r) => r.days === days)?.label ?? `${days}d`;
@@ -56,8 +56,7 @@ function referrerLabel(referrer: string | null): string {
   }
 }
 
-/** Locked visualization slot: explains the upgrade path instead of
-    rendering an empty or misleading chart. */
+
 function LockedViz({
   title,
   feature,
@@ -83,7 +82,7 @@ function LockedViz({
   );
 }
 
-/* ---------- account view ---------- */
+
 
 function AccountView({ days }: { days: AnalyticsDays }) {
   const [, setSearchParams] = useSearchParams();
@@ -140,7 +139,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
         </div>
       </section>
 
-      {/* account-wide time series */}
+      
       <section
         aria-label="Clicks over time"
         className="mt-6 ls-plate relative overflow-hidden p-5"
@@ -167,7 +166,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
         )}
       </section>
 
-      {/* account-wide peak hours — STARTER+ entitlement */}
+      
       {starterLocked ? (
         <LockedViz
           className="mt-6"
@@ -203,7 +202,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
         </section>
       )}
 
-      {/* link drill-down — per-link time series & breakdowns live in the workspace */}
+      
       <section
         aria-label="Pick a link"
         className="mt-6 ls-plate relative overflow-hidden"
@@ -254,7 +253,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
       </section>
 
       <div className="mt-6 grid gap-5 lg:grid-cols-[1.15fr_1fr]">
-        {/* top links — click opens the link workspace */}
+        
         <section
           aria-label="Top links"
           className="ls-plate relative overflow-hidden"
@@ -329,7 +328,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
           )}
         </section>
 
-        {/* recent activity */}
+        
         <section
           aria-label="Activity"
           className="ls-plate relative overflow-hidden"
@@ -403,7 +402,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
   );
 }
 
-/* ---------- link workspace ---------- */
+
 
 function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }) {
   const [, setSearchParams] = useSearchParams();
@@ -466,8 +465,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
     ? (a.referrerStats ?? []).map((r) => ({ label: referrerLabel(r.referrer), count: r.count }))
     : [];
 
-  /* derived KPIs — computed client-side from the daily series and total
-     already fetched for this view (no new API surface) */
+  
   const daily = charts.data?.dailyStats ?? [];
   const avgPerDay = Math.round((a?.totalClicks ?? 0) / days);
   const bestDay = daily.reduce((m, d) => Math.max(m, d.clicks), 0);
@@ -571,7 +569,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
         )}
       </section>
 
-      {/* per-link peak hours — STARTER+ entitlement */}
+      
       {starterLocked ? (
         <LockedViz
           className="mt-6"
@@ -688,7 +686,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
         )}
       </div>
 
-      {/* day × hour heatmap — PRO entitlement */}
+      
       {!analytics.isError &&
         (proLocked ? (
           <LockedViz
@@ -710,7 +708,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
   );
 }
 
-/* ---------- page ---------- */
+
 
 function AnalyticsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -725,8 +723,7 @@ function AnalyticsPage() {
 
   const rangeLockedNow = rangeLocked(rangeOption, plan);
 
-  /* if the URL carries a locked range, surface the banner instead of a
-     guaranteed 403 fetch */
+  
   useEffect(() => {
     const t = window.setTimeout(() => {
       setPendingLock(rangeLockedNow ? { days: validRange, minPlan: rangeOption.minPlan } : null);

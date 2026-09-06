@@ -22,7 +22,7 @@ import type { LinkItem } from "@/types/api";
 
 const PAGE_SIZE = 50;
 
-/* ---- authenticated QR thumbnail (blob-based; <img> can't send headers) ---- */
+
 function QrThumbnail({ linkId, version }: { linkId: string; version: number }) {
   const img = useQuery({
     queryKey: ["qr-img", linkId, version],
@@ -65,8 +65,7 @@ function QrPage() {
   const [studioLink, setStudioLink] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  /* The gallery grows with the account, so page through links instead of a
-     fixed 100-item cap — an observer fetches the next page on scroll. */
+  
   const links = useInfiniteQuery({
     queryKey: ["qr-gallery-links", debounced],
     queryFn: ({ signal, pageParam }) =>

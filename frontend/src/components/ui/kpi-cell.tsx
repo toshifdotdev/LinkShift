@@ -2,11 +2,7 @@ import { useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * KpiCell — an instrument, not a poster: mono tabular value under a 10px
- * mono micro-label. Value changes roll over ~400ms (the one orchestrated
- * motion on dashboards); reduced motion snaps.
- */
+
 
 function useRolledValue(value: number, active: boolean): number {
   const reduce = useReducedMotion();
@@ -40,9 +36,9 @@ function useRolledValue(value: number, active: boolean): number {
 interface KpiCellProps {
   label: string;
   value: number;
-  /** Formats the displayed number; defaults to en-US grouping. */
+  
   format?: (n: number) => string;
-  /** Animate value changes; pass false to snap (e.g. static reports). */
+  
   roll?: boolean;
   className?: string;
   valueClassName?: string;

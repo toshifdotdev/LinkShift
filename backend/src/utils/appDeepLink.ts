@@ -1,18 +1,4 @@
-/**
- * Mobile app deep linking — SDK-less, platform-aware app opening.
- *
- * Mechanisms (the realistic set for a link service that does not own the app):
- *  - Android (Chromium): an `intent://` URL. Chrome opens the app when the
- *    package is installed, otherwise it honors `S.browser_fallback_url`.
- *  - iOS + other mobile browsers: a URI-scheme attempt from an interstitial
- *    page with a timer fallback (installed apps cannot be detected from the
- *    web), plus explicit "Open in app / Continue to website" buttons.
- *  - Desktop: plain redirect to the web fallback.
- *
- * True Universal Links / App Links require apple-app-site-association /
- * assetlinks.json served from the app owner's own domain — LinkShift cannot
- * provide those for third-party apps.
- */
+
 
 export type AppDeepLinkConfig = {
     appScheme: string;
@@ -31,14 +17,14 @@ export const detectMobilePlatform = (userAgent: string): MobilePlatform => {
     return null;
 };
 
-/* Chromium-based Android browsers understand intent:// URLs. */
+
 export const isAndroidChromium = (userAgent: string): boolean =>
     /Android/i.test(userAgent) && /Chrome\/|CriOS\/|EdgA\//i.test(userAgent);
 
 const normalizePath = (path: string): string =>
     path.replace(/^\/+/, "").replace(/\/+$/, "");
 
-/** Extract the wildcard tail (Express 5 gives an array of segments). */
+
 export const extractRest = (params: Record<string, unknown>): string => {
     const raw = params.rest;
     const segments = Array.isArray(raw) ? raw : typeof raw === "string" ? [raw] : [];
@@ -50,11 +36,11 @@ export const extractRest = (params: Record<string, unknown>): string => {
     );
 };
 
-/** Raw query string from the request URL (without the leading "?"). */
+
 export const extractQuery = (reqUrl: string): string =>
     reqUrl.includes("?") ? reqUrl.split("?")[1] : "";
 
-/** Build the in-app target: scheme://appPath/rest?query */
+
 export const buildAppUrl = (
     cfg: AppDeepLinkConfig,
     rest: string,
@@ -65,7 +51,7 @@ export const buildAppUrl = (
     return `${cfg.appScheme}://${path}${query ? `?${query}` : ""}`;
 };
 
-/** Android Chromium intent:// URL with an encoded browser fallback. */
+
 export const buildIntentUrl = (
     cfg: AppDeepLinkConfig,
     rest: string,
@@ -91,17 +77,11 @@ const escapeHtml = (s: string): string =>
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
 
-/* Embed a config object into a <script> block without injection risk:
-   JSON-encode then neutralize "<" so the block can never close early. */
+
 const jsonForScript = (value: unknown): string =>
     JSON.stringify(value).replace(/</g, "\\u003c");
 
-/**
- * Branded interstitial for scheme-based opening (iOS and non-Chromium
- * Android). Auto-attempts the app once on load, falls back after a short
- * timer if the page is still visible (app not installed / scheme refused),
- * and always offers manual buttons.
- */
+
 export const renderAppInterstitial = (opts: {
     platform: "ios" | "android";
     appUrl: string;

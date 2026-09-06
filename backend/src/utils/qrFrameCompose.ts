@@ -1,20 +1,6 @@
 import { spawn } from "child_process";
 
-/**
- * Canonical frame geometry — the single source of truth for QR frames.
- *
- * The studio LIVE PREVIEW wraps the QR in a CSS border-box:
- *   border + padding both take space around the QR, so the rendered canvas
- *   is  border-box width  = 300 + 2*(border + pad),
- *   and the QR content is placed at (border + pad).
- * This composer reproduces exactly that box model so the exported PNG is
- * the same design the user sees in the preview. The frontend FRAMES table
- * (frontend/src/pages/app/qr/qr-preview.tsx) mirrors these values and is
- * guarded by tests/qr-frame.test.ts to prevent drift.
- *
- * All values are in the 300-unit QR canvas space (the base QR includes its
- * own quiet zone / margin).
- */
+
 export const FRAME_SPECS = {
     none:    { border: 0, pad: 0,  labelHeight: 0, labelText: "",        ember: false, double: false },
     clean:   { border: 6, pad: 26, labelHeight: 0, labelText: "",        ember: false, double: false },
@@ -26,23 +12,14 @@ export const FRAME_SPECS = {
 
 export type FrameStyle = keyof typeof FRAME_SPECS;
 
-/** mirrors the preview label <p> (qr-preview.tsx): gap below the QR, radius */
+
 export const LABEL_GAP = 8;
 export const LABEL_RADIUS = 6;
 
 const QR_SIZE = 300;
 const OUTER_RADIUS = 18;
 
-/**
- * Frame composition runs in an isolated child Node process.
- *
- * generateQr.ts replaces global window/document with JSDOM at module load,
- * which breaks sharp's multi-composite SVG pipeline inside THIS process.
- * A fresh process composes reliably (verified E2E).
- *
- * stdin : JSON { basePng(b64), frame, foregroundColor, backgroundColor }
- * stdout: composed PNG (base64)
- */
+
 const WORKER_CODE = (specsJson: string) => `
   let input = "";
   process.stdin.setEncoding("utf8");

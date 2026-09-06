@@ -1,10 +1,7 @@
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 import { isValidElement, type ReactNode } from "react";
 
-/*
- * Tooltip — quiet raised plate, 4px radius, no arrow clutter. Every
- * icon-only button in the app should carry one.
- */
+
 
 function TooltipProvider({ children, delay = 400 }: { children: ReactNode; delay?: number }) {
   return (
@@ -19,7 +16,7 @@ interface TooltipProps {
   children: ReactNode;
   side?: "top" | "right" | "bottom" | "left";
   sideOffset?: number;
-  /** Render the child untouched — useful when the trigger is unavailable. */
+  
   disabled?: boolean;
 }
 

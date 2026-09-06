@@ -13,7 +13,7 @@ import { PricingPreview } from "./sections/pricing-preview";
 import { FinalCta } from "./sections/final-cta";
 import { Footer } from "./sections/footer";
 
-/* Sections carry scroll-mt-* so they land below the fixed navbar. */
+
 function useSectionHashScroll() {
   const location = useLocation();
 

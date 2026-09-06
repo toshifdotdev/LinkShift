@@ -12,8 +12,7 @@ router.get("/:shortId/*rest", redirectLimiter, validate(redirectParamSchema, "pa
 
 router.post("/:shortId/unlock", unlockLimiter, validate(redirectParamSchema, "params"), validate(unlockSchema, "body"), unlockController);
 
-/* The visitor's appended path survives the password round trip by riding the
-   unlock URL itself: POST /abc/unlock/products/123?ref=x */
+
 router.post("/:shortId/unlock/*rest", unlockLimiter, validate(redirectParamSchema, "params"), validate(unlockSchema, "body"), unlockController);
 
 export default router;

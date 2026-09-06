@@ -1,19 +1,4 @@
-/*
- * SSR entry for build-time prerendering.
- *
- * `vite build --ssr src/prerender/prerender-entry.tsx` compiles this module
- * to `dist-ssr/prerender-entry.js`; scripts/prerender.mjs then renders every
- * PUBLIC_PATHS route to static HTML and writes dist/<route>/index.html.
- *
- * This is SEO static prerendering only — the deployed SPA still boots with
- * createRoot, so there is no hydration contract. The static HTML exists so
- * crawlers and AI agents that do not execute JavaScript receive real,
- * route-specific content in the initial response.
- *
- * Heads are built from the SAME sources the runtime uses (ROUTE_SEO and the
- * seo.ts JSON-LD builders), so prerendered metadata can never drift from
- * what the client applies after hydration.
- */
+
 
 import { renderToString } from "react-dom/server";
 import { MemoryRouter } from "react-router-dom";
@@ -43,15 +28,12 @@ export interface PrerenderHead {
     jsonLd?: Record<string, unknown>;
 }
 
-/* Queries stay disabled: page data is fetched by the client at runtime, and
-   the prerendered HTML carries the static copy (headings, plan matrix, docs
-   text, legal text). No authenticated or user-specific data is embedded. */
+
 const queryClient = new QueryClient({
     defaultOptions: { queries: { enabled: false, retry: false } },
 });
 
-/* Mirrors the provider tree in main.tsx so every page renders exactly as it
-   does in the browser. */
+
 export function renderRoute(path: string): string {
     return renderToString(
         <ThemeProvider>
@@ -72,7 +54,7 @@ export function renderRoute(path: string): string {
     );
 }
 
-/* Mirrors the JSON-LD each page passes to useSeo. */
+
 export function jsonLdForPath(path: string): Record<string, unknown> | undefined {
     if (path === "/") return buildLandingJsonLd();
     if (path === "/faq") {
@@ -92,8 +74,8 @@ export function jsonLdForPath(path: string): Record<string, unknown> | undefined
 }
 
 export function headForPath(path: string): PrerenderHead {
-    // Static routes first, then docs topics — mirroring the metadata each
-    // page passes to useSeo (docs-topic-page.tsx builds its own dynamically).
+    
+    
     const route = ROUTE_SEO[path];
     if (route) {
         return {

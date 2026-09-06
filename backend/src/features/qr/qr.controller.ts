@@ -71,8 +71,8 @@ export const qrDownloader = asyncHandler(async(req : Request, res : Response, ne
 
     const data = await qrDownloadService(auth.id, id);
 
-    // The stored asset is the FINAL design — frames/logos were composed at
-    // save time, so preview / library / download all match exactly.
+    
+    
     const downloadUrl = data.imageUrl.replace(
         "/upload/",
         `/upload/fl_attachment:linkshift-qr-${data.shortId}/`,
@@ -90,8 +90,8 @@ export const uploadQrLogoController = asyncHandler(async(req : Request, res : Re
     }
 
     if (!req.file) {
-        // Diagnostic: makes an unparseable multipart body diagnosable
-        // instead of a bare 400.
+        
+        
         log.error("qr_logo_no_file", {
             contentType: req.headers["content-type"] ?? null,
         });
@@ -125,8 +125,5 @@ export const deleteQrController = asyncHandler(async(req : Request, res : Respon
         message: "QR deleted successfully."
     });
 })
-/**
- * Frame composition in a clean Node process (no JSDOM globals).
- * Buffers travel as base64 over stdin/stdout.
- */
+
 

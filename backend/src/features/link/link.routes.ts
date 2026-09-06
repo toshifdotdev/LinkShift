@@ -9,7 +9,7 @@ import { querySchema } from "./link.query.validation";
 
 const router = Router();
 
-// /api/v1/links
+
 router.post("/", authMiddleWare, linkMutationLimiter, validate(createLinkSchema, "body"), createLink);
 
 router.get("/", authMiddleWare, validate(querySchema, "query"),getLinks);

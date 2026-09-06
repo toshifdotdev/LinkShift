@@ -415,9 +415,9 @@ export const updateLink = async(data : UpdateLinkData) => {
         }
     })
 
-    // Invalidate every cache key this link could be served under: the redirect
-    // hot path caches per (host, shortId), and BOTH may change in one update
-    // (slug edit and/or domain switch). Resolve hosts for old + new domains.
+    
+    
+    
     const domainsForInvalidation = await prisma.domain.findMany({
         where: { id: { in: [existingLink.domainId, domain.id] } },
         select: { id: true, host: true },
@@ -471,7 +471,7 @@ export const deleteLink = async(data : DeleteLinkData) => {
         throw new AppError("Link Not Found", 404);
     }
 
-    // Invalidate every host this link could be cached under before removal.
+    
     const owningDomains = await prisma.domain.findMany({
         where: { id: existingLink.domainId },
         select: { host: true },

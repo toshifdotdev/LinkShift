@@ -8,7 +8,7 @@ const OPTIONS: Array<{ mode: ThemeMode; label: string; Icon: typeof Sun }> = [
   { mode: "system", label: "System", Icon: Monitor },
 ];
 
-/** Small topbar control: an icon trigger that opens the theme chooser. */
+
 function ThemeToggle() {
   const { mode, setMode } = useTheme();
   const ActiveIcon = OPTIONS.find((o) => o.mode === mode)?.Icon ?? Moon;

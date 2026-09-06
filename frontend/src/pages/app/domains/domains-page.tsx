@@ -18,7 +18,7 @@ import { useToaster } from "@/components/ui/toaster";
 import { FadeIn } from "@/components/ui/motion";
 import type { DomainRow } from "@/types/api";
 
-/* plan caps mirror the seeded Plan.maxDomains (server enforces via 403) */
+
 const DOMAIN_CAP: Record<string, number | null> = { FREE: 0, STARTER: 1, CREATOR: 5, PRO: null };
 
 function DnsInstructions({ host }: { host: string }) {
@@ -261,8 +261,7 @@ function DomainsPage() {
   const rows = domains.data ?? [];
   const own = rows.filter((d) => d.userId !== null);
   const shared = rows.filter((d) => d.userId === null);
-  /* cap === 0 plans (Free) speak through the dedicated empty state below —
-     the at-cap banner only makes sense once the plan includes domains. */
+  
   const atCap = cap !== null && cap > 0 && own.length >= cap;
 
   const verify = useMutation({
@@ -354,7 +353,7 @@ function DomainsPage() {
             />
           ) : (
             <>
-              {/* shared system domain */}
+              
               {shared.map((d) => (
                 <div
                   key={d.id}
@@ -372,7 +371,7 @@ function DomainsPage() {
                 </div>
               ))}
 
-              {/* user domains */}
+              
               {own.length === 0 ? (
                 cap === 0 ? (
                   <EmptyState

@@ -1,18 +1,8 @@
-/**
- * Retry a Cloudinary upload with exponential backoff.
- *
- * Cloudinary's upload_stream surfaces failures as a single Error in its
- * callback — we have no HTTP status to inspect. Treat any error as
- * transient: Cloudinary 5xx and network blips both surface the same way,
- * and an upload that fails the first time almost always succeeds on the
- * next try (CDN edge hiccup, brief auth-token rotation, etc).
- *
- * Bounded: maxAttempts total tries, capped total wall time.
- */
+
 import { log } from "./logger";
 
 const MAX_ATTEMPTS = 3;
-const BASE_DELAY_MS = 500; // 0.5s, 1s, 2s with exponential
+const BASE_DELAY_MS = 500; 
 const MAX_DELAY_MS = 4_000;
 
 export type RetryableError = Error & { code?: string; http_code?: number };
@@ -24,8 +14,8 @@ function delay(attempt: number): Promise<void> {
 
 function shouldRetry(err: unknown): boolean {
     if (!(err instanceof Error)) return false;
-    // Don't swallow non-retryable client errors: a 400/401/403 from
-    // Cloudinary is a permanent failure (bad params, bad creds).
+    
+    
     const anyErr = err as RetryableError;
     if (anyErr.http_code !== undefined) {
         if (anyErr.http_code >= 400 && anyErr.http_code < 500) return false;

@@ -20,7 +20,7 @@ export default defineConfig([
     },
   },
   {
-    // UI primitive files export variant configs and hooks alongside components
+    
     files: ['src/components/ui/**/*.{ts,tsx}', 'src/auth/**/*.{ts,tsx}', 'src/pages/app/analytics/**/*.{ts,tsx}', 'src/theme/**/*.{ts,tsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',

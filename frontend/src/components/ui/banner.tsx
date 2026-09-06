@@ -2,10 +2,7 @@ import { X } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * Banner — an inline status strip. Tone hairline + soft tint + ringed dot;
- * the message itself carries the words.
- */
+
 
 type BannerTone = "neutral" | "info" | "success" | "warning" | "destructive";
 

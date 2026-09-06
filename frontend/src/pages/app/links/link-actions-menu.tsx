@@ -15,7 +15,7 @@ function LinkActionsMenu({
   link: LinkItem;
   onEdit: (link: LinkItem) => void;
   onDelete: (link: LinkItem) => void;
-  /** lets the parent flash copy feedback on the row */
+  
   onDeleted?: () => void;
 }) {
   const navigate = useNavigate();
@@ -40,7 +40,7 @@ function LinkActionsMenu({
 
   return (
     <div className="flex items-center justify-end gap-1">
-      {/* quick copy — the most frequent action */}
+      
       <button
         type="button"
         aria-label={copied ? "Copied" : "Copy short link"}

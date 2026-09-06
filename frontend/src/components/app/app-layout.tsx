@@ -29,9 +29,7 @@ function AppLayout() {
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      {/* MobileNav is a fixed, full-viewport overlay — it must render OUTSIDE the
-          header so `backdrop-blur` on the header cannot become its containing
-          block (which would confine the overlay to the 56px header box). */}
+      
       <MobileNav open={navOpen} onClose={() => setNavOpen(false)} />
       <div className="lg:pl-64">
         <Topbar
@@ -56,7 +54,7 @@ function AppLayout() {
   );
 }
 
-/** Shell-shaped loading state shown while /users/me resolves. */
+
 function AppShellSkeleton() {
   return (
     <div className="min-h-screen bg-background">

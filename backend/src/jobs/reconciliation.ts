@@ -14,17 +14,17 @@ type LiveSubscriptionRow = Prisma.SubscriptionGetPayload<{
     include: { plan: true; pendingPlan: true };
 }>;
 
-// ---------------------------------------------------------------------------
-// Wave 4 reconciliation engine.
-//
-// Execution contract (locked decisions):
-//  - Single-runner lease via ReconciliationRun partial unique index.
-//  - Triggered externally (manual curl for now; hourly scheduler later).
-//  - Provider authoritative for liveness/periods; terminal rows are sinks and
-//    are NEVER touched here (resurrection guard).
-//  - All repairs are absolute-set + idempotent, mirroring webhook-handler rules.
-//  - Observability: structured JSON logs only (D-D). No secrets/token logging.
-// ---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
 
 const LEASE_TTL_MINUTES = 15;
 const STALE_AP_HOURS = 24;
@@ -53,12 +53,12 @@ async function coerceInt(value: unknown): Promise<number | null> {
     return Number.isFinite(parsed) ? parsed : null;
 }
 
-// ---------------------------------------------------------------------------
-// Run lease (structural single-runner guarantee via partial unique index).
-// ---------------------------------------------------------------------------
+
+
+
 
 async function claimRun(triggeredBy: string): Promise<string | null> {
-    // Crash recovery: reclaim leases held past TTL before attempting a claim.
+    
     const cutoff = new Date(Date.now() - LEASE_TTL_MINUTES * 60_000);
     const reclaimed = await prisma.reconciliationRun.updateMany({
         where: { status: "running", startedAt: { lt: cutoff } },
@@ -74,7 +74,7 @@ async function claimRun(triggeredBy: string): Promise<string | null> {
         });
         return run.id;
     } catch (err) {
-        // Partial unique index violation => another runner holds the lease.
+        
         log({ action: "claim-denied", reason: "already-running" });
         return null;
     }
@@ -92,9 +92,9 @@ async function finishRun(
     });
 }
 
-// ---------------------------------------------------------------------------
-// Provider access (tolerant; a failed fetch degrades that row to ALERT-only).
-// ---------------------------------------------------------------------------
+
+
+
 
 async function fetchProviderSubscription(providerSubscriptionId: string) {
     await sleep(PROVIDER_CALL_DELAY_MS);
@@ -106,9 +106,9 @@ async function fetchProviderSubscription(providerSubscriptionId: string) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Subscription state-matrix repair (provider authoritative; mirrors W2 rules).
-// ---------------------------------------------------------------------------
+
+
+
 
 const PROVIDER_LIVE_TARGET: Record<string, string> = {
     active: "ACTIVE",
@@ -132,7 +132,7 @@ async function repairSubscription(
 ): Promise<RowOutcome> {
     const localId = localRow.id;
 
-    // Resurrection guard: terminal rows must never be mutated by reconciliation.
+    
     if (isTerminalSubscriptionStatus(localRow.status)) {
         log({ action: "alert", reason: "terminal-row-in-scan", localId });
         c.alertsRaised++;
@@ -142,7 +142,7 @@ async function repairSubscription(
     const providerStatus: string = entity.status;
 
     if (isTerminalSubscriptionStatus(localRow.status) === false && PROVIDER_TERMINAL_TARGET[providerStatus]) {
-        // Local live vs provider terminal: authoritative close-out.
+        
         const target = PROVIDER_TERMINAL_TARGET[providerStatus];
         await prisma.subscription.update({
             where: { id: localId },
@@ -163,7 +163,7 @@ async function repairSubscription(
 
     if (localRow.status === "AUTHORIZATION_PENDING") {
         if (providerStatus === "active") {
-            // Missed activation webhooks: authorize the checkout that actually worked.
+            
             await prisma.subscription.update({
                 where: { id: localId },
                 data: {
@@ -185,7 +185,7 @@ async function repairSubscription(
                 c.recordsSkipped++;
                 return "skipped";
             }
-            // Abandonment tier: provider-cancel first, then terminalize locally.
+            
             try {
                 await sleep(PROVIDER_CALL_DELAY_MS);
                 await razorpay.subscriptions.cancel(entity.id);
@@ -208,18 +208,18 @@ async function repairSubscription(
         }
 
         if (providerStatus === "authenticated") {
-            // Mid-auth: mandate authorized, first charge not settled yet. Wait.
+            
             c.recordsSkipped++;
             return "skipped";
         }
 
-        // AP vs pending/halted/paused: unusual pre-auth divergence — alert only.
+        
         log({ action: "alert", reason: "auth-pending-vs-live-provider", localId, providerStatus });
         c.alertsRaised++;
         return "alerted";
     }
 
-    // Local live (ACTIVE/PAYMENT_RETRY/HALTED/PAUSED) vs provider states.
+    
     const target = PROVIDER_LIVE_TARGET[providerStatus];
 
     if (!target) {
@@ -228,7 +228,7 @@ async function repairSubscription(
         return "alerted";
     }
 
-    // ---- Plan-field mirroring (identical doctrine to W2 updated-handler) ----
+    
     const mappedPlan = await mapProviderPlan(entity.plan_id);
     let warning: string | undefined;
     if (!mappedPlan) {
@@ -240,8 +240,8 @@ async function repairSubscription(
     const newPeriodStart = epochToDate(entity.current_start) ?? localRow.currentPeriodStart;
     const newPeriodEnd = epochToDate(entity.current_end) ?? localRow.currentPeriodEnd;
 
-    // Compare instants (getTime), NOT Date object references — fresh Date objects
-    // are always referentially unequal even when values match.
+    
+    
     const periodFields = {
         currentPeriodStart: newPeriodStart,
         currentPeriodEnd: newPeriodEnd,
@@ -259,7 +259,7 @@ async function repairSubscription(
         const scheduledWindowOpen = entity.has_scheduled_changes === true;
 
         if (scheduledWindowOpen) {
-            // Open schedule: planId FROZEN; pending intent must mirror provider.
+            
             if (
                 mappedPlan.id !== localRow.planId &&
                 localRow.pendingPlanId !== null &&
@@ -282,7 +282,7 @@ async function repairSubscription(
             data.pendingPlanId = desiredPendingPlanId;
             data.changeScheduledAt = scheduledAt;
         } else {
-            // Window closed: provider truth committed; schedule cleared.
+            
             if (mappedPlan.id !== localRow.planId) {
                 log({ action: "repair", localId, field: "planId", from: localRow.planId, to: mappedPlan.id, reason: "provider-authoritative" });
             }
@@ -302,8 +302,8 @@ async function repairSubscription(
     }
 
     const statusChanged = target !== localRow.status;
-    // Compare instants (getTime), NOT Date references — fresh Date objects are
-    // always referentially unequal even when their values match.
+    
+    
     const periodChanged =
         periodFields.currentPeriodStart?.getTime() !== localRow.currentPeriodStart?.getTime() ||
         periodFields.currentPeriodEnd?.getTime() !== localRow.currentPeriodEnd?.getTime();
@@ -323,7 +323,7 @@ async function repairSubscription(
     }
 
     if (!statusChanged && !planMutated && !periodChanged && warning === undefined) {
-        // Fully converged — nothing to write.
+        
         c.recordsSkipped++;
         return "skipped";
     }
@@ -339,7 +339,7 @@ async function repairSubscription(
         });
     } catch (err) {
         if ((err as any).code === "P2002") {
-            // Double-live attempt is structurally impossible under Wave 0's index.
+            
             console.error(`[RECON] CRITICAL: P2002 while repairing ${localId} — investigate immediately`, err);
         }
         throw err;
@@ -352,11 +352,11 @@ async function repairSubscription(
     return "repaired";
 }
 
-// ---------------------------------------------------------------------------
-// Payment ledger backfill (invoice-driven — SDK supports per-subscription
-// invoice listing; payments.all has NO subscription filter, so invoices are
-// the authoritative per-sub source).
-// ---------------------------------------------------------------------------
+
+
+
+
+
 
 async function backfillPaymentsForSubscription(
     subscription: {
@@ -413,7 +413,7 @@ async function backfillPaymentsForSubscription(
             });
 
             if (existing) {
-                // Fill the order-id side so future dedupes hit the cheap path.
+                
                 await prisma.payment.update({
                     where: { id: existing.id },
                     data: { providerOrderId: invoice.order_id },
@@ -455,16 +455,16 @@ async function backfillPaymentsForSubscription(
             log({ action: "backfill-payment", providerSub: subscription.providerSubscriptionId, orderId: invoice.order_id, amount });
             c.paymentsBackfilled++;
         } catch (err) {
-            if ((err as any).code === "P2002") continue; // concurrent webhook won
+            if ((err as any).code === "P2002") continue; 
             throw err;
         }
     }
 }
 
-// ---------------------------------------------------------------------------
-// Refund sync: global listing filtered to our payments; same cumulative rules
-// as the Wave-3 webhook handler (unique-anchor idempotency).
-// ---------------------------------------------------------------------------
+
+
+
+
 
 async function syncRefunds(c: ReconCounters) {
     const fromUnix = Math.floor((Date.now() - REFUND_SYNC_WINDOW_DAYS * 86_400_000) / 1000);
@@ -491,7 +491,7 @@ async function syncRefunds(c: ReconCounters) {
 
         for (const refund of items) {
             const payment = refund.payment_id ? byProviderPaymentId.get(refund.payment_id) : undefined;
-            if (!payment) continue; // foreign/unlinked refund
+            if (!payment) continue; 
 
             const already = await prisma.refund.findUnique({
                 where: { providerRefundId: refund.id },
@@ -518,7 +518,7 @@ async function syncRefunds(c: ReconCounters) {
                 log({ action: "backfill-refund", paymentId: payment.id, refundId: refund.id, amount });
                 c.refundsBackfilled++;
             } catch (err) {
-                if ((err as any).code === "P2002") continue; // raced with webhook
+                if ((err as any).code === "P2002") continue; 
                 throw err;
             }
 
@@ -537,7 +537,7 @@ async function syncRefunds(c: ReconCounters) {
                     data: { status: "REFUNDED", providerRefundId: refund.id },
                 });
                 log({ action: "repair", paymentId: payment.id, field: "status", to: "REFUNDED", cumulative });
-                c.subscriptionsRepaired++; // shared repair counter (payment-side repair)
+                c.subscriptionsRepaired++; 
             }
         }
 
@@ -546,9 +546,9 @@ async function syncRefunds(c: ReconCounters) {
     }
 }
 
-// ---------------------------------------------------------------------------
-// Orchestrator
-// ---------------------------------------------------------------------------
+
+
+
 
 export async function runReconciliation(triggeredBy = "manual") {
     const runId = await claimRun(triggeredBy);
@@ -592,10 +592,10 @@ export async function runReconciliation(triggeredBy = "manual") {
 
             const outcome = await repairSubscription(row, entity, c);
             if (outcome !== "alerted") scannedIds.push(row.id);
-            else scannedIds.push(row.id); // keep in payment/refund scope regardless
+            else scannedIds.push(row.id); 
         }
 
-        // Fresh read post-repairs so backfill uses final plan/user linkage.
+        
         if (scannedIds.length > 0) {
             const rowsAfter = await prisma.subscription.findMany({
                 where: { id: { in: scannedIds } },

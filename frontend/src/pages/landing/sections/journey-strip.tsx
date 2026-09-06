@@ -15,15 +15,7 @@ const stages = [
   { n: "04", label: "Own", note: "Your domain, your brand" },
 ];
 
-/**
- * Scroll-driven progress path.
- *
- * ONE authoritative progress value (0→1) is derived from the section's
- * scroll position and shared by every visual: the ember line's scaleX
- * (desktop) / scaleY (mobile) and the per-step milestone styling. React
- * state changes only at the three milestone crossings — never per scroll
- * pixel — so there is nothing to oscillate and nothing to fight the user.
- */
+
 function JourneyStrip() {
   const stepsRef = useRef<HTMLOListElement>(null);
   const { scrollYProgress } = useScroll({
@@ -32,7 +24,7 @@ function JourneyStrip() {
   });
   const lineScale = useSpring(scrollYProgress, { stiffness: 120, damping: 28 });
 
-  /* milestone state: 0..3, changes only when a milestone is crossed */
+  
   const [reached, setReached] = useState(0);
   useMotionValueEvent(lineScale, "change", (v) => {
     const idx = Math.min(3, Math.max(0, Math.floor(v * 3 + 1e-4)));
@@ -43,7 +35,7 @@ function JourneyStrip() {
     <section aria-label="The LinkShift journey" className="border-y border-border bg-surface">
       <Container>
         <div className="relative py-10 sm:py-12">
-          {/* desktop: horizontal path along the existing line */}
+          
           <span
             aria-hidden="true"
             className="absolute top-[3.625rem] right-[8%] left-[8%] hidden h-px bg-border lg:block"
@@ -54,7 +46,7 @@ function JourneyStrip() {
             />
           </span>
 
-          {/* mobile: vertical path beside the step circles */}
+          
           <span
             aria-hidden="true"
             className="absolute top-6 bottom-6 left-[1.125rem] w-px bg-border lg:hidden"
@@ -86,7 +78,7 @@ function JourneyStrip() {
                       )}
                     >
                       {s.n}
-                      {/* completed marker */}
+                      
                       {i < reached && (
                         <span
                           aria-hidden="true"

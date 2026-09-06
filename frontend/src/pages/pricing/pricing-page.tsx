@@ -42,9 +42,7 @@ function PricingPage() {
   const navigate = useNavigate();
   const { isAuthenticated } = useSession();
   const [cycle, setCycle] = useState<BillingCycle>("MONTHLY");
-  /* Currency is owned by the backend (region-aware via getPlans). Until that
-     resolves we render an indeterminate "loading prices…" label and refuse to
-     show a hardcoded value. */
+  
   const [currency, setCurrency] = useState<Currency | null>(null);
   const [paidPlans, setPaidPlans] = useState<ApiPlan[]>([]);
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -65,14 +63,13 @@ function PricingPage() {
     }
   }, []);
 
-  /* Deferred so state updates stay outside the synchronous effect pass. */
+  
   useEffect(() => {
     const t = window.setTimeout(() => void loadPlans(), 0);
     return () => window.clearTimeout(t);
   }, [loadPlans]);
 
-  /* Plan intent carried through login: resume the intended checkout once
-     the session exists. Runs once — the intent is consumed on read. */
+  
   const intentDoneRef = useRef(false);
   useEffect(() => {
     if (!isAuthenticated || intentDoneRef.current) return;
@@ -97,7 +94,7 @@ function PricingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  /* Current-plan awareness only when a session token exists (silent on failure). */
+  
   useEffect(() => {
     if (!getAccessToken()) return;
     let cancelled = false;
@@ -126,9 +123,7 @@ function PricingPage() {
     }
   }
 
-  /* Pricing is public — only checkout needs an account. Route a signed-out
-     visitor through sign-in, carrying the plan intent so the intended
-     checkout resumes once the session exists. */
+  
   function beginSignInForCheckout(planName: string) {
     sessionStorage.setItem("ls:plan-intent", JSON.stringify({ plan: planName, cycle }));
     navigate("/login", { state: { from: "/pricing" } });
@@ -175,8 +170,7 @@ function PricingPage() {
       checkout.open();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {
-        /* Journey: unauthenticated plan selection → auth → straight back
-           into the intended checkout. */
+        
         beginSignInForCheckout(planName);
         return;
       }
@@ -217,7 +211,7 @@ function PricingPage() {
 
       <main className="flex-1 pt-28 pb-24 sm:pt-32">
         <Container>
-          {/* header */}
+          
           <header className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-xl">
               <Kicker>Pricing</Kicker>
@@ -241,7 +235,7 @@ function PricingPage() {
             </div>
           </header>
 
-          {/* body */}
+          
           {status === "loading" && <PricingSkeleton />}
 
           {status === "error" && (
@@ -286,14 +280,12 @@ function PricingPage() {
             </div>
           )}
 
-          {/* Static, price-independent information — rendered in every status
-              so the content exists before JavaScript runs (prerendered HTML)
-              and stays visible if plan loading fails. */}
+          
           <div className="mt-10">
             <IncludesBand />
           </div>
 
-          {/* billing behaviour notes */}
+          
           <div className="mt-8 grid gap-x-10 gap-y-4 border-t border-border pt-8 sm:grid-cols-2 lg:grid-cols-3">
             {NOTES.map(([label, note]) => (
               <div key={label}>

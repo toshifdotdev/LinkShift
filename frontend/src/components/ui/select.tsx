@@ -3,10 +3,7 @@ import { Check, ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * Select — the Base UI select with LinkShift material. Replaces every
- * native <select> in the app (the sort pickers, the form dropdowns).
- */
+
 
 interface SelectProps {
   value?: string;
@@ -38,7 +35,7 @@ function SelectTrigger({
   className?: string;
   placeholder?: string;
   "aria-label"?: string;
-  /** Static label, or (value) => label to keep the placeholder while empty. */
+  
   children?: ReactNode | ((value: string) => ReactNode);
 }) {
   return (

@@ -1,10 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/**
- * A deterministic progress indicator — a 1px ember hairline that sweeps
- * L→R. Used inside primary action buttons (Save, Continue, Download) to
- * communicate in-flight work without the anxiety of an indeterminate spinner.
- */
+
 function ProgressIndicator({ className }: { className?: string }) {
   return (
     <span

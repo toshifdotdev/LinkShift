@@ -3,14 +3,9 @@ import { Spinner } from "./spinner";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * LinkShift button family.
- * Static design carries the identity: slug typography (mono caps) on ink
- * surfaces with a drawn ember rule on hover. Ghost/link stay editorial
- * Archivo for quiet contexts.
- */
+
 const buttonVariants = cva(
-  // `ls-btn` carries the shared interaction system (ember rule-draw + press feedback)
+  
   "ls-btn ls-pressable relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 overflow-hidden whitespace-nowrap rounded-md font-medium transition-[background-color,border-color,color,box-shadow,transform] duration-200 ease-out select-none focus-visible:outline-2 focus-visible:outline-ring/70 focus-visible:outline-offset-2 disabled:pointer-events-none disabled:opacity-45 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5",
   {
     variants: {
@@ -24,17 +19,17 @@ const buttonVariants = cva(
         "icon-xs": "size-7",
       },
       variant: {
-        /* Primary action — ember plate, deep-ember spine, white rule */
+        
         default:
           "bg-brand font-mono uppercase tracking-[0.08em] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.22)] [--ls-spine:#9a3d06] [--ls-rule:rgba(255,255,255,0.85)] hover:bg-brand-hover active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.28)]",
         primary:
           "bg-brand font-mono uppercase tracking-[0.08em] text-primary-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-1px_0_rgba(0,0,0,0.22)] [--ls-spine:#9a3d06] [--ls-rule:rgba(255,255,255,0.85)] hover:bg-brand-hover active:shadow-[inset_0_2px_4px_rgba(0,0,0,0.28)]",
-        /* Ink plate — raised surface, ember spine + rule */
+        
         secondary:
           "border border-border bg-raised font-mono uppercase tracking-[0.08em] text-foreground [--ls-spine:var(--brand)] [--ls-rule:var(--brand)] hover:border-border-strong hover:bg-[var(--raised-hover)] active:bg-[var(--raised-active)]",
         outline:
           "border border-border-strong bg-transparent font-mono uppercase tracking-[0.08em] text-foreground [--ls-spine:var(--brand)] [--ls-rule:var(--brand)] hover:border-brand/60 hover:bg-brand/[0.06]",
-        /* Editorial quiet — Inter sentence case, no spine */
+        
         ghost:
           "bg-transparent font-sans normal-case tracking-normal text-fg-secondary [--ls-spine:transparent] [--ls-rule:var(--brand)] hover:bg-elevated hover:text-foreground",
         destructive:

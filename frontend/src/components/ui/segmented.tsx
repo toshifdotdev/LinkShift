@@ -2,10 +2,7 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * Segmented — an exclusive in-view choice rendered as a raised thumb on an
- * elevated track. Base UI Tabs provide the roving-focus keyboard model.
- */
+
 
 interface SegmentedOption {
   value: string;

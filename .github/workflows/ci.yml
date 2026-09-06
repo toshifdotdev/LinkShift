@@ -13,8 +13,6 @@ jobs:
       run:
         working-directory: backend
     env:
-      # Placeholder credentials so module imports succeed without real secrets.
-      # Unit suite is hermetic (no DB/network); integration stays local-only.
       RAZORPAY_KEY_ID: rzp_test_placeholder
       RAZORPAY_KEY_SECRET: placeholder_secret
       RAZORPAY_WEBHOOK_SECRET: whsec_placeholder
@@ -35,8 +33,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # The generated client is gitignored (backend/src/generated/prisma) and
-      # must be produced before TypeScript can resolve its imports.
       - name: Generate Prisma client
         run: npx prisma generate
 
@@ -61,8 +57,6 @@ jobs:
       run:
         working-directory: frontend
     env:
-      # Production API base used by the build (`npm run build` → prerendered
-      # routes + sitemap). Same value the deployed frontend is built with.
       VITE_API_URL: https://go.linkshift.in/api/v1
     steps:
       - uses: actions/checkout@v4
@@ -100,13 +94,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Proves the production image builds from a clean checkout. No push,
-      # no registry credentials, no secrets.
       - name: Build backend image
         run: docker build --platform linux/amd64 -t linkshift-backend-ci backend/
 
-      # compose requires the env_file to exist and APP_IMAGE to be set.
-      # Placeholder values only — this validates structure, not secrets.
       - name: Validate docker-compose configuration
         working-directory: deploy
         run: |
@@ -114,8 +104,6 @@ jobs:
           docker compose config --quiet
           rm .env
 
-      # Caddy is not preinstalled on the runner; the official caddy:2 image
-      # validates the exact Caddyfile that ships with the repo.
       - name: Validate Caddyfile
         run: >
           docker run --rm
@@ -128,11 +116,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Current-tree scan of TRACKED files only (git grep) — ignored local
-      # files are never read, and git history is not scanned, so the
-      # intentionally removed old content cannot fail new builds.
-      # Patterns are high-signal credential prefixes; documented placeholders
-      # (rzp_test_…, whsec_placeholder, linkshift.admin@gmail.com) do not match.
       - name: Scan tracked files for credential patterns
         run: |
           if git grep -nIE \

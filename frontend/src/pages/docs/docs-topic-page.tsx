@@ -6,8 +6,7 @@ import { ProductScreenshot, type ProductShot } from "@/components/product-screen
 import { PublicShell } from "@/components/public-shell";
 import { findTopic, type DocBlock } from "./docs-data";
 
-/* Media labels that map to real product captures. Unmapped labels fall back
-   to the dashed placeholder slot below. */
+
 const MEDIA_SHOTS: Record<string, ProductShot> = {
   "The create-link dialog with destination, slug preview and domain picker":
     "create-link",

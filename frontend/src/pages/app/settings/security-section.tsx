@@ -76,8 +76,8 @@ function SecuritySection() {
         description: "Sign in again with your new password.",
         variant: "success",
       });
-      // The single refresh session was revoked on the server. End the
-      // local session too and land the user on the login screen.
+      
+      
       logout();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Couldn't update your password.");
@@ -98,7 +98,7 @@ function SecuritySection() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
-      {/* Sign-in & session summary */}
+      
       <div className="flex flex-col gap-6">
         <dl className="ls-plate grid grid-cols-1 overflow-hidden sm:grid-cols-2">
           <div className="border-b border-border px-4 py-3.5 sm:border-r">
@@ -158,7 +158,7 @@ function SecuritySection() {
         </div>
       </div>
 
-      {/* Password change form */}
+      
       <form
         onSubmit={handlePasswordChange}
         className="ls-plate flex flex-col gap-4 px-4 py-4"

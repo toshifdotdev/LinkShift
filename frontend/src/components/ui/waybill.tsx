@@ -1,17 +1,13 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * Waybill — the plan card. A plate carrying the plan's route code, its
- * status lamp, detail rows, and the renewal action. The current plan gets
- * the ember stripe (the Rail language reserved for *current*).
- */
+
 interface WaybillProps extends HTMLAttributes<HTMLElement> {
-  /** Plan route code, e.g. "PRO". */
+  
   code: string;
-  /** Human plan name, e.g. "Pro". */
+  
   name?: string;
-  /** Status lamp node. */
+  
   status?: ReactNode;
   current?: boolean;
   action?: ReactNode;

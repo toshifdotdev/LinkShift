@@ -1,6 +1,6 @@
 import { apiFetch } from "./client";
 
-/** Authenticated Settings API — account-password, avatar, and deletion flows. */
+
 
 export function changePassword(input: {
   currentPassword?: string;

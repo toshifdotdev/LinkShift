@@ -44,8 +44,7 @@ function EditLinkDialog({
   const canUseSlug = plan !== "FREE";
   const canUseDeepLink = plan === "PRO";
 
-  /* The parent mounts this component per-edit (keyed by link id), so
-     initializers run fresh for every edit session — no seeding effects. */
+  
   const [name, setName] = useState(link.name ?? "");
   const [targetUrl, setTargetUrl] = useState(link.targetUrl);
   const [isActive, setIsActive] = useState(link.isActive);
@@ -66,9 +65,7 @@ function EditLinkDialog({
 
   const domains = useDomains();
 
-  /* The API returns the link's domain, so the preview defaults to the host the
-     link actually lives on. Once switching is on and a domain is selected, the
-     preview reflects that selection. */
+  
   const domainHost =
     switchDomain && domainId
       ? domains.data?.find((d) => d.id === domainId)?.host ?? DEFAULT_SHORT_DOMAIN
@@ -127,7 +124,7 @@ function EditLinkDialog({
     }
 
     void mutation.mutateAsync({
-      /* always sent — the backend clears expiry when it is omitted */
+      
       expiresAt: fromLocalInputValue(expiry),
       name: name.trim() || " ",
       targetUrl: targetUrl.trim(),
@@ -138,7 +135,7 @@ function EditLinkDialog({
         passwordChoice === "replace" ? newPassword : passwordChoice === "remove" ? null : undefined,
       deepLink: canUseDeepLink ? deepLink : undefined,
       appDeepLink: canUseDeepLink ? appDeepLink : undefined,
-      /* turning the feature off clears stored config, like create does */
+      
       appScheme: canUseDeepLink ? (appDeepLink ? appScheme.trim() || null : null) : undefined,
       androidPackage: canUseDeepLink ? (appDeepLink ? androidPackage.trim() || null : null) : undefined,
       appPath: canUseDeepLink ? (appDeepLink ? appPath.trim() || null : null) : undefined,
@@ -186,7 +183,7 @@ function EditLinkDialog({
               <FieldError>{targetUrl && !destinationValid ? "Enter a valid http(s) URL." : null}</FieldError>
             </Field>
 
-            {/* UTM honesty: stored UTM values are not returned by the API */}
+            
             {link.targetUrl.includes("utm_") && (
               <div className="flex items-start gap-2.5 rounded-md border border-border bg-elevated/60 px-3.5 py-3">
                 <Info className="mt-0.5 size-3.5 shrink-0 text-fg-muted" aria-hidden="true" />
@@ -256,7 +253,7 @@ function EditLinkDialog({
               </Field>
             </div>
 
-            {/* password tri-state */}
+            
             <Field>
               <FieldLabel>Password</FieldLabel>
               <div
@@ -315,7 +312,7 @@ function EditLinkDialog({
               )}
             </Field>
 
-            {/* domain switch */}
+            
             <Field>
               <label htmlFor="edit-switch-domain" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
                 <input
@@ -350,7 +347,7 @@ function EditLinkDialog({
               </FieldHint>
             </Field>
 
-            {/* status toggle */}
+            
             <label className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
               <input
                 type="checkbox"
@@ -361,7 +358,7 @@ function EditLinkDialog({
               Link is active. Unchecking pauses all redirects.
             </label>
 
-            {/* path forwarding */}
+            
             <Field>
               <FieldLabel className="flex items-center gap-2">
                 Path forwarding
@@ -409,7 +406,7 @@ function EditLinkDialog({
               )}
             </Field>
 
-            {/* mobile app deep linking */}
+            
             <Field>
               <FieldLabel className="flex items-center gap-2">
                 Mobile app deep linking

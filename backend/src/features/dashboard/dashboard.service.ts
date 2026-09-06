@@ -158,7 +158,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
             ORDER BY day ASC
             `;
 
-    // Peak-hours is a STARTER+ entitlement; skip the query entirely below it.
+    
     const hourlyRows = rank >= planRankOf("STARTER")
         ? await prisma.$queryRaw<HourRow[]>`
             SELECT
@@ -373,8 +373,8 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
             `,
     ])
 
-    // Breakdown sections are a plan entitlement: gated sections are stripped
-    // server-side so the client never receives data the plan doesn't include.
+    
+    
     const starterUnlocked = rank >= planRankOf("STARTER");
     const creatorUnlocked = rank >= planRankOf("CREATOR");
     const proUnlocked = rank >= planRankOf("PRO");
@@ -536,8 +536,8 @@ export const getChartData = async(id : string, linkId : string, requestedDays ?:
         }),
     ]);
 
-    // Identifiers are quoted: Prisma creates camelCase tables/columns, and
-    // unquoted SQL folds to lowercase (table "scan" does not exist).
+    
+    
     const dailyStats = await prisma.$queryRaw<DailyStats[]>`
             SELECT
                 DATE(s."scannedAt") AS day,

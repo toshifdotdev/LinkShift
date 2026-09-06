@@ -3,13 +3,7 @@ import { Check, Circle, Crop, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-/**
- * Logo crop step.
- * The image is contained in a fixed box; the user drags the image behind a
- * fixed square mask (position) and scales it with a slider (zoom). Apply
- * renders the masked region from the ORIGINAL bitmap via canvas as a
- * 512×512 PNG and optionally clips it to a circle (transparent corners).
- */
+
 function LogoCrop({
   src,
   onApply,
@@ -19,7 +13,7 @@ function LogoCrop({
   onApply: (file: File) => void;
   onCancel: () => void;
 }) {
-  const [pos, setPos] = useState({ x: 0, y: 0 }); // image-point offset from box center in 0..1 units
+  const [pos, setPos] = useState({ x: 0, y: 0 }); 
   const [shape, setShape] = useState<"square" | "circle">("square");
   const [zoom, setZoom] = useState(1);
   const [error, setError] = useState<string | null>(null);
@@ -27,20 +21,20 @@ function LogoCrop({
   const imgRef = useRef<HTMLImageElement>(null);
   const dragRef = useRef<{ startX: number; startY: number; posX: number; posY: number } | null>(null);
 
-  const BOX = 288; // display box
-  const CROP = 208; // crop square
+  const BOX = 288; 
+  const CROP = 208; 
 
   const onImgLoad = useCallback(() => {
     const img = imgRef.current;
     if (img) setImgSize({ w: img.naturalWidth, h: img.naturalHeight });
   }, []);
 
-  /* displayed image size (contain) */
+  
   const scale = Math.min(BOX / (imgSize.w || 1), BOX / (imgSize.h || 1)) * zoom;
   const dispW = (imgSize.w || 1) * scale;
   const dispH = (imgSize.h || 1) * scale;
 
-  /* clamp pos so the crop square stays over the image */
+  
   const maxX = Math.max(0, (dispW - CROP) / 2) / (dispW || 1);
   const maxY = Math.max(0, (dispH - CROP) / 2) / (dispH || 1);
   const cx = Math.min(maxX, Math.max(-maxX, pos.x));
@@ -59,7 +53,7 @@ function LogoCrop({
 
   async function apply() {
     const img = imgRef.current;
-    /* Apply stays disabled until the source image has loaded */
+    
     if (!img || !imgSize.w || !imgSize.h) return;
 
     const out = 512;
@@ -68,14 +62,7 @@ function LogoCrop({
     canvas.height = out;
     const ctx = canvas.getContext("2d")!;
 
-    /* ONE source of truth — the exact source square under the crop window,
-       derived from the SAME geometry as the preview transform:
-       img element top-left = (BOX-dispW)/2 + cx*dispW (x), (BOX-dispH)/2 + cy*dispH (y),
-       crop square top-left = (BOX-CROP)/2 (both axes), src px per display px = 1/scale.
-       The crop origin in image pixels is therefore:
-         ((BOX-CROP)/2 - (BOX-dispW)/2 - cx*dispW) / scale = (dispW-CROP)/(2*scale) - cx*natW
-       (dispW/scale = natW). This is what the preview shows, so the baked
-       asset and the saved QR always match the crop selection. */
+    
     const srcSize = CROP / scale;
     const sx0 = (dispW - CROP) / (2 * scale) - cx * (img.naturalWidth || 0);
     const sy0 = (dispH - CROP) / (2 * scale) - cy * (img.naturalHeight || 0);
@@ -84,8 +71,7 @@ function LogoCrop({
 
     ctx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, out, out);
 
-    /* Circle shape = inscribe a circle in the exported square and drop the
-       corners (alpha=0) — a baked asset, so preview and saved QR agree. */
+    
     if (shape === "circle") {
       ctx.globalCompositeOperation = "destination-in";
       ctx.beginPath();
@@ -136,7 +122,7 @@ function LogoCrop({
             transform: `translate(calc(-50% + ${cx * dispW}px), calc(-50% + ${cy * dispH}px))`,
           }}
         />
-        {/* mask + crop shape */}
+        
         {shape === "circle" ? (
           <div
             className="pointer-events-none absolute rounded-full border-2 border-brand shadow-[0_0_0_9999px_rgba(0,0,0,0.55)]"

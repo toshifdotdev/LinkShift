@@ -18,7 +18,7 @@ function Hero() {
 
   return (
     <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
-      {/* quiet ink texture */}
+      
       <div
         aria-hidden="true"
         className="dot-grid pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,black_30%,transparent_100%)]"
@@ -31,7 +31,7 @@ function Hero() {
       <Container className="relative">
         <div className="grid items-center gap-14 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10 xl:gap-12">
           <div>
-            {/* 01 · eyebrow */}
+            
             <motion.p
               {...fade(0)}
               className="flex items-center gap-3 font-mono text-[11px] font-medium tracking-[0.18em] text-brand uppercase"
@@ -39,10 +39,7 @@ function Hero() {
               Links · QR · Analytics
             </motion.p>
 
-            {/* 03–04 · headline reveal via clip-path wipe.
-               No overflow:hidden, no masks, no padding tricks: the resting
-               clip-path insets are NEGATIVE, so glyphs can never be clipped
-               once revealed — descenders, italics and punctuation included. */}
+            
             <h1 className="mt-5">
               <motion.span
                 className="font-display block text-[clamp(2.6rem,6.5vw,4.5rem)] leading-[1.06] font-medium tracking-[-0.02em]"
@@ -70,7 +67,7 @@ function Hero() {
               </motion.span>
             </h1>
 
-            {/* ember statement — sibling of h1, shares no clipping context */}
+            
             <motion.p {...fade(0.4)} className="mt-3 flex items-center gap-4">
               <motion.span
                 aria-hidden="true"
@@ -84,7 +81,7 @@ function Hero() {
               </span>
             </motion.p>
 
-            {/* 05 · the transformation pipeline */}
+            
             <motion.div
               {...fade(0.54)}
               className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1"
@@ -103,7 +100,7 @@ function Hero() {
               ))}
             </motion.div>
 
-            {/* 06 · supporting copy */}
+            
             <motion.p
               {...fade(0.64)}
               className="text-pretty mt-6 max-w-md text-base leading-relaxed text-fg-secondary sm:text-lg"
@@ -113,7 +110,7 @@ function Hero() {
               comes from.
             </motion.p>
 
-            {/* 07 · CTAs */}
+            
             <motion.div {...fade(0.72)} className="mt-8 flex flex-wrap items-center gap-3">
               <Link to="/register">
                 <Button size="lg">
@@ -130,7 +127,7 @@ function Hero() {
             </motion.div>
           </div>
 
-          {/* 08 · the shift, live */}
+          
           <motion.div
             id="demo"
             className="scroll-mt-28"

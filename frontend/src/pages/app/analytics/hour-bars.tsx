@@ -9,12 +9,7 @@ interface HourPoint {
 
 const fmtHour = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
-/**
- * Hour-of-day column chart (24 slots, UTC buckets). Bar intensity encodes
- * relative volume — the peak hour burns full ember. Columns grow in with a
- * staggered ls-col-grow entrance; the layer is keyed by dataset so a
- * range/link change replays it once. Reduced motion snaps (CSS).
- */
+
 function HourBars({
   data,
   loading,
@@ -70,7 +65,7 @@ function HourBars({
 
   return (
     <div className="relative">
-      {/* hover guide + readout */}
+      
       {hover !== null && (
         <>
           <span
@@ -90,7 +85,7 @@ function HourBars({
         </>
       )}
 
-      {/* columns — intensity encodes volume; keyed so dataset change replays entrance */}
+      
       <div key={itemsKey} className={cn("pointer-events-none flex items-end gap-[3px]", heightClass)}>
         {slots.map((s, i) =>
           s.count === 0 ? (
@@ -110,7 +105,7 @@ function HourBars({
         )}
       </div>
 
-      {/* invisible hover columns (keyboard focusable) */}
+      
       <div className={cn("absolute inset-x-0 top-0 flex", heightClass)}>
         {slots.map((s) => (
           <button

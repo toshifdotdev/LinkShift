@@ -2,12 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { Logo } from "@/components/brand/logo";
 
-/**
- * Shared authentication shell. The "ink field" with a quiet dot-grid
- * texture, a single framed card, and editorial type. The "Mono Marquee"
- * kicker + Fraunces headline + quiet description + form + footer rhythm
- * is the same rhythm used on every auth page.
- */
+
 function AuthLayout({
   kicker,
   title,

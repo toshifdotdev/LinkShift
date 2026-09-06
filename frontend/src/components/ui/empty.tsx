@@ -3,12 +3,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { Lamp } from "./lamp";
 
-/*
- * The one consolidated empty/error treatment: a sunken well with a dashed
- * hairline and a single gradient hair across the top. Empty states speak
- * in the brand voice (Fraunces title); error states carry a destructive
- * lamp — never color alone.
- */
+
 
 interface EmptyStateProps extends HTMLAttributes<HTMLDivElement> {
   marquee?: string;

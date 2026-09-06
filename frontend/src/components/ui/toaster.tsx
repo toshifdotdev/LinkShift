@@ -24,7 +24,7 @@ interface ToastItem {
 interface ToastInput {
   title: string;
   description?: string;
-  /** Optional mono caption shown right-aligned, e.g. the short link or id. */
+  
   meta?: string;
   variant?: ToastVariant;
   duration?: number;

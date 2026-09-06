@@ -6,14 +6,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { PUBLIC_PATHS } from "./src/prerender/public-routes.ts";
 
-/**
- * Build-time sitemap generator.
- *
- * Emits dist/sitemap.xml with canonical https://linkshift.in URLs for every
- * public route. The URL list comes from the shared PUBLIC_PATHS module so the
- * sitemap and the prerendered static HTML (scripts/prerender.mjs) can never
- * drift apart. Skipped during the SSR prerender bundle build.
- */
+
 function sitemapPlugin(): Plugin {
   let outDir: string | null = null;
   return {

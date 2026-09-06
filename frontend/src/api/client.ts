@@ -4,7 +4,7 @@ const API_BASE_URL = import.meta.env.DEV
   ? "/api/v1"
   : (import.meta.env.VITE_API_URL ?? "/api/v1");
 
-/** Auth endpoints that must never trigger the refresh flow. */
+
 const AUTH_EXEMPT = ["/auth/login", "/auth/register", "/auth/refresh", "/auth/logout", "/auth/forgot-password", "/auth/reset-password"];
 
 export const UNAUTHORIZED_EVENT = "ls:unauthorized";
@@ -25,11 +25,7 @@ async function performRefresh(): Promise<boolean> {
   }
 }
 
-/* Single-flight refresh: when the access token expires, several API calls can
-   401 simultaneously. The backend rotates the refresh cookie on every refresh,
-   so parallel refresh calls would invalidate each other and log the user out.
-   Sharing one in-flight promise means concurrent 401s wait for a single
-   refresh and then all retry with the new token. */
+
 let refreshInFlight: Promise<boolean> | null = null;
 
 function requestRefresh(): Promise<boolean> {
@@ -41,7 +37,7 @@ function requestRefresh(): Promise<boolean> {
   return refreshInFlight;
 }
 
-/** Error carrying the real HTTP status from the backend. */
+
 export class ApiError extends Error {
   status: number;
 
@@ -58,9 +54,9 @@ interface RequestOptions {
   query?: Record<string, string | number | boolean | undefined | null>;
   signal?: AbortSignal;
   headers?: Record<string, string>;
-  /** Legacy option — overrides the stored token when provided. */
+  
   accessToken?: string;
-  /** Internal: marks a request already retried after token refresh. */
+  
   _retried?: boolean;
 }
 
@@ -80,7 +76,7 @@ async function apiFetch<T>(pathStr: string, options: RequestOptions = {}): Promi
 
   const token = accessToken ?? getAccessToken();
   const finalHeaders: Record<string, string> = { ...headers };
-  /* FormData sets its own multipart boundary — never override it */
+  
   const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
   if (body !== undefined && !isFormData) finalHeaders["Content-Type"] = "application/json";
   if (token) finalHeaders["Authorization"] = `Bearer ${token}`;
@@ -95,7 +91,7 @@ async function apiFetch<T>(pathStr: string, options: RequestOptions = {}): Promi
       body: isFormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
     });
   } catch {
-    // fetch only throws on network-level failures
+    
     throw new ApiError(0, "Network error: could not reach the server.");
   }
 

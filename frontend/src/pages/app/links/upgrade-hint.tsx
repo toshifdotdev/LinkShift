@@ -3,11 +3,7 @@ import { Link } from "react-router-dom";
 import { useSession } from "@/auth/session";
 import { cn } from "@/lib/utils";
 
-/**
- * Inline upgrade explanation for plan-gated capabilities.
- * Explains what the feature does → why it's unavailable → what unlocks it,
- * with a path to /pricing. Never a dead disabled control.
- */
+
 function UpgradeHint({
   feature,
   requirement,

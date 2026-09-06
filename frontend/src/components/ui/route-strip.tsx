@@ -1,22 +1,17 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * RouteStrip — the page header instrument. Replaces the repeated
- * PageHeader: `NN · NAME` kicker in the machine voice, a Fraunces thesis
- * title, an optional meta row of codes and lamps, and the page's primary
- * action on the right.
- */
+
 interface RouteStripProps extends HTMLAttributes<HTMLElement> {
-  /** Desk number, zero-padded: "01". */
+  
   index?: string;
-  /** Desk name in caps: "ROUTES". */
+  
   label: string;
   title: string;
   description?: string;
-  /** Codes and lamps describing the current context. */
+  
   meta?: ReactNode;
-  /** The page's single primary action. */
+  
   action?: ReactNode;
 }
 

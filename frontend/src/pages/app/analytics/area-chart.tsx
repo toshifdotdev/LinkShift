@@ -4,13 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { DailyPoint } from "@/types/api";
 
-/**
- * Primary time-series visualization — SVG area/line chart.
- * The area path uses a non-uniform viewBox scale (responsive), with
- * non-scaling stroke; the hover layer is HTML (percentage-positioned) so
- * tooltips never distort. Line draws in on data change; reduced motion
- * renders the final state directly.
- */
+
 function AreaChart({
   data,
   loading,
@@ -29,7 +23,7 @@ function AreaChart({
   const lineRef = useRef<SVGPathElement>(null);
   const areaRef = useRef<SVGPathElement>(null);
 
-  /* draw-in: dash the line at full length, release it; area fades up */
+  
   useEffect(() => {
     const line = lineRef.current;
     const area = areaRef.current;
@@ -68,8 +62,7 @@ function AreaChart({
 
   const total = data.reduce((s, d) => s + d.clicks, 0);
   if (total === 0 || data.length === 0) {
-    /* empty state keeps the chart structure visible so the user
-       understands what will appear once data exists */
+    
     return (
       <div
         className={cn(
@@ -104,7 +97,7 @@ function AreaChart({
 
   return (
     <div className="relative">
-      {/* hover guide + readout */}
+      
       {hover !== null && data[hover] && (
         <>
           <span
@@ -124,7 +117,7 @@ function AreaChart({
         </>
       )}
 
-      {/* invisible hover columns (keyboard focusable) */}
+      
       <div className={cn("absolute inset-0 flex", heightClass)}>
         {data.map((d, i) => (
           <button
@@ -140,7 +133,7 @@ function AreaChart({
         ))}
       </div>
 
-      {/* area + line — non-scaling stroke keeps the line crisp */}
+      
       <svg
         viewBox={`0 0 ${W} ${H}`}
         preserveAspectRatio="none"

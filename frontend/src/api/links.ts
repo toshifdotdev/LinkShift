@@ -43,13 +43,12 @@ export interface UpdateLinkPayload {
   isActive?: boolean;
   slug?: string;
   domainId?: string;
-  /** Backend always writes expiresAt on update — the current value must be
-      re-sent or it is cleared. null explicitly removes the expiry. */
+  
   expiresAt: string | null;
-  /** string = set new password, null = remove password, omit = unchanged. */
+  
   password?: string | null;
   deepLink?: boolean;
-  /** null clears the stored value, omit leaves it unchanged. */
+  
   appDeepLink?: boolean;
   appScheme?: string | null;
   androidPackage?: string | null;
@@ -77,7 +76,7 @@ export function getLink(id: string) {
 }
 
 export function createLink(payload: CreateLinkPayload) {
-  /* backend returns { message, data: createdLink } (201) */
+  
   return apiFetch<{ success?: true; message: string; data: LinkItem }>("/links", {
     method: "POST",
     body: payload,

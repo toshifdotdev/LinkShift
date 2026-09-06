@@ -1,17 +1,4 @@
-/**
- * Server-rendered unlock page for password-protected links.
- *
- * Served by the redirect route itself (401 + HTML for browsers, 401 + JSON
- * for API clients), so a visitor who lands on a protected short link can
- * actually enter the password. The form POSTs to the wildcard unlock route
- * with the visitor's original tail preserved:
- *
- *     GET  /abc/products/123?ref=x   -> this page
- *     POST /abc/unlock/products/123?ref=x  { password }
- *
- * The tail survives because it is carried in the form action — nothing is
- * stored server-side before authentication.
- */
+
 
 const escapeHtml = (s: string): string =>
     s

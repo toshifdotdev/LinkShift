@@ -35,10 +35,6 @@ enum AuthProvider {
 enum SubscriptionStatus {
     ACTIVE
 
-    // DEPRECATED - transitional only.
-    // Replaced by AUTHORIZATION_PENDING / PAYMENT_RETRY (Wave 0).
-    // Kept so legacy code compiles until billing waves 1-3 stop writing it.
-    // Postgres cannot drop enum labels; do NOT write this value from new code.
     PENDING
 
     AUTHORIZATION_PENDING
@@ -72,9 +68,6 @@ enum PaymentStatus {
   REFUNDED
 }
 
-// NULL on legacy rows ≡ SUBSCRIPTION (zero-backfill convention).
-// PRORATION rows are provisional: subscription.charged / payment.captured
-// adoption paths flip them to SUBSCRIPTION when a cycle charge claims them.
 enum PaymentCategory {
   SUBSCRIPTION
   PRORATION
@@ -188,11 +181,8 @@ model Link {
   utmTerm     String?
   utmContent  String?
 
-  // Pro-only: forward the visitor's appended path + query to the destination.
   deepLink    Boolean @default(false)
 
-  // Pro-only: mobile app deep linking — open the configured app on mobile,
-  // fall back to the web destination otherwise. Per-link app configuration.
   appDeepLink     Boolean  @default(false)
   appScheme       String?
   androidPackage  String?
@@ -252,7 +242,7 @@ model Scan {
   os         String?
   country    String?
   city       String?
-  ipAddress  String?  // stored per SCAN_IP_PRIVACY (default: /24-/48 truncated)
+  ipAddress  String?
   referrer   String?
 
   utmSource   String?
@@ -387,9 +377,6 @@ model Payment {
   @@index([subscriptionId])
 }
 
-// Cumulative refund ledger for a Payment. providerRefundId is the idempotency
-// anchor: duplicate deliveries and stale-claim re-entry can never double-count.
-// Payment.status flips to REFUNDED when SUM(refunds.amount) >= payment.amount.
 model Refund {
   id               String          @id @default(cuid())
   paymentId        String
@@ -403,13 +390,9 @@ model Refund {
   @@index([paymentId])
 }
 
-// Wave 4 reconciliation: one row per pass. The partial unique index on the
-// constant (1) WHERE status='running' is a STRUCTURAL single-runner lock across
-// all machines; stale 'running' rows older than the lease TTL are reclaimed by
-// the next trigger (crash recovery). Doubles as run audit/stats.
 model ReconciliationRun {
   id          String    @id @default(cuid())
-  status      String    // 'running' | 'completed' | 'failed'
+  status      String
   triggeredBy String    @default("external")
   stats       Json?
   startedAt   DateTime  @default(now()) @db.Timestamptz(3)

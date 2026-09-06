@@ -7,9 +7,7 @@ import { SecuritySection } from "./security-section";
 import { DangerZoneSection } from "./delete-account-dialog";
 import { AppearanceSection } from "./appearance-section";
 
-/* The settings rail. On desktop a left-rail list of section links. On
-   mobile a horizontal scroll of section links. The active link carries
-   the same Ember Stripe used everywhere else. */
+
 function SettingsRail({
   active,
   onChange,

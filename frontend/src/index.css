@@ -1,19 +1,15 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-/* ============================================================
-   ROUTE OFFICE — LinkShift design tokens (evolves Ink & Ember)
-   Everything is a route: codes (mono), lamps (status), rails
-   (live hairlines). Ember stays the only fill color.
-   ============================================================ */
+
 
 @theme inline {
-  /* Typography */
+  
   --font-sans: "Archivo", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-display: "Fraunces", ui-serif, Georgia, serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Surfaces */
+  
   --color-background: var(--background);
   --color-surface: var(--surface);
   --color-elevated: var(--elevated);
@@ -23,24 +19,24 @@
   --color-skeleton: var(--skeleton);
   --color-chart-track: var(--chart-track);
 
-  /* Foregrounds */
+  
   --color-foreground: var(--foreground);
   --color-fg-secondary: var(--fg-secondary);
   --color-fg-muted: var(--fg-muted);
 
-  /* Borders */
+  
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-border-subtle: var(--border-subtle);
   --color-border-ember: var(--border-ember);
 
-  /* Brand */
+  
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-brand-soft: var(--brand-soft);
   --color-brand-ink: var(--brand-ink);
 
-  /* Semantic aliases (shadcn-compatible, kept for existing pages) */
+  
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
@@ -65,60 +61,60 @@
   --color-ring: var(--ring);
   --color-dot: var(--dot);
 
-  /* Status lamps — soft tonal backgrounds for badges/banners */
+  
   --color-success-soft: var(--success-soft);
   --color-warning-soft: var(--warning-soft);
   --color-destructive-soft: var(--destructive-soft);
   --color-info-soft: var(--info-soft);
 
-  /* Themed elevation — the only shadow scale the app uses */
+  
   --shadow-lift: var(--shadow-lift);
 
-  /* Radii — scale */
-  --radius-xs: 3px;   /* chips, status dots */
-  --radius-sm: 4px;   /* tooltips */
-  --radius-md: 6px;   /* buttons, inputs */
-  --radius-lg: 8px;   /* cards, dialogs */
-  --radius-xl: 12px;  /* hero surfaces, signature plates */
-  --radius-2xl: 18px; /* QR frame, large hero */
+  
+  --radius-xs: 3px;   
+  --radius-sm: 4px;   
+  --radius-md: 6px;   
+  --radius-lg: 8px;   
+  --radius-xl: 12px;  
+  --radius-2xl: 18px; 
 }
 
 :root {
   color-scheme: dark;
 
-  /* Surfaces — warm carbon ladder (canvas → plate) */
-  --background: #141210;   /* Carbon — page canvas */
-  --surface: #1a1713;      /* Char — card / plate */
-  --elevated: #201d18;     /* nested inside a plate */
-  --raised: #27231d;       /* input fields, popovers */
-  --overlay: #0c0a08;      /* scrim behind modals */
-  --sunken: #0f0d0b;       /* empty-state wells */
-  --skeleton: #27231d;     /* loading shapes */
+  
+  --background: #141210;   
+  --surface: #1a1713;      
+  --elevated: #201d18;     
+  --raised: #27231d;       
+  --overlay: #0c0a08;      
+  --sunken: #0f0d0b;       
+  --skeleton: #27231d;     
 
-  /* Text — Bone ink on carbon */
+  
   --foreground: #f1ece3;
   --fg-secondary: #9c9284;
   --fg-muted: #8a8172;
 
-  /* Lines — warm tonal scale */
+  
   --border: #2a251f;
   --border-strong: #3d372e;
   --border-subtle: #201c17;
   --border-ember: rgba(232, 89, 12, 0.35);
 
-  /* Ember — the only fill color */
+  
   --brand: #e8590c;
   --brand-hover: #f56d1e;
   --brand-soft: rgba(232, 89, 12, 0.10);
   --brand-ink: #f56d1e;
 
-  /* Semantic aliases (lamps: status is color + word, never color alone) */
+  
   --card: #1a1713;
   --card-foreground: #f1ece3;
   --popover: #201d18;
   --popover-foreground: #f1ece3;
   --primary: #e8590c;
-  --primary-foreground: #141210; /* ink on ember — construction-sign language */
+  --primary-foreground: #141210; 
   --secondary: #27231d;
   --secondary-foreground: #f1ece3;
   --muted: #201d18;
@@ -136,24 +132,24 @@
   --input: #2a251f;
   --ring: #f56d1e;
 
-  /* Lamp softs — tonal backgrounds for badges/banners */
+  
   --success-soft: rgba(63, 191, 133, 0.10);
   --warning-soft: rgba(224, 168, 60, 0.10);
   --destructive-soft: rgba(229, 72, 77, 0.10);
   --info-soft: rgba(96, 165, 250, 0.10);
 
-  /* Texture */
+  
   --dot: rgba(241, 236, 227, 0.10);
   --shadow-color: 0 0% 0%;
 
-  /* Themed elevation */
+  
   --shadow-lift: 0 2px 6px hsl(0 0% 0% / 0.35), 0 16px 40px -16px hsl(0 0% 0% / 0.6);
 
-  /* Interactive raised-surface states */
+  
   --raised-hover: #2e2922;
   --raised-active: #2a251f;
 
-  /* Data-viz */
+  
   --chart-track: #2a251f;
   --chart-1: #e8590c;
   --chart-2: #f1ece3;
@@ -164,43 +160,37 @@
   --chart-center: #ffffff;
 }
 
-/* ============================================================
-   PAPER OFFICE — the light scheme.
-   A clean bright white canvas: plates stay white and earn their
-   edges from hairlines and themed elevation, never from gray or
-   cream tints. Ink and lines are neutral; ember is deepened for
-   AA contrast on white.
-   ============================================================ */
+
 :root[data-theme="light"] {
   color-scheme: light;
 
-  /* Surfaces — white canvas; hierarchy comes from lines and lift */
-  --background: #ffffff;   /* Paper — page canvas */
-  --surface: #ffffff;      /* Sheet — card / plate */
-  --elevated: #f6f6f6;     /* nested panels, menus, dialogs */
-  --raised: #ffffff;       /* input fields, popovers, tooltips */
-  --overlay: #171717;      /* scrim behind modals */
-  --sunken: #f2f2f2;       /* empty-state wells */
-  --skeleton: #e9e9e9;     /* loading shapes — must read on white */
+  
+  --background: #ffffff;   
+  --surface: #ffffff;      
+  --elevated: #f6f6f6;     
+  --raised: #ffffff;       
+  --overlay: #171717;      
+  --sunken: #f2f2f2;       
+  --skeleton: #e9e9e9;     
 
-  /* Text — neutral ink */
+  
   --foreground: #171717;
   --fg-secondary: #525252;
   --fg-muted: #737373;
 
-  /* Lines — neutral hairlines */
+  
   --border: #e5e5e5;
   --border-strong: #d4d4d4;
   --border-subtle: #efefef;
   --border-ember: rgba(194, 65, 12, 0.40);
 
-  /* Ember — deepened for contrast on white */
+  
   --brand: #c2410c;
   --brand-hover: #a33708;
   --brand-soft: rgba(194, 65, 12, 0.07);
   --brand-ink: #c2410c;
 
-  /* Semantic aliases (lamps: status is color + word, never color alone) */
+  
   --card: #ffffff;
   --card-foreground: #171717;
   --popover: #ffffff;
@@ -224,24 +214,24 @@
   --input: #d4d4d4;
   --ring: #c2410c;
 
-  /* Lamp softs — tonal backgrounds for badges/banners */
+  
   --success-soft: rgba(4, 120, 87, 0.08);
   --warning-soft: rgba(180, 83, 9, 0.08);
   --destructive-soft: rgba(220, 38, 38, 0.07);
   --info-soft: rgba(37, 99, 235, 0.08);
 
-  /* Texture */
+  
   --dot: rgba(23, 23, 23, 0.07);
   --shadow-color: 0 0% 10%;
 
-  /* Themed elevation — tight neutral, never dark-mode shadows */
+  
   --shadow-lift: 0 2px 6px hsl(0 0% 10% / 0.06), 0 16px 40px -18px hsl(0 0% 10% / 0.16);
 
-  /* Interactive raised-surface states */
+  
   --raised-hover: #f2f2f2;
   --raised-active: #ebebeb;
 
-  /* Data-viz */
+  
   --chart-track: #e8e8e8;
   --chart-1: #c2410c;
   --chart-2: #171717;
@@ -280,7 +270,7 @@
     outline-offset: 2px;
   }
 
-  /* Thin, quiet scrollbars */
+  
   * {
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
@@ -313,7 +303,7 @@
 }
 
 @layer utilities {
-  /* Editorial display type */
+  
   .text-balance {
     text-wrap: balance;
   }
@@ -321,7 +311,7 @@
     text-wrap: pretty;
   }
 
-  /* Faint dot grid on dark ink (kept for legacy page backgrounds) */
+  
   .dot-grid {
     background-color: var(--background);
     background-image: radial-gradient(var(--dot) 1px, transparent 1px);
@@ -329,7 +319,7 @@
     background-position: -11px -11px;
   }
 
-  /* Hairline column rules — editorial grid texture */
+  
   .rule-lines {
     background-image: linear-gradient(to right, var(--border) 1px, transparent 1px);
     background-size: calc(100% / 6) 100%;
@@ -339,16 +329,14 @@
     background-image: linear-gradient(to bottom, transparent, var(--border-strong), transparent);
   }
 
-  /* ----- LinkShift signature utilities ----- */
+  
 
-  /* The Plate: bordered rounded surface with one hairline ember rail. The
-     default LinkShift card. */
+  
   .ls-plate {
     @apply relative rounded-lg border border-border bg-surface;
   }
 
-  /* The Mono Marquee: tiny mono-caps editorial label, used at the top of
-     almost every card. The ember hairline is the divider. */
+  
   .ls-marquee {
     @apply flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-fg-muted;
   }
@@ -357,12 +345,12 @@
     @apply h-px w-5 bg-brand/60;
   }
 
-  /* The Ember Stripe: a 2px ember hairline at the top of an active surface. */
+  
   .ls-stripe {
     @apply pointer-events-none absolute inset-x-0 top-0 h-0.5 bg-brand;
   }
 
-  /* Animated ember hairline draw — used on success moments. */
+  
   .ls-stripe-draw {
     background: linear-gradient(to right, #e8590c 0%, #e8590c 100%);
     background-size: 0% 100%;
@@ -377,7 +365,7 @@
     to   { background-size: 100% 100%; }
   }
 
-  /* Press-down feedback — used on primary buttons. */
+  
   .ls-pressable {
     transition: transform 0.12s cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -385,8 +373,7 @@
     transform: translateY(0.5px);
   }
 
-  /* Slow skeleton pulse — replaces the Tailwind `animate-pulse` for content
-     skeletons so they read as the same component across the app. */
+  
   .ls-skeleton {
     @apply rounded bg-skeleton;
     animation: ls-pulse 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -396,7 +383,7 @@
     50%      { opacity: 0.85; }
   }
 
-  /* Skeleton shimmer (KPI, chart). A 1px ember hairline sweeps L→R. */
+  
   .ls-skeleton-shimmer {
     position: relative;
     overflow: hidden;
@@ -419,8 +406,7 @@
     100% { transform: translateX(100%); }
   }
 
-  /* The Quiet Reveal: a 6px rise + fade for cards and modals. Used with
-     FadeIn. Honors reduced motion via @media below. */
+  
   .ls-reveal {
     animation: ls-reveal 240ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
@@ -429,7 +415,7 @@
     to   { opacity: 1; transform: translateY(0); }
   }
 
-  /* Subtle attention ping for the live status indicator. */
+  
   .ls-ping {
     animation: ls-ping 1.6s cubic-bezier(0, 0, 0.2, 1) infinite;
   }
@@ -439,9 +425,7 @@
     100% { transform: scale(2.5); opacity: 0; }
   }
 
-  /* Chart entrances: `from`-only keyframes animate each bar/segment from
-     zero to its own inline value, so one animation serves every datum.
-     Lists are keyed by dataset so a range/link change replays the sweep. */
+  
   .ls-bar-grow {
     animation: ls-bar-grow 500ms cubic-bezier(0.22, 1, 0.36, 1);
   }
@@ -482,13 +466,7 @@
   }
 }
 
-/* ============================================================
-   LinkShift button interaction — the shift rule + spine.
-   SPINE (static identity): a 3px ember edge inset at the left,
-   clipped by the button radius — visible before any interaction.
-   RULE (hover): a hairline rule draws along the lower edge
-   (origin left) and collapses on press. Text never moves.
-   ============================================================ */
+
 .ls-btn::before {
   content: "";
   position: absolute;
@@ -545,7 +523,7 @@
   }
 }
 
-/* Shared micro-interaction: hairline ember rule draws under links */
+
 .nav-rule {
   position: relative;
 }
@@ -568,7 +546,7 @@
   transform: scaleX(1);
 }
 
-/* Ember signal riding the demo's transformation rail */
+
 @keyframes rail-pulse {
   0% {
     top: -8%;

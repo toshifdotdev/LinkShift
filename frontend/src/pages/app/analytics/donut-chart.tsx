@@ -14,12 +14,7 @@ interface DonutItem {
   count: number;
 }
 
-/**
- * Ring visualization for small categorical sets (devices).
- * Segments are stroke-dasharray arcs that sweep in via ls-donut-sweep;
- * the SVG is keyed by dataset so a range/link change replays it.
- * Legend carries dot + label + count + %. Reduced motion snaps (CSS).
- */
+
 function DonutChart({
   title,
   items,
@@ -56,7 +51,7 @@ function DonutChart({
         <p className="px-5 py-8 text-center text-xs text-fg-muted">{emptyText}</p>
       ) : (
         <div className="flex items-center gap-6 px-5 py-5">
-          {/* ring */}
+          
           <svg
             key={itemsKey}
             width={size}
@@ -69,7 +64,7 @@ function DonutChart({
             <circle cx="60" cy="60" r="48" fill="none" strokeWidth="16" style={{ stroke: "var(--chart-track)" }} />
             {visible.map((item, i) => {
               const fraction = item.count / total;
-              /* dash lengths on a 2π·48 circumference */
+              
               const c = 2 * Math.PI * 48;
               const prev = visible.slice(0, i).reduce((s, v) => s + v.count, 0);
               const dash = `${(fraction * c).toFixed(2)} ${(c - fraction * c).toFixed(2)}`;
@@ -89,7 +84,7 @@ function DonutChart({
                 />
               );
             })}
-            {/* center readout */}
+            
             <text
               x="60"
               y="56"
@@ -106,7 +101,7 @@ function DonutChart({
             </text>
           </svg>
 
-          {/* legend */}
+          
           <ul className="min-w-0 flex-1 space-y-2">
             {visible.map((item, i) => (
               <li key={item.label} className="flex items-center gap-2.5 text-[13px]">

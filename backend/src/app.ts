@@ -22,22 +22,12 @@ import "./features/auth/google.strategy";
 
 export const app = express();
 
-// Trust proxy is deployment-specific: 0/unset = no proxy (local dev, req.ip is
-// the socket address); N = number of trusted reverse-proxy hops in front of this
-// process (e.g. 1 for a single nginx/PaaS LB, 2 for Cloudflare + nginx).
-// NEVER use `true` — it trusts client-supplied X-Forwarded-For entries and lets
-// callers forge their IP for rate-limiting and GeoIP.
+
 const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
 if (Number.isFinite(trustProxyHops) && trustProxyHops > 0) {
     app.set('trust proxy', trustProxyHops);
 }
 
-// Cookie parsing and passport MUST be registered before any router — Express
-// runs middleware in registration order, and mounting these in server.ts
-// (after app.ts already attached every router) left them at the END of the
-// chain where they never executed. req.cookies stayed undefined and every
-// /auth/refresh & /auth/logout crashed with a TypeError -> generic 500,
-// silently killing the refresh-token flow.
 app.use(cookieParser());
 app.use(passport.initialize());
 
@@ -57,13 +47,12 @@ app.post(
 );
 
 app.use(express.json());
-/* Native HTML forms (the password-protected link unlock page) post
-   urlencoded bodies. */
+
 app.use(express.urlencoded({ extended: false }));
 
 app.get("/health", async (_, res) => {
-    // Dependency-aware health: 200 only when critical deps respond. Redis is
-    // reported but does not fail the check (features degrade without it).
+    
+    
     const checks: Record<string, string> = {};
 
     try {
@@ -98,10 +87,7 @@ app.use("/api/v1/internal", internalRouter);
 app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/support", supportRouter);
 
-// Public short links: canonical <domain>/<shortId>.
-// Mounted LAST so every /api/* router (and /health, /favicon.ico above)
-// takes precedence; the 7-char shortId validation in redirect.validation
-// prevents this root mount from capturing anything else.
+
 app.use("/",redirectRouter);
 
 app.use((req : Request, res : Response, next : NextFunction) => {

@@ -3,13 +3,10 @@ import { useReducedMotion } from "framer-motion";
 
 const ALPHABET = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ0123456789";
 
-/**
- * Resolves `text` left-to-right with a brief character scramble —
- * the LinkShift "slug materialising" motif. Purely presentational.
- */
+
 function useScramble(text: string, active: boolean, duration = 550): string {
   const reduce = useReducedMotion();
-  /* Holds the latest scrambled frame; null means "not animating". */
+  
   const [frame, setFrame] = useState<string | null>(null);
 
   useEffect(() => {

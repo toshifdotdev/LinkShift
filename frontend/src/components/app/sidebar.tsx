@@ -35,7 +35,7 @@ function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
         >
           {({ isActive }) => (
             <>
-              {/* The Ember Rail: a 1px left hairline that only the active item shows */}
+              
               <span
                 aria-hidden="true"
                 className={cn(

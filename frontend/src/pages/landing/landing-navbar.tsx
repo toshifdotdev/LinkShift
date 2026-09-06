@@ -14,7 +14,7 @@ const links = [
   { label: "Docs", href: "/docs", id: null },
 ];
 
-/* Scroll-spy via IntersectionObserver — no scroll listeners, no per-frame work */
+
 function useActiveSection(): string | null {
   const [active, setActive] = useState<string | null>(null);
 
@@ -70,7 +70,7 @@ function LandingNavbar() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
         <Logo />
 
-        {/* quiet index nav: ember position dot marks the live section */}
+        
         <nav className="hidden items-center gap-8 md:flex" aria-label="Primary">
           {links.map((link) => {
             const isActive = link.id !== null && activeSection === link.id;

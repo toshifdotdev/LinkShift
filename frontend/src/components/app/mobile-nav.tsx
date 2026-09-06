@@ -35,7 +35,7 @@ function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
             className="fixed inset-y-0 left-0 z-50 w-72 border-r border-border bg-surface lg:hidden"
             aria-label="Navigation"
           >
-            {/* The Mono Marquee: a 1px ember hairline at the very top */}
+            
             <span aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-brand/60" />
             <SidebarContent
               onNavigate={onClose}

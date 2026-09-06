@@ -7,8 +7,8 @@ import { linkCacheKey, deleteCache } from "../../utils/cache";
 import { log } from "../../utils/logger";
 import { getUserPlan, getSubscriptionService } from "../billing/billing.service";
 
-// Non-terminal local states imply a provider mandate that could still charge.
-// Terminal states (CANCELLED/COMPLETED/EXPIRED) are already dead at Razorpay.
+
+
 const LIVE_CANDIDATE_STATUSES = [
     "AUTHORIZATION_PENDING",
     "PAYMENT_RETRY",
@@ -17,13 +17,13 @@ const LIVE_CANDIDATE_STATUSES = [
     "PAUSED",
 ] as const;
 
-// ---------------------------------------------------------------------------
-// Account deletion — Option A (provider-first, abort-on-failure)
-//
-// NOTHING local is mutated until every live provider mandate has been
-// successfully cancelled. Any cancellation failure aborts with 502 and the
-// account remains fully intact and retryable.
-// ---------------------------------------------------------------------------
+
+
+
+
+
+
+
 
 async function cancelLiveProviderSubscriptions(userId: string, sdk: typeof razorpay): Promise<void> {
     const candidates = await prisma.subscription.findMany({
@@ -45,7 +45,7 @@ async function cancelLiveProviderSubscriptions(userId: string, sdk: typeof razor
             const description = String(
                 (err as any)?.error?.description ?? (err as any)?.message ?? ""
             );
-            // Already terminal at the provider is success for our purposes.
+            
             if (!/already\s+cancelled|has been cancelled|expired/i.test(description)) {
                 failedProviderIds.push(providerId);
                 log.error("provider_cancel_failed", {
@@ -97,8 +97,8 @@ export const deleteMe = async (userId: string, password: string | undefined, con
         throw new AppError("Account not found", 404);
     }
 
-    // Server-side confirmation — the user must type their exact account email.
-    // Case-insensitive to match how registration stores the value as-typed.
+    
+    
     if (!confirmation.trim() || confirmation.trim().toLowerCase() !== user.email.trim().toLowerCase()) {
         throw new AppError("Confirmation email does not match your account email.", 400);
     }
@@ -113,14 +113,14 @@ export const deleteMe = async (userId: string, password: string | undefined, con
         }
     }
 
-    // Provider-first: if ANY live mandate cannot be cancelled, abort before a
-    // single row is touched. The user can retry after fixing payment issues.
+    
+    
     await cancelLiveProviderSubscriptions(userId, sdk);
 
-    // Cloudinary assets to remove post-commit (best-effort, non-blocking).
+    
     const assetIds = await collectCloudinaryAssets(userId);
 
-    // Cache keys to clear post-commit (host-aware, per Wave M1).
+    
     const linksForCache = await prisma.link.findMany({
         where: { userId },
         select: { shortId: true, domain: { select: { host: true } } },
@@ -131,21 +131,21 @@ export const deleteMe = async (userId: string, password: string | undefined, con
     });
 
     await prisma.$transaction(async (tx) => {
-        // Link.userId FK is RESTRICT — links must go before the user.
+        
         await tx.link.deleteMany({ where: { userId } });
-        // Owned non-default domains: delete so the host can be re-registered by
-        // anyone later. The shared default domain has no owner and survives.
+        
+        
         await tx.domain.deleteMany({ where: { userId } });
         await tx.user.delete({ where: { id: userId } });
     });
 
-    // Post-commit cache invalidation (millisecond window; bounded residual).
+    
     await Promise.all([
         ...linksForCache.map(l => deleteCache(linkCacheKey(l.domain.host, l.shortId))),
         ...ownedDomains.map(d => deleteCache(`domain:${d.host}`)),
     ]).catch(() => {});
 
-    // Best-effort CDN cleanup AFTER commit — orphaned assets are harmless.
+    
     for (const publicId of assetIds) {
         try {
             await deleteImage(publicId);

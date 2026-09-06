@@ -13,7 +13,7 @@ export interface AppNavItem {
   label: string;
   to: string;
   icon: LucideIcon;
-  /** mono index numeral — LinkShift's editorial numbering system */
+  
   index: string;
 }
 

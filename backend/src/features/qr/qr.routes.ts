@@ -9,9 +9,9 @@ import { imageUpload } from "../../middleware/upload.middleware";
 
 const router = Router();
 
-// api/v1/qr  --> route start from this
-// NOTE: static segments (logo) must be registered BEFORE /:id, otherwise
-// multer requests are captured by the id route and fail body validation.
+
+
+
 router.post('/logo', authMiddleWare, imageUpload.single("image"), uploadQrLogoController);
 
 router.post('/:id', authMiddleWare, qrLimiter, validate(linkIdSchema, "params"), validate(createQrSchema, "body"), qrController);

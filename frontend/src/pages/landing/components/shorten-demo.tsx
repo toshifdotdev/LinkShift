@@ -27,15 +27,7 @@ function looksLikeUrl(value: string): boolean {
   return /^[a-z]+:\/\//i.test(v) || /^[\w-]+(\.[\w-]+)+/.test(v);
 }
 
-/**
- * Preview states.
- * idle      compact card: input + Shorten
- * shifting  transformation beat: region opens to its FINAL height while
- *           the connector draws and the panel fades in
- * expanded  rail sweeps, slug resolves, stats/signals/footer fade in —
- *           zero further layout change, so the sequence reads as one
- *           continuous transformation
- */
+
 type DemoState = "idle" | "shifting" | "expanded";
 
 interface DemoResult {
@@ -57,15 +49,10 @@ function ShortenDemo() {
   const [engaged, setEngaged] = useState(false);
   const [pendingShift, setPendingShift] = useState(false);
 
-  /* Mirror of `engaged` the self-typing timers read directly: a tick that was
-     already queued when the user's first keystroke landed must not fire its
-     setUrl afterwards and clobber the controlled input (e.g. swallow a
-     character typed right after "https://"). */
+  
   const engagedRef = useRef(false);
 
-  /* Every scheduled callback lives here — cleared on reset/unmount so
-     rapid clicks, mid-transition resets and unmounts can never leave
-     stale animation state behind. */
+  
   const timersRef = useRef<Set<number>>(new Set());
 
   const clearTimers = useCallback(() => {
@@ -114,17 +101,14 @@ function ShortenDemo() {
   }, [clearTimers]);
 
   const engage = useCallback(() => {
-    /* Kill the demo's scheduled writers synchronously — the effect cleanup
-       runs too late to stop a tick that fired between the keystroke and the
-       render, and that tick must never overwrite the user's value. */
+    
     engagedRef.current = true;
     clearTimers();
     setEngaged(true);
     setPendingShift(false);
   }, [clearTimers]);
 
-  /* Auto-demo: the URL types itself, then shifts. Any engagement cancels
-     it; under reduced motion it runs almost immediately. */
+  
   useEffect(() => {
     if (engaged) return;
 
@@ -207,7 +191,7 @@ function ShortenDemo() {
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-border bg-surface shadow-[0_32px_80px_-32px_rgba(0,0,0,0.9)]">
-      {/* window chrome */}
+      
       <div className="flex items-center justify-between border-b border-border px-5 py-3 sm:px-6">
         <div className="flex items-center gap-2" aria-hidden="true">
           <span className="size-2 rounded-full bg-border-strong" />
@@ -243,9 +227,7 @@ function ShortenDemo() {
               onFocus={engage}
               placeholder="Paste a long URL…"
               aria-invalid={!!error}
-              /* Ligatures off: JetBrains Mono joins "//" into one glyph, so a
-                 typed https:// visually reads as https:/ even though the value
-                 is correct. Every character must render on its own. */
+              
               className={`h-11 w-full rounded-md border bg-raised px-4 font-mono text-[13px] text-foreground caret-brand placeholder:text-fg-muted transition-colors hover:border-border-strong focus-visible:border-brand focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-ring/40 [font-variant-ligatures:none] ${
                 state === "shifting" ? "opacity-70" : ""
               } ${error ? "border-destructive" : "border-input"}`}
@@ -273,8 +255,7 @@ function ShortenDemo() {
           </p>
         )}
 
-        {/* shift connector — confined to the empty gap between input and
-            the expanding region */}
+        
         <div aria-hidden="true" className="pointer-events-none relative h-0">
           <AnimatePresence>
             {state === "shifting" && !reduce && (
@@ -290,9 +271,7 @@ function ShortenDemo() {
           </AnimatePresence>
         </div>
 
-        {/* ONE smooth height transition for the entire compact → expanded
-            move: the grid track opens once to the final height while the
-            panel fades in; everything afterwards happens in place. */}
+        
         <div
           className={`grid transition-[grid-template-rows] ease-out ${
             reduce ? "duration-0" : "duration-500"
@@ -308,10 +287,7 @@ function ShortenDemo() {
                 className="pt-4"
               >
                 <div className="relative rounded-md border border-border bg-elevated/60 p-4 pl-6">
-                  {/* THE EMBER RULE — own clipped track; reveals via a CSS
-                      class flip only when `expanded` (post-settle). During
-                      idle/shifting/expansion frames it is not visible, so
-                      it cannot bleed anywhere. */}
+                  
                   <span
                     aria-hidden="true"
                     className="absolute inset-y-3 left-2 w-px overflow-hidden bg-border"
@@ -360,8 +336,7 @@ function ShortenDemo() {
                   </div>
                 </div>
 
-                {/* reserved at final height from the first frame; revealed
-                    in place on `expanded` — no second layout jump */}
+                
                 <div
                     aria-hidden={!open || state !== "expanded"}
                     className={`transition-opacity duration-500 ${

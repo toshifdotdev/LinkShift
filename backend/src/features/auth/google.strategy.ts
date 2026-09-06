@@ -6,19 +6,11 @@ import { googleLogin } from "./auth.service";
 import { oauthStateStore } from "./oauthState";
 import { log } from "../../utils/logger";
 
-// The Google strategy is registered only when its configuration exists.
-// Constructing it eagerly with missing credentials used to crash every
-// import of the app (hermetic unit tests/CI never carry Google secrets).
-//
-// Semantics:
-// - credentials present  → strategy registered; behavior identical to before
-// - credentials missing,
-//   production           → fail fast at startup: a production deployment must
-//                          not boot with a silently disabled sign-in method
-// - credentials missing,
-//   dev/test/CI          → warn and skip registration; hitting /auth/google
-//                          then fails per-request with a clean redirect to
-//                          /login?error=google (handled by errorMiddleware)
+
+
+
+
+
 const googleConfigured = Boolean(
     config.googleClientId && config.googleClientSecret && config.googleCallbackUrl
 );
@@ -29,8 +21,7 @@ if (googleConfigured) {
             clientID : config.googleClientId!,
             clientSecret : config.googleClientSecret!,
             callbackURL : config.googleCallbackUrl!,
-            // Stateless CSRF state: passport's default stores need login sessions,
-            // which this flow runs without.
+       
             store : oauthStateStore,
         },
             async (accessToken : string, refreshToken : string, profile : Profile, done : VerifyCallback) => {

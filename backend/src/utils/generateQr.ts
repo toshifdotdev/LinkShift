@@ -50,12 +50,12 @@ export const generateQrImage = async (data: qrCodeData) => {
         height: 300,
         data: data.shortUrl,
         margin: data.margin,
-        // High error correction when a logo covers the center — keeps the
-        // code scannable despite occlusion.
+        
+        
         qrOptions: { errorCorrectionLevel: data.logoUrl ? "H" : "Q" },
-        // NOTE: the logo is NOT passed to the library — JSDOM cannot load
-        // images, so the logo silently vanished from the generated SVG.
-        // It is composited with sharp below, after rasterization.
+        
+        
+        
         dotsOptions: {
             color: data.foregroundColor,
             type: patternStyleMap[data.pattern]
@@ -90,15 +90,15 @@ export const generateQrImage = async (data: qrCodeData) => {
         .png()
         .toBuffer();
 
-    // Logo composite with sharp — mirrors the studio preview (30% of the
-    // code width, centered, on a clear rounded area of the background
-    // color, with ECC-H already applied above for scannability).
+    
+    
+    
     if (data.logoUrl) {
         try {
             const logoRes = await fetch(data.logoUrl);
             if (logoRes.ok) {
                 const logoBuf = Buffer.from(await logoRes.arrayBuffer());
-                const logoSize = Math.round(300 * 0.3); // 90px — mirrors imageSize 0.3
+                const logoSize = Math.round(300 * 0.3); 
                 const clearPad = Math.round(logoSize * 0.14);
                 const clearSize = logoSize + clearPad * 2;
                 const clearRect = Buffer.from(
@@ -119,8 +119,8 @@ export const generateQrImage = async (data: qrCodeData) => {
                     .toBuffer();
             }
         } catch (logoError) {
-            // A failed logo fetch must never break QR generation — the code
-            // is still fully functional without the logo.
+            
+            
             console.error("[qr] logo composite failed, generating without logo:", logoError instanceof Error ? logoError.message : logoError);
         }
     }

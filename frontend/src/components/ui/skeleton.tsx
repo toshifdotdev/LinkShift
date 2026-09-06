@@ -1,17 +1,13 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * Skeletons — one pulse for every loading shape, plus templates so pages
- * stop copy-pasting loading layouts. The ember shimmer marks instruments
- * (KPIs, charts); plain rows just pulse.
- */
+
 
 type SkeletonVariant = "block" | "row" | "kpi" | "chart";
 
 interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
   variant?: SkeletonVariant;
-  /** If true, an ember hairline sweeps L→R over the block. Default false. */
+  
   shimmer?: boolean;
 }
 

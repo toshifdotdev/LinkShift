@@ -3,9 +3,7 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  // Neon M-fix: fail fast during network blips instead of hanging on OS SYN
-  // retries, and reap idle sockets before Neon's server-side idle kill.
+  connectionString: process.env.DATABASE_URL,  
   max: Number(process.env.DATABASE_POOL_MAX ?? 10),
   connectionTimeoutMillis: Number(process.env.DB_CONNECT_TIMEOUT_MS ?? 10_000),
   idleTimeoutMillis: 30_000,
