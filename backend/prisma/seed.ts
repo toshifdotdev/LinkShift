@@ -90,9 +90,9 @@ const plans = [
 
 
 async function main() {
-    // The shared system domain must never be owned by an account: userId is
-    // cleared on every seed run so a row that earlier out-of-order creation
-    // turned into a user's custom domain is reclaimed as the shared default.
+    
+    
+    
     await prisma.domain.upsert({
         where : {
             host : "go.linkshift.in"

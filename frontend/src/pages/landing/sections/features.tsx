@@ -40,8 +40,7 @@ function Features() {
   const [active, setActive] = useState(0);
   const setActiveStable = useCallback((i: number) => setActive(i), []);
 
-  /* Replay token: bumps once per genuine ledger re-entry, remounting only
-     the tiny stage visual. No continuous animation while scrolling. */
+  
   const [replayToken, setReplayToken] = useState(0);
   const ledgerRef = useRef<HTMLDivElement>(null);
   const wasOutsideRef = useRef(true);
@@ -64,20 +63,7 @@ function Features() {
     return () => observer.disconnect();
   }, []);
 
-  /*
-   * ONE authoritative active index.
-   *
-   * A single IntersectionObserver watches all four rows against a stable
-   * focus band around the viewport's vertical centre. On any threshold
-   * crossing it performs ONE batched geometry read and picks the row whose
-   * centre is CLOSEST to the band centre. Because the decision is a pure
-   * function of geometry — not of which row's enter/exit event happened to
-   * fire last — the index progresses monotonically (01→02→03→04 down,
-   * reversed up) and cannot oscillate at boundaries. Ties keep the current
-   * row (hysteresis), and if no row occupies the band, the active row is
-   * simply retained. State changes happen only when the index actually
-   * changes — never per scroll pixel.
-   */
+  
   const rowRefs = useRef<(HTMLElement | null)[]>([]);
 
   useEffect(() => {
@@ -106,7 +92,7 @@ function Features() {
         if (closest !== -1) setActiveStable(closest);
       },
       {
-        /* the focus band: middle 20% of the viewport */
+        
         rootMargin: "-40% 0px -40% 0px",
         threshold: [0, 0.25, 0.5, 0.75, 1],
       },
@@ -120,7 +106,7 @@ function Features() {
     <section id="product" className="scroll-mt-20 py-24 sm:py-32">
       <Container>
         <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-20">
-          {/* sticky editorial heading */}
+          
           <div className="lg:sticky lg:top-28 lg:self-start">
             <Reveal>
               <Kicker>The product</Kicker>
@@ -136,7 +122,7 @@ function Features() {
             </Reveal>
             <StageReadout activeIndex={active} />
             
-            {/* Product screenshot - Create Link */}
+            
             <Reveal delay={0.15}>
               <figure className="mt-8 overflow-hidden rounded-lg border border-border bg-surface shadow-[0_16px_40px_-20px_rgba(0,0,0,0.7)]">
                 <ProductScreenshot shot="create-link" />
@@ -144,7 +130,7 @@ function Features() {
             </Reveal>
           </div>
 
-          {/* progressive ledger */}
+          
           <div ref={ledgerRef} className="border-t border-border">
             {features.map((f, i) => (
               <FeatureRow
@@ -165,7 +151,7 @@ function Features() {
   );
 }
 
-/* Isolated + CSS-animated so activation never runs JS animation */
+
 const StageReadout = memo(function StageReadout({ activeIndex }: { activeIndex: number }) {
   const f = features[activeIndex];
   return (
@@ -181,14 +167,7 @@ const StageReadout = memo(function StageReadout({ activeIndex }: { activeIndex: 
   );
 });
 
-/*
- * Performance contract:
- * - memoized rows → an activation re-renders exactly two rows
- * - indicator/opacity changes are plain CSS transitions
- * - no hover-opacity effects (they re-fire as rows scroll under the cursor)
- * - stage visuals are keyed remounts that play one CSS transition each,
- *   settle, and stay idle; replay token re-runs them only on section entry
- */
+
 const FeatureRow = memo(function FeatureRow({
   feature,
   index,
@@ -210,7 +189,7 @@ const FeatureRow = memo(function FeatureRow({
           active ? "opacity-100" : "opacity-50 sm:opacity-40"
         }`}
       >
-        {/* ember indicator — pure transform/opacity */}
+        
         <span
           aria-hidden="true"
           className={`absolute top-7 bottom-7 -left-3 w-0.5 rounded-full bg-brand transition-[transform,opacity] duration-300 ease-out sm:-left-5 ${
@@ -242,7 +221,7 @@ const FeatureRow = memo(function FeatureRow({
   );
 });
 
-/* Product-specific stages — CSS transitions only, one-shot per activation */
+
 const StageVisual = memo(function StageVisual({
   index,
   active,

@@ -9,12 +9,7 @@ import { Input } from "@/components/ui/input";
 import { useToaster } from "@/components/ui/toaster";
 import { AuthLayout } from "./auth-layout";
 
-/**
- * Verification outcomes land here. The backend redirects to
- * `/verify-email?error=expired` when a token fails; successful
- * verifications redirect to `/login?verified=true` instead.
- * Direct visits (no params) get the resend form.
- */
+
 function VerifyEmailPage() {
   useSeo({ title: "Verify email — LinkShift", robots: "noindex,nofollow" });
   const [params] = useSearchParams();

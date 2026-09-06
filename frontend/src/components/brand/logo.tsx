@@ -1,13 +1,7 @@
 import { Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
-/*
- * Brand mark: vector reconstruction of the chain-link/shift symbol
- * (public/brand/logo-mark.svg), inlined so it inherits the ink color and
- * stays crisp at every size. The mark sits on its own light ground
- * (#F9F9F9), so the plate stays light in both themes — a framed
- * brand artifact on paper and on carbon alike.
- */
+
 function Logo({
   to = "/",
   size = "md",

@@ -15,7 +15,7 @@ import { useToaster } from "@/components/ui/toaster";
 import { FadeIn } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
 
-/* ---------- status presentation ---------- */
+
 
 function statusInfo(sub: { status: string; cancelAtPeriodEnd: boolean } | null): {
   label: string;
@@ -55,7 +55,7 @@ function renewalCountdown(iso: string | null | undefined): string | null {
   return `${days} days until renewal`;
 }
 
-/* ---------- page ---------- */
+
 
 function BillingPage() {
   const { user } = useSession();
@@ -67,8 +67,7 @@ function BillingPage() {
   const planName = user?.plan.name ?? "FREE";
   const renewal = renewalCountdown(sub?.currentPeriodEnd);
 
-  /* Usage & limits come from the single billing-usage contract; every cap is
-     the real plan value the backend enforces (unlimited = null cap). */
+  
   const usage = useQuery({
     queryKey: ["billing-usage"],
     queryFn: () => getBillingUsage(),
@@ -117,7 +116,7 @@ function BillingPage() {
         }
       />
 
-      {/* current plan — the waybill */}
+      
       <Waybill
         aria-label="Current plan"
         code={planName}
@@ -151,7 +150,7 @@ function BillingPage() {
         {status.note && <WaybillRow label="Note">{status.note}</WaybillRow>}
       </Waybill>
 
-      {/* usage */}
+      
       <section
         aria-label="Usage"
         className="mt-6 relative overflow-hidden rounded-xl border border-border bg-surface"
@@ -229,7 +228,7 @@ function BillingPage() {
         )}
       </section>
 
-      {/* plan comparison link */}
+      
       <section className="mt-6 flex items-center justify-between gap-4 rounded-xl border border-border bg-surface px-5 py-4 sm:px-6">
         <div>
           <p className="text-[13px] font-medium text-foreground">Compare plans</p>
@@ -245,7 +244,7 @@ function BillingPage() {
         </Link>
       </section>
 
-      {/* cancel confirmation */}
+      
       <ConfirmDialog
         open={cancelOpen}
         onOpenChange={setCancelOpen}
@@ -261,7 +260,7 @@ function BillingPage() {
   );
 }
 
-/* ---------- usage row ---------- */
+
 
 function UsageRow({
   icon,

@@ -6,12 +6,7 @@ interface BreakdownItem {
   count: number;
 }
 
-/**
- * Horizontal analytical bar list — label, proportional track, count.
- * The top item carries the ember accent; the rest stay muted.
- * Bars grow in via the ls-bar-grow entrance; the list is keyed by dataset
- * so a range/link change replays it. Reduced motion snaps (CSS).
- */
+
 function BreakdownPanel({
   title,
   items,

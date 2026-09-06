@@ -2,10 +2,7 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * Tabs — panel switching. The current tab rides a 1px ember rail: the Rail
- * language reserved for *current*.
- */
+
 
 interface TabsProps {
   value?: string;

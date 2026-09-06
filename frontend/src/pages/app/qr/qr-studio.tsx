@@ -62,7 +62,7 @@ const FRAMES: Array<[FrameStyle, string]> = [
   ["branded", "Branded"],
 ];
 
-/** relative luminance contrast ratio — warns below scannable comfort */
+
 function contrastRatio(hexA: string, hexB: string): number {
   const lum = (hex: string) => {
     const c = hex.replace("#", "");
@@ -94,7 +94,7 @@ function QrStudio({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** when opened from a library card, the link is locked to this one */
+  
   initialLinkId?: string | null;
   onSaved?: () => void;
 }) {
@@ -124,7 +124,7 @@ function QrStudio({
   const plan = user?.plan.name ?? "FREE";
   const canBrand = plan === "CREATOR" || plan === "PRO";
 
-  /* ONE canonical design object — drives preview, payload, and save. */
+  
   type StudioDesign = QrConfig & { frame: FrameStyle };
   const [design, setDesign] = useState<StudioDesign>({ ...DEFAULT_CONFIG, frame: "none" });
   const [logo, setLogo] = useState<{ url: string; publicId: string } | null>(null);
@@ -138,7 +138,7 @@ function QrStudio({
   const [downloading, setDownloading] = useState(false);
   const [lockMsg, setLockMsg] = useState<string | null>(null);
 
-  /* payload = exact design + logo refs */
+  
   const payload = { ...design, logoUrl: logo?.url, logoPublicId: logo?.publicId };
 
   const save = useMutation({
@@ -167,12 +167,12 @@ function QrStudio({
     setUploadingLogo(true);
     setLogoError(null);
     try {
-      /* LogoCrop already outputs a cropped, upload-ready square PNG */
+      
       const res = await uploadQrLogo(file);
       setLogo({ url: res.logUrl, publicId: res.logoPublicId });
-      setCropSrc(null); // clear the crop only after a successful upload
+      setCropSrc(null); 
     } catch (err) {
-      /* keep cropSrc — the user can retry Apply without re-picking */
+      
       setLogoError(
         err instanceof ApiError ? err.message : "Logo upload failed. Please try again.",
       );
@@ -186,10 +186,7 @@ function QrStudio({
   const lowContrast = contrast < 2.5;
 
   function close() {
-    /* Only request the close. The actual state reset happens in
-       `resetAfterClose` (via onOpenChangeComplete) AFTER the exit animation
-       finishes — otherwise the success panel unmounts mid-animation and the
-       dialog appears to vanish abruptly. */
+    
     onOpenChange(false);
   }
 
@@ -203,7 +200,7 @@ function QrStudio({
 
   const quotaError = save.error instanceof ApiError && save.error.status === 403 ? save.error : null;
 
-  /* ---- success panel ---- */
+  
   if (savedQr) {
     return (
       <Dialog
@@ -211,16 +208,7 @@ function QrStudio({
         onOpenChange={(o) => !o && close()}
         onOpenChangeComplete={(o) => !o && resetAfterClose()}
       >
-        {/*
-          The Framer Motion page-transition wrapper applies a `transform`
-          to its element, which turns the popup's `position: fixed` into
-          a positioned relative to the wrapper. To force the popup to
-          anchor against the actual viewport, we set every positioning
-          key explicitly. The `position: fixed` with `top/left/right/
-          bottom: 0` makes the popup fill the viewport, then `margin: auto`
-          centers it, and `max-height: calc(100dvh - 2rem)` ensures it
-          can scroll inside the viewport on short / mobile screens.
-        */}
+        
         <DialogContent
           style={{
             position: "fixed",
@@ -238,15 +226,12 @@ function QrStudio({
           }}
           className="relative overflow-hidden p-5 sm:p-6"
         >
-          {/* The signature moment: a quiet ember stripe draws across the top. */}
+          
           <span
             aria-hidden="true"
             className="ls-stripe-draw pointer-events-none absolute inset-x-0 top-0 h-px"
           />
-          {/* The panel is a vertical column capped to the viewport. On tall
-              desktop it sits centered and comfortable. On short / mobile
-              viewports the inner content scrolls inside the capped box so
-              every action stays reachable. */}
+          
           <div className="flex max-h-[calc(100dvh-2rem)] flex-col items-stretch overflow-y-auto">
             <div className="flex flex-col items-center pt-3 text-center">
               <p className="ls-marquee">Saved</p>
@@ -312,7 +297,7 @@ function QrStudio({
     );
   }
 
-  /* ---- designer ---- */
+  
   return (
     <Dialog
       open={open}
@@ -330,9 +315,9 @@ function QrStudio({
 
         <div className="min-h-0 flex-1 overflow-y-auto">
         <div className="grid gap-6 p-5 lg:grid-cols-[1fr_320px]">
-          {/* controls */}
+          
           <div className="flex flex-col gap-5">
-            {/* link picker */}
+            
             <Field>
               <FieldLabel>
                 {initialLinkId ? "Linked to" : "Choose a link"}
@@ -392,7 +377,7 @@ function QrStudio({
               )}
             </Field>
 
-            {/* presets */}
+            
             <Field>
               <FieldLabel>Presets</FieldLabel>
               <div className="grid grid-cols-4 gap-2">
@@ -444,7 +429,7 @@ function QrStudio({
               </div>
             </Field>
 
-            {/* colors */}
+            
             <Field>
               <FieldLabel>Colors</FieldLabel>
               <div className="grid grid-cols-2 gap-3">
@@ -487,7 +472,7 @@ function QrStudio({
               )}
             </Field>
 
-            {/* pattern */}
+            
             <Field>
               <FieldLabel>Pattern</FieldLabel>
               <Segmented
@@ -507,7 +492,7 @@ function QrStudio({
               />
             </Field>
 
-            {/* eyes */}
+            
             <div className="grid gap-4 sm:grid-cols-2">
               <Field>
                 <FieldLabel>Corner style</FieldLabel>
@@ -545,7 +530,7 @@ function QrStudio({
               </Field>
             </div>
 
-            {/* margin */}
+            
             <Field>
               <FieldLabel htmlFor="qr-margin">Quiet zone</FieldLabel>
               <input
@@ -560,7 +545,7 @@ function QrStudio({
               <FieldHint>{design.margin} modules of silence around the code.</FieldHint>
             </Field>
 
-            {/* frame — Creator/Pro, enforced server-side at download */}
+            
             <Field>
               <FieldLabel>
                 Frame
@@ -570,8 +555,7 @@ function QrStudio({
                   </span>
                 )}
               </FieldLabel>
-              {/* Locked frames stay clickable — the controlled value keeps the
-                  thumb put while the click surfaces the upgrade path. */}
+              
               <Segmented
                 ariaLabel="Frame style"
                 value={design.frame}
@@ -608,7 +592,7 @@ function QrStudio({
 
             {lockMsg && <UpgradeHint feature={lockMsg} requirement="Creator or Pro" />}
 
-            {/* logo — Creator/Pro (server-enforced) */}
+            
             <Field>
               <FieldLabel>
                 Logo
@@ -672,8 +656,7 @@ function QrStudio({
                   const f = e.target.files?.[0];
                   e.target.value = "";
                   if (!f) return;
-                  /* some Windows/浏览器 quirk: image/jpg or empty type —
-                     fall back to the extension for the check */
+                  
                   const isImage = /^image\/(png|jpeg|jpg|webp)$/.test(f.type) || (/^image\//.test(f.type) && /\.(png|jpe?g|webp)$/i.test(f.name));
                   if (!isImage) {
                     setLogoError("Only PNG, JPEG or WebP images are supported.");
@@ -693,7 +676,7 @@ function QrStudio({
             </Field>
           </div>
 
-          {/* preview column */}
+          
           <div className="lg:sticky lg:top-0 lg:self-start">
             <div className="ls-plate p-5">
               <p className="ls-marquee mb-4">Live preview</p>
@@ -733,7 +716,7 @@ function QrStudio({
         </div>
         </div>
 
-        {/* action bar — always visible, outside the scroll area */}
+        
         <div className="shrink-0 border-t border-border p-4">
           {save.error && !quotaError && (
             <p role="alert" className="mb-2.5 text-xs text-destructive">
@@ -767,7 +750,7 @@ function QrStudio({
 export { QrStudio };
 
 
-/* ---- control glyphs ---- */
+
 function PatternGlyph({
   kind,
   active,
@@ -850,7 +833,7 @@ function EyeBallGlyph({ kind, active }: { kind: "square" | "dot"; active: boolea
 }
 
 
-/* ---- preset mini preview: real colors/pattern + frame hint ---- */
+
 function PresetThumb({
   fg,
   bg,

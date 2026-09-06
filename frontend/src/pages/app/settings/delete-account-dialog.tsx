@@ -90,7 +90,7 @@ function DeleteAccountDialog({
         description: "Your data has been removed. We're sorry to see you go.",
         variant: "success",
       });
-      // Session dies with the account — clear local state and land on /login.
+      
       logout();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Deletion failed. Please try again.");

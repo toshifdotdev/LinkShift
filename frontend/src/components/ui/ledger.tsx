@@ -2,12 +2,7 @@ import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * Ledger — the column-defined table. Desktop renders a true table with a
- * sticky header and aria-sort; below md it reflows to a card per row using
- * the columns' cardLabel. Rows lead with route codes and keep numerals in
- * tabular mono (handled by the cells).
- */
+
 
 type LedgerSortDirection = "asc" | "desc";
 
@@ -24,7 +19,7 @@ interface LedgerColumn<T> {
   align?: "left" | "right";
   className?: string;
   headerClassName?: string;
-  /** Label shown in the mobile card reflow; falls back to header. */
+  
   cardLabel?: ReactNode;
 }
 
@@ -62,7 +57,7 @@ function Ledger<T>({
 
   return (
     <div data-slot="ledger" className={className}>
-      {/* table ≥ md */}
+      
       <div className="hidden md:block">
         <table className="w-full border-collapse text-[13px]">
           <thead>
@@ -146,7 +141,7 @@ function Ledger<T>({
         </table>
       </div>
 
-      {/* cards < md */}
+      
       <div className="flex flex-col gap-2 md:hidden">
         {rows.map((row) => (
           <div

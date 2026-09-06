@@ -28,7 +28,7 @@ function LinksPage() {
   const { toast } = useToaster();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  /* ---- URL-backed list state (deep-linkable, refresh-stable) ---- */
+  
   const page = Math.max(1, Number(searchParams.get("page") ?? 1) || 1);
   const search = searchParams.get("search") ?? "";
   const status = (searchParams.get("status") ?? undefined) as ListLinksParams["status"];
@@ -39,7 +39,7 @@ function LinksPage() {
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const debouncedSearch = useDebouncedValue(searchInput, 300);
 
-  /* push debounced search into the URL once it settles */
+  
   useEffect(() => {
     if (debouncedSearch === search) return;
     const next = new URLSearchParams(searchParams);
@@ -66,7 +66,7 @@ function LinksPage() {
   const pagination = listQuery.data?.pagination ?? null;
   const hasAnyLinks = (listQuery.data?.pagination.totalRecords ?? 0) > 0;
 
-  /* ---- dialogs ---- */
+  
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<LinkItem | null>(null);
   const [deleting, setDeleting] = useState<LinkItem | null>(null);
@@ -94,8 +94,7 @@ function LinksPage() {
   });
 
   function handleCreated(link: LinkItem) {
-    /* land the user on page 1, newest-first, unfiltered so the new link
-       is immediately visible, then flash it */
+    
     const next = new URLSearchParams();
     setSearchParams(next, { replace: true });
     setSearchInput("");

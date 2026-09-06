@@ -2,15 +2,11 @@ import type { QrConfig } from "@/api/qr";
 
 type Frame = "none" | "clean" | "label" | "branded";
 
-/**
- * Ready-made styles. Every preset maps ONLY to fields the backend
- * persists and renders (colors, margin, pattern, eye styles) — nothing
- * cosmetic is faked client-side.
- */
+
 export interface QrPreset {
   name: string;
   config: Pick<QrConfig, "foregroundColor" | "backgroundColor" | "margin" | "pattern" | "eyeStyle" | "eyeBallStyle">;
-  /** frames are composed server-side at download; Creator/Pro */
+  
   frame?: Frame;
 }
 

@@ -10,9 +10,7 @@ type RedirectParams = {
     shortId : string;
 };
 
-/* Browsers send Accept: text/html,… — API clients send application/json.
-   Password-gated GETs answer with the unlock page for the former and keep
-   the historical JSON contract for the latter. */
+
 const prefersJson = (req: Request): boolean => {
     const accept = req.headers.accept ?? "";
     return accept.includes("application/json") && !accept.includes("text/html");
@@ -39,8 +37,7 @@ export const redirect = asyncHandler(async(req : Request, res : Response) => {
             res.status(401).json(result);
             return;
         }
-        /* Unlock page whose form action preserves the visitor's appended
-           path and query, so both survive the password round trip. */
+        
         const rest = extractRest(req.params as Record<string, unknown>);
         const query = extractQuery(req.url ?? "");
         res.status(401)

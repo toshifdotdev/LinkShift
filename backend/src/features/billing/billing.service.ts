@@ -48,9 +48,9 @@ export const getPlansService = async(currency : "INR" | "USD") => {
 
 
 export const razorpayWebhookService = async(signature : string, data : Buffer, eventId: string) => {
-    // Fail closed, cleanly: without the dashboard-configured secret no
-    // signature can be verified, and `createHmac("sha256", undefined)` would
-    // otherwise surface as a raw TypeError instead of a deliberate refusal.
+    
+    
+    
     if (!config.razorpayWebhookSecret) {
         throw new AppError("Razorpay webhook secret is not configured", 500);
     }
@@ -58,8 +58,8 @@ export const razorpayWebhookService = async(signature : string, data : Buffer, e
     const expectedSignature = crypto.createHmac("sha256", config.razorpayWebhookSecret)
                               .update(data).digest("hex");
 
-    // Length pre-check: timingSafeEqual throws RangeError on length mismatch,
-    // which surfaced as 500s (and Razorpay retries) for forged signatures.
+    
+    
     if (signature.length !== expectedSignature.length) {
         throw new AppError("Invalid webhook signature", 400);
     }
@@ -75,7 +75,7 @@ export const razorpayWebhookService = async(signature : string, data : Buffer, e
 
     const payload = JSON.parse(data.toString("utf8"));
 
-    // Idempotency: ensure WebhookEvent row exists
+    
     try {
         await prisma.webhookEvent.create({
             data: { eventId, eventType: payload.event, status: "PENDING" }
@@ -88,7 +88,7 @@ export const razorpayWebhookService = async(signature : string, data : Buffer, e
         }
     }
 
-    // Atomic claim: only one process can claim PENDING/FAILED/stale PROCESSING
+    
     const STALE_MINUTES = 5;
     const claimed = await prisma.$executeRaw`
         UPDATE "WebhookEvent" 
@@ -105,22 +105,22 @@ export const razorpayWebhookService = async(signature : string, data : Buffer, e
         if (existing?.status === "PROCESSED") {
             return { event: payload.event, processed: true, alreadyProcessed: true };
         }
-        // Another process is actively handling it (fresh PROCESSING)
+        
         throw new AppError("Webhook event already being processed", 409);
     }
 
-    // We own the claim - run business logic
+    
     try {
         const webhookResult = await processWebhookEvent(payload);
         
-        // Success - mark PROCESSED
+        
         await prisma.webhookEvent.update({
             where: { eventId },
             data: { status: "PROCESSED", processedAt: new Date(), claimedAt: null }
         });
         return { event: payload.event, processed: true, ...(webhookResult ?? {}) };
     } catch (err) {
-        // Failure - mark FAILED (retryable)
+        
         await prisma.webhookEvent.update({
             where: { eventId },
             data: { status: "FAILED", claimedAt: null }
@@ -135,15 +135,15 @@ type WebhookProcessResult = {
     warning?: string;
 };
 
-// Terminal rows are sinks: stale/out-of-order events must never resurrect them
-// into live states.
+
+
 export const TERMINAL_SUBSCRIPTION_STATUSES = ["CANCELLED", "COMPLETED", "EXPIRED"] as const;
 
 export const isTerminalSubscriptionStatus = (status: string) =>
     (TERMINAL_SUBSCRIPTION_STATUSES as readonly string[]).includes(status);
 
-// Maps a Razorpay plan id to our local Plan via the four provider plan-id columns.
-// Returns null for unmapped ids (dashboard-created / foreign plans).
+
+
 export const mapProviderPlan = async (planId: string | undefined | null) => {
     if (!planId) {
         return null;
@@ -161,8 +161,8 @@ export const mapProviderPlan = async (planId: string | undefined | null) => {
     });
 };
 
-// Billing cycle derives ONLY from which provider column matched - never from
-// payload names or unrelated fields.
+
+
 export const cycleFromPlanMatch = (
     plan: NonNullable<Awaited<ReturnType<typeof mapProviderPlan>>>,
     planId: string
@@ -187,12 +187,12 @@ export const epochToDate = (seconds: number | undefined | null) =>
 const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult | void> => {
     switch (payload.event) {
         case "payment.captured": {
-            // Upsert-by-order: tolerant of legitimate Razorpay ordering where this
-            // arrives before subscription.charged creates the local Payment row.
+            
+            
             const payment = payload.payload.payment.entity;
 
-            // userId can only come from a known local subscription; foreign/unlinked
-            // payments are acknowledged rather than fabricated.
+            
+            
             const localSubscription = await findLocalSubscription(payment.subscription_id ?? "");
 
             if (!localSubscription) {
@@ -232,7 +232,7 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
 
                         status: "SUCCESS",
 
-                        // Cycle/auth charges are always SUBSCRIPTION revenue.
+                        
                         category: "SUBSCRIPTION",
                     },
                 });
@@ -242,8 +242,8 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                     data: {
                         providerPaymentId: payment.id,
                         status: "SUCCESS",
-                        // Adoption: claims a provisional PRORATION row created by an
-                        // earlier invoice.paid (first-auth ordering race).
+                        
+                        
                         category: "SUBSCRIPTION",
                     },
                 });
@@ -253,9 +253,9 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
         case "payment.failed": {
-            // No money moved; when no local row exists we cannot fabricate ledger
-            // context - acknowledge instead of failing (prevents auth-transaction
-            // retry storms). A SUCCESS payment is never overwritten by a failure.
+            
+            
+            
             const payment = payload.payload.payment.entity;
 
             const existingPayment = await prisma.payment.findUnique({
@@ -288,12 +288,12 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
         case "invoice.paid": {
-            // LEDGER-ONLY: never touches subscription status/periods/plan fields.
-            // Razorpay emits this for regular cycle invoices too, so classification
-            // is outcome-based (adoption): unmatched rows are created provisionally
-            // as PRORATION and flipped to SUBSCRIPTION by subscription.charged /
-            // payment.captured when their dedupe chains claim them.
-            // No billing_start/billing_end heuristics - 🔬T4b governs assumptions.
+            
+            
+            
+            
+            
+            
             const invoice = payload.payload.invoice.entity;
 
             if (!invoice.subscription_id) {
@@ -308,7 +308,7 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                 return { matched: false, ignored: "unknown" };
             }
 
-            // Dedupe 1/2: a cycle charge recorded this invoice's payment already.
+            
             if (invoice.payment_id) {
                 const byPaymentId = await prisma.payment.findUnique({
                     where: {
@@ -324,7 +324,7 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                 }
             }
 
-            // Dedupe 2/2: fallback on the invoice's own order id.
+            
             if (invoice.order_id) {
                 const byOrderId = await prisma.payment.findUnique({
                     where: {
@@ -368,7 +368,7 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
 
                     status: "SUCCESS",
 
-                    // Provisional until claimed by a cycle charge (see S2 adoption flips).
+                    
                     category: "PRORATION",
                 },
             });
@@ -377,11 +377,11 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
         case "refund.processed": {
-            // Cumulative refund ledger (supersedes single-refund comparison).
-            // Refunds NEVER modify Subscription state: returning money is an
-            // independent business action from cancelling service.
-            // Idempotency anchor: Refund.providerRefundId UNIQUE - duplicate
-            // deliveries and stale-claim re-entry cannot double-count amounts.
+            
+            
+            
+            
+            
             const refund = payload.payload.refund.entity;
 
             const existingPayment = refund.payment_id
@@ -411,7 +411,7 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
             }
 
             if (refund.currency && refund.currency !== existingPayment.currency) {
-                // Wave-3 convention: soft-warn, record actual values, never convert.
+                
                 console.warn(`[webhook] refund.processed: refund currency ${refund.currency} differs from payment currency ${existingPayment.currency} on ${existingPayment.id}`);
             }
 
@@ -432,14 +432,14 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                     if (!(err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")) {
                         throw err;
                     }
-                    // Same Razorpay refund already ledgered: duplicate delivery or
-                    // stale-claim re-entry. The amount must NOT be counted again.
+                    
+                    
                     duplicate = true;
                 }
 
-                // Recompute + apply terminal state on every pass (absolute-set,
-                // idempotent). Skipped on duplicates so providerRefundId keeps
-                // pointing at the LATEST threshold-crossing refund.
+                
+                
+                
                 const totals = await tx.refund.aggregate({
                     _sum: { amount: true },
                     where: { paymentId: existingPayment.id },
@@ -473,8 +473,8 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
         case "subscription.authenticated": { // 1st
-            // Mandate authorized != active: status intentionally untouched so
-            // AUTHORIZATION_PENDING stays non-entitled until activated/charged fires.
+            
+            
             const subscription = payload.payload.subscription.entity;
             const existingSubscription = await findLocalSubscription(subscription.id);
 
@@ -506,8 +506,8 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                 return { matched: true, ignored: "terminal" };
             }
 
-            // Authoritative entry into ACTIVE. Only-if-provided field updates so we
-            // never overwrite valid values; pending/cancel fields untouched.
+            
+            
             try {
                 await prisma.subscription.update({
                     where: { id: existingSubscription.id },
@@ -520,8 +520,8 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                     },
                 });
             } catch (err) {
-                // P2002 here would mean a second live row for this user -
-                // structurally impossible under Wave 0's index + Block-Until-Cancel.
+                
+                
                 console.error(`[webhook] subscription.activated: UNIQUE violation while activating ${existingSubscription.id}`, err);
                 throw err;
             }
@@ -530,7 +530,7 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
             case "subscription.charged": {
-                // Renewal engine: PAYMENT_RETRY->ACTIVE, HALTED->ACTIVE, ACTIVE->ACTIVE.
+                
                 const subscription = payload.payload.subscription.entity;
 
                 const payment = payload.payload.payment.entity;
@@ -553,12 +553,12 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                     console.error(`[webhook] subscription.charged: unmapped Razorpay plan '${subscription.plan_id}' on ${existingSubscription.id}; lifecycle applied without plan change`);
                 }
 
-                // ---- Gated plan-commit decision ----
-                // Considered only when the payload maps to a DIFFERENT local plan and
-                // no schedule window is open. Allowed via:
-                //   (a) pendingPlanId === mapped plan -> authorized change confirmed
-                //   (b) brand-new billing cycle       -> provider truth, but LOUD alert
-                // Otherwise (stale/out-of-order charge): plan frozen, lifecycle only.
+                
+                
+                
+                
+                
+                
                 type PlanCommit = { planId: string; billingCycle: "MONTHLY" | "YEARLY"; alert: boolean };
                 let planCommit: PlanCommit | null = null;
 
@@ -595,7 +595,7 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
 
                 await prisma.$transaction(async (tx) => {
 
-                    // Payment dedupe chain: payment-id first, order-id fallback, create last.
+                    
                     let existingPayment =
                         await tx.payment.findUnique({
                             where: {
@@ -635,7 +635,7 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
 
                         status: "SUCCESS" as const,
 
-                        // Cycle charges are always SUBSCRIPTION revenue.
+                        
                         category: "SUBSCRIPTION" as const,
                     };
 
@@ -653,8 +653,8 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
                             data: {
                                 providerPaymentId: payment.id,
                                 status: "SUCCESS",
-                                // Adoption: a provisional PRORATION row created by an
-                                // earlier invoice.paid is claimed by this cycle charge.
+                                
+                                
                                 category: "SUBSCRIPTION",
                             },
                         });
@@ -692,8 +692,8 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
             }
 
         case "subscription.pending": {
-            // Renewal charge failed; retry scheduled. Entitlement continues via the
-            // isEntitled() grace rule until currentPeriodEnd - no ad-hoc access logic.
+            
+            
             const subscription = payload.payload.subscription.entity;
             const existingSubscription = await findLocalSubscription(subscription.id);
 
@@ -718,9 +718,9 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
         case "subscription.halted": {
-            // Retries exhausted at Razorpay - NOT a cancellation. Entitlement still
-            // governed by isEntitled() until periodEnd+grace. Pending plan schedule
-            // intentionally kept (🔬T7b verifies provider behavior across halt/resume).
+            
+            
+            
             const subscription = payload.payload.subscription.entity;
             const existingSubscription = await findLocalSubscription(subscription.id);
 
@@ -741,9 +741,9 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
         case "subscription.cancelled": {
-            // Terminal sink. Deliberately NOT terminal-guarded: re-confirming an
-            // already-CANCELLED row must stay possible (heals the Wave-1 transient
-            // where the provider cancel succeeded but our local write failed).
+            
+            
+            
             const subscription = payload.payload.subscription.entity;
             const existingSubscription = await findLocalSubscription(subscription.id);
 
@@ -768,8 +768,8 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
         case "subscription.paused": {
-            // Billing paused at provider; entitlement follows the same grace rule as
-            // HALTED via isEntitled(). Pending schedule kept across pause 🔬T7b.
+            
+            
             const subscription = payload.payload.subscription.entity;
             const existingSubscription = await findLocalSubscription(subscription.id);
 
@@ -790,8 +790,8 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
         case "subscription.resumed": {
-            // Charge flow restored. Pendings kept - scheduled changes survive pause
-            // at the provider (🔬T7b); periods refresh only-if-provided.
+            
+            
             const subscription = payload.payload.subscription.entity;
             const existingSubscription = await findLocalSubscription(subscription.id);
 
@@ -816,8 +816,8 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
         case "subscription.completed": {
-            // Natural end (total_count exhausted). Distinct from CANCELLED: no user
-            // intent, never re-enterable, entitled only until periodEnd by wall clock.
+            
+            
             const subscription = payload.payload.subscription.entity;
             const existingSubscription = await findLocalSubscription(subscription.id);
 
@@ -841,8 +841,8 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         }
 
     case "subscription.updated": {
-        // The plan-change reconciler. has_scheduled_changes is authoritative for
-        // freezing planId; change_scheduled_at only supplies the timestamp.
+        
+        
         const subscription = payload.payload.subscription.entity;
 
         const existingSubscription = await findLocalSubscription(subscription.id);
@@ -878,10 +878,10 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
         };
 
         if (!scheduledWindowOpen) {
-            // Window CLOSED: provider truth is committed. Absolute-set + clear schedule.
-            // Effectuation path for BOTH cycle-end downgrades and immediate upgrades.
-            // Also correctly clears a stale local pending after someone cancels the
-            // scheduled update at the provider.
+            
+            
+            
+            
             const planChanged = mappedPlan.id !== existingSubscription.planId;
 
             await prisma.subscription.update({
@@ -898,11 +898,11 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
             break;
         }
 
-        // Window OPEN: planId is FROZEN - mirror future intent instead of applying it.
-        //   mapped == current plan         -> keep existing pendings (scheduling ack)
-        //   mapped == existing pending     -> keep (already mirrored)
-        //   mapped != current & no pending -> adopt (dashboard-initiated schedule)
-        //   conflicting pending            -> provider wins
+        
+        
+        
+        
+        
         const conflictingPending =
             existingSubscription.pendingPlanId !== null &&
             existingSubscription.pendingPlanId !== mappedPlan.id &&
@@ -993,7 +993,7 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         quantity : 1,
         customer_notify : true,
 
-        // Provider-side authorization deadline (see AUTHORIZATION_EXPIRY_HOURS).
+        
         expire_by: Math.floor(Date.now() / 1000) + AUTHORIZATION_EXPIRY_HOURS * 3600,
     })
 
@@ -1015,7 +1015,7 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         return {
             subscriptionId: dbSubscription.id,
 
-            // Razorpay Checkout needs THIS id (sub_...) as its subscription_id option.
+            
             providerSubscriptionId: razorpaySubscription.id,
 
             planId: selectedPlan.id,
@@ -1105,8 +1105,8 @@ export const cancelSubscriptionService = async (userId: string, cancelAtPeriodEn
 
     let razorpaySubscription: { id: string; status: string };
     try {
-         // Razorpay permits cancelling created/authenticated/pending/halted/paused/active subs;
-        // at_cycle_end is only meaningful while ACTIVE (🔬T8 confirms pending/halted/paused specifics).
+         
+        
         razorpaySubscription = await razorpay.subscriptions.cancel(
             subscription.providerSubscriptionId,
             cancelAtPeriodEnd
@@ -1171,10 +1171,10 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         throw new AppError("Plan not found", 404);
     }
 
-    // Same plan AND same billing cycle => true no-op. The SAME plan with a
-    // DIFFERENT cycle is a legitimate Monthly<->Yearly switch and must proceed.
+    
+    
     if (selectedPlan.id === subscription.planId && billingCycle === subscription.billingCycle) {
-        // Same-plan request: clean no-op without calling Razorpay.
+        
         return {
             subscriptionId: subscription.id,
             providerSubscriptionId: subscription.providerSubscriptionId,
@@ -1187,9 +1187,9 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         };
     }
 
-    // Monthly <-> Yearly switching is supported and ALWAYS schedules at cycle_end
-    // (no immediate proration, no mandate-charge risk). Same-frequency changes keep
-    // the existing immediate-upgrade / cycle-end-downgrade behavior.
+    
+    
+    
     const crossFrequency = subscription.billingCycle !== billingCycle;
 
     if(subscription.currency !== currency) {
@@ -1237,9 +1237,9 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         }
     }   
 
-    // Cross-frequency switches never prorate: they take effect when the current
-    // prepaid period ends, so the schedule is always cycle_end regardless of
-    // direction. Upgrade/downgrade semantics only apply to same-frequency changes.
+    
+    
+    
     const isUpgrade = !crossFrequency && newPrice > currentPrice;
 
     const scheduleChangeAt = crossFrequency
@@ -1286,9 +1286,9 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         );
     }
 
-    // Single conditional write driven by the PROVIDER RESPONSE ENTITY - never a
-    // stale DB re-read. Mirrors exactly what Razorpay accepted; the
-    // subscription.updated webhook later corroborates this idempotently.
+    
+    
+    
     const providerHasSchedule = razorpaySubscription.has_scheduled_changes === true;
     const scheduledAt =
         typeof razorpaySubscription.change_scheduled_at === "number"
@@ -1296,10 +1296,10 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
             : (subscription.currentPeriodEnd ?? new Date());
 
     if (providerHasSchedule) {
-        // Scheduled at cycle_end: covers same-frequency downgrades AND
-        // Monthly<->Yearly switches. Plan/billingCycle stay unchanged locally
-        // until provider effectuation; subscription.updated / charged self-heal /
-        // reconciliation then commit them from provider truth.
+        
+        
+        
+        
         await prisma.subscription.update({
             where: { id: subscription.id },
             data: {
@@ -1308,7 +1308,7 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
             },
         });
     } else {
-        // Immediate (upgrade "now"): provider already committed the new plan.
+        
         await prisma.subscription.update({
             where: { id: subscription.id },
             data: {
@@ -1365,18 +1365,18 @@ export const LIVE_SUBSCRIPTION_STATUSES = [
     "PAUSED",
 ] as const;
 
-// 🔬 RAZORPAY-TEST-PENDING — checklist T1/T2: the yearly value exceeds Razorpay's
-// documented 30-year span formula; do NOT finalize these until test-mode verification.
+
+
 const TOTAL_COUNT_MONTHLY = 1200;
 const TOTAL_COUNT_YEARLY = 100;
 
-// D-A (verified contract, subscriptions.d.ts L46-50): expire_by is a Unix-seconds
-// deadline for the authorization payment. Provider self-expires unauthenticated
-// checkouts; reconciliation's stale-AUTHORIZATION_PENDING sweep (24h default) is
-// the backstop. Residual 🔬T2: which webhook (if any) fires on auto-expiry.
+
+
+
+
 export const AUTHORIZATION_EXPIRY_HOURS = 24;
 
-// Paid access survives PAYMENT_RETRY/HALTED/PAUSED until the paid period ends (+24h slack).
+
 const ENTITLEMENT_GRACE_MS = 24 * 60 * 60 * 1000;
 
 type SubscriptionWithPlan = Prisma.SubscriptionGetPayload<{
@@ -1403,11 +1403,11 @@ export const isEntitled = (subscription: SubscriptionWithPlan | null): boolean =
         );
     }
 
-    // AUTHORIZATION_PENDING is never entitled.
+    
     return false;
 };
 
-// At most ONE live row per user (DB-enforced since Wave 0), so findFirst is deterministic.
+
 export const getEntitledSubscription = async (
     userId: string
 ): Promise<SubscriptionWithPlan | null> => {
@@ -1462,11 +1462,11 @@ export const getUserPlan = async (userId: string) => {
 
 const getBillingPeriod = (subscription: Awaited<ReturnType<typeof getActiveSubscription>>) => {
     if (subscription) {
-        // Quota windows are MONTHLY-labeled regardless of billing frequency.
-        // A YEARLY subscriber's provider period spans a whole year, so usage
-        // (QR codes / redirects / destination & slug changes) is metered on
-        // calendar months instead — identical semantics to non-subscribers.
-        // Billing itself stays provider-authoritative and is unaffected here.
+        
+        
+        
+        
+        
         if (subscription.billingCycle === "YEARLY") {
             const now = new Date();
             return {
@@ -1476,8 +1476,8 @@ const getBillingPeriod = (subscription: Awaited<ReturnType<typeof getActiveSubsc
         }
 
         if (!subscription.currentPeriodStart || !subscription.currentPeriodEnd) {
-            // Defensive fallback: a live row with missing provider periods must not
-            // hard-fail quota checks (degrades to calendar month instead).
+            
+            
             const now = new Date();
             return {
                 periodStart: new Date(now.getFullYear(), now.getMonth(), 1),
@@ -1725,7 +1725,7 @@ export const checkDestinationLimit = async (userId: string) => {
     const limit = plan.maxDestinationChangesPerMonth;
 
 
-    // Pro / unlimited
+    
     if (limit === null) {
         if (plan.name !== "PRO") {
             return;
@@ -1786,7 +1786,7 @@ export const checkCustomSlugLimit = async (userId: string) => {
 
     const limit = plan.maxCustomSlugsPerMonth;
 
-    // Unlimited
+    
     if (limit === null) {
         return;
     }
@@ -1879,13 +1879,12 @@ export const checkCsvExportAccess = async (userId: string) => {
     }
 };
 
-/* Plan ladder for analytics visualization tiers: range windows are metered
-   by analyticsDays, breakdown sections by this rank. */
+
 export const PLAN_ORDER = ["FREE", "STARTER", "CREATOR", "PRO", "ENTERPRISE"] as const;
 export const planRankOf = (name: string): number =>
     (PLAN_ORDER as readonly string[]).indexOf(name);
 
-/* Deep linking is a Pro-tier capability (and any plan above Pro). */
+
 const DEEP_LINK_PLANS = ["PRO", "ENTERPRISE"];
 
 export const hasDeepLinkAccess = async (userId: string): Promise<boolean> => {
@@ -1899,7 +1898,7 @@ export const checkDeepLinkAccess = async (userId: string) => {
     }
 };
 
-/* Mobile app deep linking is a separate Pro-tier capability. */
+
 export const hasAppDeepLinkAccess = async (userId: string): Promise<boolean> => {
     const plan = await getUserPlan(userId);
     return !!plan && DEEP_LINK_PLANS.includes(plan.name);
@@ -1912,10 +1911,10 @@ export const checkAppDeepLinkAccess = async (userId: string) => {
 };
 
 export const getUsageService = async (userId: string) => {
-    // Period semantics identical to the quota guards (checkRedirectLimit /
-    // checkQrLimit / checkCustomSlugLimit / checkDestinationLimit): metered on
-    // the entitled subscription's provider window, or the calendar month when
-    // there is no entitled subscription / no provider period.
+    
+    
+    
+    
     const subscription = await getEntitledSubscription(userId);
     const plan = await getUserPlan(userId);
     const { periodStart } = getBillingPeriod(subscription);

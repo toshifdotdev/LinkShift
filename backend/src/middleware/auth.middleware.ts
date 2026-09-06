@@ -15,11 +15,11 @@ export const authMiddleWare = (req : Request, res : Response, next : NextFunctio
     try {
         const decoded = jwt.verify(token, config.jwtSecret as string) as CustomJwtPayload;
 
-        // Guard against malformed payloads (e.g. legacy tokens signed with a
-        // non-string `id`). Without this, downstream Prisma calls throw a
-        // PrismaClientValidationError — a non-AppError — and the error
-        // middleware returns a generic 500 "Internal Server Error" instead
-        // of a meaningful 401.
+        
+        
+        
+        
+        
         if (typeof decoded.id !== "string" || decoded.id.length === 0) {
             return next(new AppError("Invalid token", 401));
         }

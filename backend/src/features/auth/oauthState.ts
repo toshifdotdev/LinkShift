@@ -2,9 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import type { Request, Response } from "express";
 import { config } from "../../config";
 
-/* Cookie-backed OAuth state for the Google flow. The app runs stateless
-   (session: false), so passport's built-in state stores are unavailable and
-   the CSRF state is paired with a hash stored in a short-lived cookie. */
+
 
 export const OAUTH_STATE_COOKIE = "google_oauth_state";
 export const STATE_COOKIE_PATH = "/api/v1/auth/google";
@@ -24,9 +22,9 @@ type StateStoreStoreCallback = (err: Error | null, state?: string) => void;
 type StateStoreVerifyCallback = (err: Error | null, ok: boolean, state?: unknown) => void;
 
 export const oauthStateStore = {
-    // passport-oauth2 dispatches on declared arity. With three declared
-    // parameters it calls store(req, meta, callback); the typeof guard also
-    // accepts the (req, callback) convention.
+    
+    
+    
     store(
         req: Request,
         metaOrCallback: unknown,
@@ -56,9 +54,9 @@ export const oauthStateStore = {
         callback(null, state);
     },
 
-    // Same convention-tolerant shape as store: four declared parameters make
-    // passport call verify(req, state, meta, callback); (req, state, callback)
-    // is accepted too.
+    
+    
+    
     verify(
         req: Request,
         providedState: string,
@@ -75,8 +73,8 @@ export const oauthStateStore = {
 
         const cookieValue: unknown = req.cookies?.[OAUTH_STATE_COOKIE];
 
-        // One-shot: consume the cookie before validating so a captured
-        // callback URL cannot be replayed.
+        
+        
         if (req.res) {
             clearOAuthStateCookie(req.res);
         }

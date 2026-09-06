@@ -28,11 +28,7 @@ export function getLinkCharts(linkId: string, days?: AnalyticsDays) {
   );
 }
 
-/**
- * CSV export is an authenticated stream — the endpoint is Bearer-header-only
- * (auth middleware never reads the refresh cookie), so the request must carry
- * the Authorization header. Fetched as a blob, then downloaded.
- */
+
 export async function exportLinkCsv(
   id: string,
   days: AnalyticsDays | undefined,

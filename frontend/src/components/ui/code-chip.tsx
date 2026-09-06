@@ -1,10 +1,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * CodeChip — a route code rendered in the machine voice: mono, plated,
- * quiet. Optional `prefix` (the host) dims so the slug carries the eye.
- */
+
 interface CodeChipProps extends Omit<HTMLAttributes<HTMLElement>, "prefix"> {
   prefix?: ReactNode;
   truncate?: boolean;

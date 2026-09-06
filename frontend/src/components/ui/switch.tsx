@@ -1,10 +1,7 @@
 import { Switch as SwitchPrimitive } from "@base-ui/react/switch";
 import { cn } from "@/lib/utils";
 
-/*
- * Switch — ember track when on. Off keeps the raised plate so state reads
- * from position + color, never color alone.
- */
+
 interface SwitchProps {
   checked?: boolean;
   defaultChecked?: boolean;
@@ -37,7 +34,7 @@ function Switch({
         "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border border-border-strong bg-raised transition-colors duration-150",
         "data-checked:border-brand data-checked:bg-brand",
         "data-disabled:cursor-not-allowed data-disabled:opacity-45",
-        /* extend the hit area below lg so the thumb stays a 44px target */
+        
         "max-lg:after:absolute max-lg:after:-inset-3.5 max-lg:after:content-['']",
         className,
       )}

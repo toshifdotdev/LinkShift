@@ -9,7 +9,7 @@ export const extractVisitorInfo = (req : Request) => {
 
     const ipAddress = req.ip?.trim() || undefined;
 
-    // HTTP spec spells it "referer"; accept the common misspelling too.
+    
     const rawReferrer = (req.headers.referer ?? req.headers.referrer) as string | undefined;
 
     return {

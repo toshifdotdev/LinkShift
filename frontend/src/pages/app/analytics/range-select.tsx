@@ -11,7 +11,7 @@ export interface RangeOption {
   minPlan: PlanName;
 }
 
-/** Only ranges the backend whitelist supports, with real plan gates. */
+
 export const RANGE_OPTIONS: RangeOption[] = [
   { label: "7D", days: 7, minPlan: "FREE" },
   { label: "30D", days: 30, minPlan: "FREE" },
@@ -29,9 +29,7 @@ export function rangeLocked(option: RangeOption, plan: string): boolean {
   return planRank(option.minPlan) > planRank(plan);
 }
 
-/* Locked ranges stay clickable (not disabled) so the click can surface the
-   upgrade path instead of silently doing nothing; the controlled value keeps
-   the thumb in place. */
+
 function RangeSelect({
   value,
   plan,

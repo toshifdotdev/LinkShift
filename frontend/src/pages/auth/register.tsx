@@ -38,7 +38,7 @@ function RegisterPage() {
   const ruleState = useMemo(() => RULES.map((r) => ({ ...r, ok: r.test(password) })), [password]);
   const allValid = ruleState.every((r) => r.ok);
 
-  /* Already signed in → the app, not the signup form. */
+  
   if (isAuthenticated) return <Navigate to="/app" replace />;
 
   async function handleResend() {
@@ -74,8 +74,7 @@ function RegisterPage() {
     }
   }
 
-  /* ---- post-register: verification-required state (real contract:
-          register creates the account and emails a link; no session) ---- */
+  
   if (sentTo) {
     return (
       <AuthLayout

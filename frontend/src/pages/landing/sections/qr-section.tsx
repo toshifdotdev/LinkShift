@@ -40,7 +40,7 @@ function QrSection() {
             </Reveal>
           </div>
 
-          {/* QR Studio screenshot */}
+          
           <Reveal delay={0.08}>
             <figure className="overflow-hidden rounded-lg border border-border bg-surface shadow-[0_24px_60px_-28px_rgba(0,0,0,0.8)]">
               <ProductScreenshot shot="qr-studio" />

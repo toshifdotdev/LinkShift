@@ -51,13 +51,13 @@ export const formatScanRow = (scan: ScanRow): string =>
         scan.ipAddress,
     ]);
 
-// Streams the CSV directly to the caller-provided sink instead of
-// materializing every scan in memory (large PRO exports could previously OOM
-// the process). Byte-identical output to the old join('\n') implementation:
-// header first, then one row per line, no trailing newline.
-//
-// Pagination uses a (scannedAt, id) descending cursor so very large exports
-// stay fast without OFFSET degradation.
+
+
+
+
+
+
+
 export const exportLinkAnalytics = async (
     write: (chunk: string) => void,
     userId: string,
@@ -81,8 +81,8 @@ export const exportLinkAnalytics = async (
 
     const BATCH_SIZE = 1000;
     let totalRows = 0;
-    // Keyset cursor on the exact sort keys (scannedAt desc, id desc) — cuids
-    // are not monotonic, so `id lt cursor` would be incorrect.
+    
+    
     let cursorScannedAt: Date | undefined;
     let cursorId: string | undefined;
 

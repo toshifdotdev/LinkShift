@@ -1,10 +1,4 @@
-/*
- * Public legal & policy foundation.
- * Copy sticks to what the product verifiably does. Anything only the owner
- * can supply (legal entity, addresses, support email, refund window,
- * jurisdiction) is a `todo` block — rendered as a visible placeholder until
- * replaced.
- */
+
 
 export type LegalBlock =
   | { kind: "p"; text: string }

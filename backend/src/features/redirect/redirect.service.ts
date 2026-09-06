@@ -57,13 +57,7 @@ type RedirectResult =
         linkId: string;
     };
 
-/**
- * Shared tail of every successful resolution (plain redirect AND password
- * unlock): record the scan, append UTM (inside completeTargetUrl), apply
- * Pro-gated path forwarding, then Pro-gated platform-aware app deep linking.
- * Keeping both flows on one pipeline is what guarantees an unlocked link
- * behaves exactly like its unprotected equivalent.
- */
+
 const resolveDestination = async (link: CachedLink, req: Request): Promise<ResolvedRedirect> => {
     const result = await completeTargetUrl(link, req);
 
@@ -91,9 +85,7 @@ const resolveDestination = async (link: CachedLink, req: Request): Promise<Resol
             const rest = extractRest(req.params as Record<string, unknown>);
             const query = extractQuery(req.url ?? "");
 
-            /* Chromium-based Android browsers resolve intent:// natively:
-               they open the app when installed, otherwise they follow the
-               embedded browser_fallback_url without a round trip. */
+            
             if (platform === "android" && isAndroidChromium(userAgent) && cfg.androidPackage) {
                 return {
                     kind: "redirect",
@@ -146,9 +138,7 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
     }
 
     if (!targetUrl) {
-        /* Hot path: one Prisma call resolves the link AND its domain row
-           (include), so the common cache-miss case no longer does a domain
-           lookup + a link lookup back-to-back. */
+        
         const linkWithDomain = await prisma.link.findFirst({
             where: {
                 shortId,
@@ -158,9 +148,7 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
         });
 
         if (!linkWithDomain) {
-            /* Slow path (no link). Disambiguate "no such domain" vs "no
-               such link" with a single follow-up so the right branded
-               page is shown. */
+            
             const domain = await prisma.domain.findUnique({ where: { host } });
             if (!domain) {
                 throw new AppError("Domain Not Found", 400);
@@ -261,9 +249,6 @@ export const unlockService = async(shortId : string, password : string, host : s
         throw new AppError("Incorrect Password", 401);
     }
 
-    /* The unlock route carries the visitor's original wildcard tail
-       (POST /:shortId/unlock/*rest plus the original query string), so the
-       shared pipeline forwards path/query and applies the Pro-gated features
-       exactly like the unprotected redirect path. */
+    
     return resolveDestination(targetUrl, req);
 }

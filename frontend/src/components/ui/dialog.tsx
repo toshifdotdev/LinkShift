@@ -11,7 +11,7 @@ function Dialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** Fires after the open/close animation finishes — safe place to reset state. */
+  
   onOpenChangeComplete?: (open: boolean) => void;
   children: ReactNode;
 }) {
@@ -54,8 +54,7 @@ function DialogContent({
           "fixed top-1/2 left-1/2 z-50 w-[calc(100vw-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto",
           "rounded-lg border border-border bg-elevated p-6 shadow-lift",
           "focus:outline-none animate-in fade-in zoom-in-95 duration-200",
-          /* Base UI holds the popup mounted while it animates out and flags it
-             with `data-ending-style` — ease it back down instead of unmounting. */
+          
           "data-ending-style:animate-out data-ending-style:fade-out data-ending-style:zoom-out-95",
           className,
         )}

@@ -4,7 +4,7 @@ export type PlanName = "STARTER" | "CREATOR" | "PRO";
 export type BillingCycle = "MONTHLY" | "YEARLY";
 export type Currency = "INR" | "USD";
 
-/** Shape returned by GET /billing/plans (server maps Prisma Plan → these fields). */
+
 export interface ApiPlan {
   name: string;
   monthlyPrice: number | null;
@@ -53,7 +53,7 @@ export type SubscriptionStatus =
   | "COMPLETED"
   | "EXPIRED";
 
-/** GET /billing/subscription returns the Prisma row incl. plan & pendingPlan. */
+
 export interface ApiSubscription {
   id: string;
   status: SubscriptionStatus;
@@ -135,12 +135,7 @@ const USAGE_CATEGORIES = [
   "domains",
 ] as const;
 
-/**
- * GET /billing/usage — every category and cap the page renders. The response
- * is validated here (not scattered through the page) so a stale/malformed
- * backend contract surfaces as a recoverable query error instead of a
- * `Cannot read properties of undefined` render crash (blank page).
- */
+
 export async function getBillingUsage() {
   const res = await apiFetch<{ success: true; data: Partial<BillingUsage> }>("/billing/usage");
   const data = res.data;

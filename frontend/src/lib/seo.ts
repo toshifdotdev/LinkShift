@@ -1,57 +1,40 @@
-/**
- * Route-aware SEO utility for LinkShift.
- *
- * Zero-dependency head management: updates <title>, <meta>, <link rel="canonical">,
- * <meta name="robots">, Open Graph tags, and JSON-LD scripts on navigation.
- * Correctly replaces (never duplicates) elements when the route changes.
- *
- * Usage (inside a page component):
- *   useSeo({ title: "Pricing — LinkShift", description: "…", canonicalPath: "/pricing" });
- *   useSeo({ ...ROUTE_SEO["/pricing"] });
- *   useSeo({ ...ROUTE_SEO["/"], jsonLd: buildLandingJsonLd() });
- */
+
 
 import { useEffect } from "react";
 
 const ORIGIN = "https://linkshift.in";
 
-/* ------------------------------------------------------------------ */
-/*  Public interface                                                   */
-/* ------------------------------------------------------------------ */
+
+
+
 
 export interface SeoConfig {
-  /** Document <title> (required) */
+  
   title: string;
-  /** <meta name="description"> */
+  
   description?: string;
-  /** Canonical URL path — joined with ORIGIN. Defaults to current pathname. */
+  
   canonicalPath?: string;
-  /** Robots directive — e.g. "index,follow" or "noindex,nofollow" */
+  
   robots?: string;
-  /** Override OG title (defaults to title) */
+  
   ogTitle?: string;
-  /** Override OG description (defaults to description) */
+  
   ogDescription?: string;
-  /** Override OG url (defaults to ORIGIN + canonicalPath) */
+  
   ogUrl?: string;
-  /** Structured data object — injected as <script type="application/ld+json"> */
+  
   jsonLd?: Record<string, unknown> | null;
 }
 
-/**
- * React hook — apply SEO metadata for the lifetime of the component.
- * Re-runs when any config value changes (route transitions re-mount pages).
- */
+
 export function useSeo(cfg: SeoConfig): void {
   useEffect(() => {
     applySeo(cfg);
   }, [cfg.title, cfg.description, cfg.canonicalPath, cfg.robots, cfg.jsonLd]);
 }
 
-/**
- * Imperative version — apply SEO metadata to the document head immediately.
- * Useful outside React or in layout components that don't re-mount.
- */
+
 export function applySeo(cfg: SeoConfig): void {
   setTitle(cfg.title);
   setMeta("description", cfg.description ?? "");
@@ -66,9 +49,9 @@ export function applySeo(cfg: SeoConfig): void {
   setJsonLd(cfg.jsonLd ?? null);
 }
 
-/* ------------------------------------------------------------------ */
-/*  Per-route metadata map                                            */
-/* ------------------------------------------------------------------ */
+
+
+
 
 export interface RouteSeo {
   title: string;
@@ -76,7 +59,7 @@ export interface RouteSeo {
   canonicalPath: string;
 }
 
-/** Static route definitions — titles/descriptions derived from page sources. */
+
 export const ROUTE_SEO: Record<string, RouteSeo> = {
   "/": {
     title: "LinkShift — URL Shortener with QR Codes & Link Analytics",
@@ -162,12 +145,11 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
   },
 };
 
-/* ------------------------------------------------------------------ */
-/*  JSON-LD structured-data builders                                  */
-/* ------------------------------------------------------------------ */
 
-/** Landing page: WebSite + WebApplication + Organization (truthful — identity
- *  facts mirror the public legal pages; no registrations or fake claims). */
+
+
+
+
 export function buildLandingJsonLd(): Record<string, unknown> {
   return {
     "@context": "https://schema.org",
@@ -208,7 +190,7 @@ export function buildLandingJsonLd(): Record<string, unknown> {
   };
 }
 
-/** FAQ page: FAQPage structured data. Pass in flat Q&A entries. */
+
 export function buildFaqJsonLd(
   entries: Array<{ q: string; a: string }>,
 ): Record<string, unknown> {
@@ -226,7 +208,7 @@ export function buildFaqJsonLd(
   };
 }
 
-/** BreadcrumbList for docs topics and other nested pages. */
+
 export function buildBreadcrumbJsonLd(
   items: Array<{ name: string; path: string }>,
 ): Record<string, unknown> {
@@ -242,9 +224,9 @@ export function buildBreadcrumbJsonLd(
   };
 }
 
-/* ------------------------------------------------------------------ */
-/*  Low-level DOM helpers (idempotent — update or create)               */
-/* ------------------------------------------------------------------ */
+
+
+
 
 function setTitle(title: string): void {
   document.title = title;
@@ -282,7 +264,7 @@ function setRobots(content?: string): void {
     if (content) {
       el.content = content;
     } else {
-      // Remove robots meta when not needed (default is index,follow)
+      
       el.remove();
     }
   }
@@ -301,7 +283,7 @@ function setOg(property: string, content: string): void {
 }
 
 function setJsonLd(data: Record<string, unknown> | null): void {
-  // Remove any existing JSON-LD script we manage (identified by data-seo attribute)
+  
   const existing = document.querySelector(
     'script[type="application/ld+json"][data-seo]',
   );

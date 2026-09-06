@@ -36,8 +36,8 @@ function ProfileSection() {
   const [nameError, setNameError] = useState<string | null>(null);
 
   if (user && user.name !== prevName) {
-    // The profile refreshed from the server (e.g. saved elsewhere) — resync
-    // the draft so it never silently diverges from the stored name.
+    
+    
     setPrevName(user.name);
     setNameDraft(user.name);
   }
@@ -118,7 +118,7 @@ function ProfileSection() {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="flex flex-col gap-6">
-        {/* Avatar */}
+        
         <div className="flex items-start gap-4">
           <Avatar
             src={user.avatarUrl}
@@ -167,7 +167,7 @@ function ProfileSection() {
           onCropComplete={(blob) => void handleCropComplete(blob)}
         />
 
-        {/* Name */}
+        
         <form onSubmit={handleSaveName} className="flex flex-col gap-1.5" noValidate>
           <Field>
             <FieldLabel htmlFor="profile-name">Name</FieldLabel>
@@ -192,7 +192,7 @@ function ProfileSection() {
         </form>
       </div>
 
-      {/* Account facts */}
+      
       <dl className="ls-plate grid h-fit grid-cols-1 overflow-hidden sm:grid-cols-2">
         <div className="border-b border-border px-4 py-3.5 sm:border-r">
           <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Email</dt>

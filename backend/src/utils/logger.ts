@@ -1,12 +1,4 @@
-/**
- * Single-call JSON logger. One event = one line of stdout/stderr.
- *
- *   log.info("event_name", { userId, planId })
- *   log.error("event_name", { error: err.message, stack: err.stack })
- *
- * Fields are merged into the JSON object. Never log secrets or full
- * tokens. Set LOG_PRETTY=1 for indented development output.
- */
+
 type Level = "debug" | "info" | "warn" | "error";
 
 const LEVEL_RANK: Record<Level, number> = { debug: 10, info: 20, warn: 30, error: 40 };

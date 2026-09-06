@@ -1,10 +1,6 @@
 import type { ApiPlan, Currency } from "@/api/billing";
 
-/**
- * The FREE tier is defined by the backend seed (prisma/seed.ts). It is the
- * default state of every account and is intentionally presented alongside
- * the API-provided paid plans.
- */
+
 export const FREE_PLAN: ApiPlan = {
   name: "FREE",
   monthlyPrice: 0,
@@ -51,12 +47,7 @@ export function formatAnalytics(days: number): string {
   return `${days} days`;
 }
 
-/**
- * Per-plan display overrides. Used where enforcement code differs from raw
- * seed numbers — e.g. FREE accounts are hard-blocked from destination edits
- * by the subscription requirement (billing.service checkDestinationLimit),
- * so their seeded quota of 3 must never be advertised.
- */
+
 const OVERRIDES: Record<string, Record<string, string>> = {
   FREE: { destinationEdits: "—", customSlugs: "—" },
 };
@@ -86,7 +77,7 @@ export const LIMIT_ROWS: LimitRow[] = [
   { key: "analytics", label: "Analytics history", value: (p) => formatAnalytics(p.analyticsDays) },
 ];
 
-/** Feature gates enforced in backend code (billing.service hardcoded checks). */
+
 export type FlagValue = boolean;
 
 export interface FlagRow {
@@ -118,7 +109,7 @@ export const FLAG_ROWS: FlagRow[] = [
   },
 ];
 
-/** Implemented for every plan without any gate. */
+
 export const UNIVERSAL_INCLUDES: Array<{ title: string; note: string }> = [
   { title: "Password-protected links", note: "bcrypt-guarded unlock endpoint" },
   { title: "Link expiration", note: "Hard 410 after the set datetime" },
@@ -126,7 +117,7 @@ export const UNIVERSAL_INCLUDES: Array<{ title: string; note: string }> = [
   { title: "Redirect grace band", note: "Soft overage before a plan cuts off" },
 ];
 
-/** Yearly discount vs 12×monthly, derived from live plan data. */
+
 export function yearlyDiscountPercent(plans: ApiPlan[]): number | null {
   const base = plans.find((p) => p.yearlyPrice !== null && p.monthlyPrice);
   if (!base?.yearlyPrice || !base.monthlyPrice) return null;

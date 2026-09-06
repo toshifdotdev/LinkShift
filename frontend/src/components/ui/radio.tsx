@@ -3,11 +3,7 @@ import { RadioGroup as RadioGroupRoot } from "@base-ui/react/radio-group";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * Radio + RadioGrid — Base UI radio semantics with LinkShift material.
- * Radio is the round control; RadioGrid renders options as selectable
- * tiles (the QR studio aspect-ratio/size pickers).
- */
+
 
 interface RadioGroupProps {
   value?: string;

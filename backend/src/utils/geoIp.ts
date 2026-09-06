@@ -6,9 +6,9 @@ const dbPath = path.join(
     "GeoLite2-City.mmdb"
 );
 
-// GeoIP is enrichment only: a missing/corrupt MMDB must degrade to
-// "unknown location" — without this catch, the rejected open() becomes an
-// unhandled rejection and can take the whole process down at startup.
+
+
+
 const readerPromise = Reader.open(dbPath).catch((err) => {
     console.warn(
         "[geoip] database unavailable — location enrichment disabled:",

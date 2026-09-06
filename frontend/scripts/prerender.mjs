@@ -1,21 +1,4 @@
-/*
- * Build-time prerender step.
- *
- * Consumes:
- *   dist/index.html          — the SPA shell emitted by `vite build`
- *   dist-ssr/prerender-entry.js — the SSR bundle emitted by
- *                                `vite build --ssr src/prerender/prerender-entry.tsx`
- *
- * Produces:
- *   dist/index.html                 — prerendered homepage
- *   dist/<route>/index.html         — one static file per PUBLIC_PATHS route
- *
- * Each file gets route-specific title/description/canonical/OG/Twitter/robots
- * and the page's JSON-LD (tagged `data-seo`, the same marker the runtime
- * useSeo() manages, so hydration replaces rather than duplicates).
- * The React root is filled with the server-rendered markup; the client still
- * boots with createRoot (no hydration contract).
- */
+
 
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -27,7 +10,7 @@ const distDir = join(root, "dist");
 const template = readFileSync(join(distDir, "index.html"), "utf8");
 const ORIGIN = "https://linkshift.in";
 
-/** Replace the content value of an attribute-selected meta tag. */
+
 function replaceMetaContent(html, selector, content) {
     const re = new RegExp(`(<meta[^>]*${selector}[^>]*content=")[^"]*(")`);
     if (!re.test(html)) {
@@ -40,7 +23,7 @@ function escapeHtml(s) {
     return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
-/** Escape a string for safe embedding inside a <script> JSON payload. */
+
 function escapeJsonForScript(json) {
     return json.replace(/</g, "\\u003c");
 }
@@ -62,8 +45,8 @@ function buildPage(path) {
     html = replaceMetaContent(html, 'name="twitter:title"', head.title);
     html = replaceMetaContent(html, 'name="twitter:description"', head.description);
 
-    // Explicit index directive for crude crawlers; runtime useSeo() removes
-    // this tag for parity with its default index,follow behavior.
+    
+    
     const robotsMeta = '<meta name="robots" content="index,follow" />';
     html = html.replace("</head>", `    ${robotsMeta}\n</head>`);
 

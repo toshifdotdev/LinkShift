@@ -3,13 +3,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 interface HeatPoint {
-  /** Postgres DOW: 0 = Sunday … 6 = Saturday (UTC). */
+  
   dow: number;
   hour: number;
   count: number;
 }
 
-/* Display order Monday-first; values are Postgres DOW indices. */
+
 const ROWS: Array<{ label: string; full: string; dow: number }> = [
   { label: "Mon", full: "Monday", dow: 1 },
   { label: "Tue", full: "Tuesday", dow: 2 },
@@ -22,12 +22,7 @@ const ROWS: Array<{ label: string; full: string; dow: number }> = [
 
 const fmtHour = (h: number) => `${String(h).padStart(2, "0")}:00`;
 
-/**
- * Day-of-week × hour-of-day scan heatmap (UTC buckets). Cell intensity is
- * ember-on-transparent so both themes stay legible; the whole grid fades in
- * once per dataset (no per-cell choreography). Hover readout lives in a
- * fixed-height footer so inspecting never shifts layout.
- */
+
 function HeatGrid({
   title,
   data,
@@ -129,7 +124,7 @@ function HeatGrid({
             </div>
           </div>
 
-          {/* fixed-height readout — hover info or peak summary */}
+          
           <footer className="border-t border-border-subtle px-5 py-2.5">
             <p className="truncate font-mono text-[10px] tracking-[0.12em] text-fg-muted tabular-nums">
               {hover ? readout(hover) : peak ? `PEAK · ${readout(peak)}` : ""}

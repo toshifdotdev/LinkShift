@@ -39,7 +39,7 @@ function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: 
       <MenuPrimitive.Portal>
         <MenuPrimitive.Positioner align="end" sideOffset={8} className="z-50">
           <MenuPrimitive.Popup className="relative w-60 overflow-hidden rounded-lg border border-border bg-elevated p-1.5 shadow-lift animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
-            {/* The Mono Marquee: a 1px ember hairline drawn across the top of the popover */}
+            
             <span aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-brand/60" />
             <div className="border-b border-border px-3 pt-4 pb-2.5">
               <p className="truncate text-[13px] font-medium text-foreground">{user?.name}</p>

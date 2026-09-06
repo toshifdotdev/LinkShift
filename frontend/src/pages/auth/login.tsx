@@ -32,7 +32,7 @@ function LoginPage() {
   const from = (location.state as { from?: string } | null)?.from ?? "/app";
   const [startingGoogle, setStartingGoogle] = useState(false);
 
-  /* Clear one-shot query flags once their banners have been seen. */
+  
   useEffect(() => {
     if (!justVerified && !googleFailed) return;
     const url = googleFailed ? "/login?error=google" : "/login";
@@ -45,7 +45,7 @@ function LoginPage() {
     window.location.assign(GOOGLE_AUTH_URL);
   }
 
-  /* Already signed in → straight to the app. */
+  
   if (isAuthenticated) return <Navigate to="/app" replace />;
 
   async function handleSubmit(e: React.FormEvent) {

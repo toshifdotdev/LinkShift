@@ -1,9 +1,6 @@
 import { cn } from "@/lib/utils";
 
-/*
- * The arc stays visible under reduced motion — role="status" plus the
- * label carry the meaning when the spin stops.
- */
+
 function Spinner({ className }: { className?: string }) {
   return (
     <svg

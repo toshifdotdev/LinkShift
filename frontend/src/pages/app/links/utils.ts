@@ -1,6 +1,6 @@
 import type { LinkItem } from "@/types/api";
 
-/** ISO → value usable by <input type="datetime-local"> in the local zone. */
+
 function toLocalInputValue(iso: string | null): string {
   if (!iso) return "";
   const d = new Date(iso);
@@ -8,7 +8,7 @@ function toLocalInputValue(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-/** datetime-local value → ISO string, or null when empty. */
+
 function fromLocalInputValue(value: string): string | null {
   if (!value) return null;
   const d = new Date(value);

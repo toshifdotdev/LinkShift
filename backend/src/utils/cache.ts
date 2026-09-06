@@ -1,7 +1,7 @@
 import { redisClient } from "../config/redis"
 
-// All Redis access is failure-tolerant: a missing/degraded Redis must degrade
-// features (caching) rather than break them (redirects, dashboards, tests).
+
+
 
 let warned = false;
 function warnOnce(action: string, err: unknown) {

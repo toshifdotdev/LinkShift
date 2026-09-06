@@ -1,12 +1,7 @@
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
-/**
- * LinkShift motion primitives.
- *
- * One library (framer-motion). Every interactive surface that animates goes
- * through these. Reduced motion is honored by every primitive.
- */
+
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -15,11 +10,7 @@ const riseVariants: Variants = {
   visible: { opacity: 1, y: 0 },
 };
 
-/**
- * The Quiet Reveal — every card, modal, and surface transition uses this.
- * 6px rise + 240ms ease-out-cubic. The user feels the page settle, not
- * animate.
- */
+
 function FadeIn({
   children,
   delay = 0,
@@ -49,10 +40,7 @@ function FadeIn({
   );
 }
 
-/**
- * Stagger children: each child reveals 50ms after the previous.
- * Use for list rows, grids of cards, sidebars of features.
- */
+
 function Stagger({
   children,
   delay = 0,
@@ -97,11 +85,7 @@ function Stagger({
   );
 }
 
-/**
- * The Ember Stripe: an active left rail that grows in from 0 → 1.
- * Used on the sidebar's active item, the "current plan" stripe, and any
- * list/grid item that needs a wayfinding accent.
- */
+
 function Spine({
   active,
   className,
@@ -125,28 +109,21 @@ function Spine({
   );
 }
 
-/**
- * The FlashSweep — a horizontal ember hairline that sweeps L→R under a
- * row to mark it as newly created. The page that owns the row passes
- * `trigger`; the moment the trigger changes, the sweep runs.
- */
+
 function FlashSweep({ trigger, className }: { trigger: unknown; className?: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     el.classList.remove("is-on");
-    // force reflow so the animation restarts even if the class is re-added
+    
     void el.offsetWidth;
     el.classList.add("is-on");
   }, [trigger]);
   return <span aria-hidden="true" ref={ref} className={"ls-stripe-draw " + (className ?? "")} />;
 }
 
-/**
- * NumberTick — counts a number from 0 to `target` over `duration` ms.
- * Honors reduced motion by snapping to the final value.
- */
+
 function NumberTick({
   value,
   active = true,

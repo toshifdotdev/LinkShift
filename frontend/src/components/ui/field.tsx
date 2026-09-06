@@ -12,11 +12,7 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 
-/*
- * Field — the vertical form rhythm. Hints and errors register their ids on
- * the enclosing Field; Input/Textarea pick the list up as aria-describedby,
- * so assistive tech hears the hint and the error alongside the control.
- */
+
 
 interface FieldRegistry {
   register: (id: string) => void;
@@ -26,7 +22,7 @@ interface FieldRegistry {
 const FieldRegistryContext = createContext<FieldRegistry | null>(null);
 const FieldDescribedByContext = createContext<string | undefined>(undefined);
 
-/** Merged aria-describedby ids from the enclosing <Field>, if any. */
+
 function useFieldDescribedBy() {
   return useContext(FieldDescribedByContext);
 }

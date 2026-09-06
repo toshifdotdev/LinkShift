@@ -20,10 +20,7 @@ const steps = [
   },
 ];
 
-/*
- * Route manifest — the journey as a waybill: one plate, hairline rows,
- * mono stage codes, and a quiet arrow that answers hover.
- */
+
 function HowItWorks() {
   return (
     <section id="how-it-works" className="scroll-mt-20 py-24 sm:py-32">

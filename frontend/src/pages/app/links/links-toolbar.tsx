@@ -69,7 +69,7 @@ function LinksToolbar({
             aria-label="Search links"
             className="h-9 w-full pl-9 pr-12 sm:w-72"
           />
-          {/* The ⌘K hint — desktop only, never a dead control. */}
+          
           <span
             aria-hidden="true"
             className="pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 select-none items-center rounded border border-border bg-elevated px-1.5 py-0.5 font-mono text-[10px] tracking-[0.04em] text-fg-muted sm:flex"

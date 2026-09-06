@@ -1,10 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/*
- * Pagination — mono numerals; the current page carries the ember rail
- * (the Rail language reserved for *current*).
- */
+
 
 type WindowItem = number | "gap";
 

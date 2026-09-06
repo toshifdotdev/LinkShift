@@ -5,12 +5,7 @@ import { useLogout, useSession } from "@/auth/session";
 import { AppShellSkeleton } from "@/components/app/app-layout";
 import { Button } from "@/components/ui/button";
 
-/**
- * Guards the /app subtree. Token absence short-circuits to /login; a
- * present token waits on the /users/me query before rendering the shell.
- * Non-401 bootstrap failures (5xx, network) surface a recovery state
- * instead of an unrendered blank screen.
- */
+
 function RequireAuth() {
   const location = useLocation();
   const { isLoading, isAuthenticated, hasError, refetch } = useSession();
@@ -27,7 +22,7 @@ function RequireAuth() {
     return <BootstrapErrorState onRetry={() => void refetch()} onSignOut={logout} />;
   }
 
-  // 401: the UNAUTHORIZED_EVENT listener is already routing to /login.
+  
   return null;
 }
 

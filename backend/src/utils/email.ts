@@ -17,17 +17,17 @@ export type EmailDeliveryResult = { delivered: boolean };
 
 export const sendEmail = async(data : SendEmailData) => {
     const payload = {
-        // Must be a verified sender on this Resend account. Production requires
-        // a domain you own (see EMAIL_FROM in .env.example / ENVIRONMENT.md).
+        
+        
         from : config.emailFrom!,
         to : data.to,
         subject : data.subject,
         html : data.html
     };
 
-    // Resend's SDK resolves with { data, error } instead of throwing on
-    // API-level failures — inspect `error` explicitly so a rejected send
-    // propagates to sendEmailSafely rather than looking successful.
+    
+    
+    
     const { data: result, error } = await resend.emails.send(payload);
 
     if (error) {
@@ -37,12 +37,7 @@ export const sendEmail = async(data : SendEmailData) => {
     return result;
 }
 
-/**
- * Provider outages must not surface as 500s mid-auth-flow. Delivery failures
- * are logged here (never the recipient address) and reported to the caller
- * via the result so it can degrade appropriately: registration rolls the
- * account back, while reset/resend keep their enumeration-neutral response.
- */
+
 export const sendEmailSafely = async(data : SendEmailData) : Promise<EmailDeliveryResult> => {
     try {
         await sendEmail(data);
@@ -57,8 +52,8 @@ export const sendEmailSafely = async(data : SendEmailData) : Promise<EmailDelive
 }
 
 export const sendPasswordResetEmail = async(email : string, token : string) : Promise<EmailDeliveryResult> => {
-    // Points at the FRONTEND origin — the reset page submits the new password
-    // through the API. (FRONTEND_URL must be the SPA origin, not the OAuth path.)
+    
+    
     const resetLink = buildPasswordResetUrl(config.frontendUrl!, token);
 
     const html = `
@@ -85,7 +80,7 @@ export const sendPasswordResetEmail = async(email : string, token : string) : Pr
 
 
 export const sendVerificationEmail = async (userId: string, email: string, name : string | null) : Promise<EmailDeliveryResult> => {
-    // delete previous verification token -- to prevent error 
+    
     await prisma.emailVerification.deleteMany({
         where : {
             userId
@@ -104,8 +99,8 @@ export const sendVerificationEmail = async (userId: string, email: string, name 
         }
     })
 
-    // Points at the BACKEND verify-email route, which validates the token and
-    // then redirects the browser to the frontend login page.
+    
+    
     const verificationUrl = buildEmailVerificationUrl(config.APP_URL!, generatedToken);
     const displayName = name ?? "there";
 

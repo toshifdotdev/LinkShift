@@ -1,9 +1,4 @@
-/*
- * Documentation information architecture.
- * Categories → topics → blocks. Copy stays factual and short; media blocks
- * reference real product captures where one exists (see MediaBlock in
- * docs-topic-page.tsx) and fall back to a labeled placeholder slot otherwise.
- */
+
 
 export type DocBlock =
   | { kind: "p"; text: string }

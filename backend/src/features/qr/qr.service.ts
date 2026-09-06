@@ -13,8 +13,8 @@ export const qrService = async(data : createLinkQr) => {
 
     await checkQrLimit(data.userId);
 
-    // Plan gate: logo branding is a Creator/Pro capability (enforced
-    // server-side, mirrored by the locked control in the studio UI).
+    
+    
     if (data.logoUrl) {
         const plan = await getUserPlan(data.userId);
         if (plan.name !== "CREATOR" && plan.name !== "PRO") {
@@ -35,7 +35,7 @@ export const qrService = async(data : createLinkQr) => {
     }
 
    
-    // APP_URL must be the public short domain (e.g. https://go.linkshift.in).
+    
     const shortUrl = `${config.APP_URL}/${currentLink.shortId}`;
 
     const foregroundColor = data.foregroundColor ?? "#000000";
@@ -48,7 +48,7 @@ export const qrService = async(data : createLinkQr) => {
     const logoUrl = data.logoUrl;
     const logoPublicId = data.logoPublicId ?? null;
 
-    // Frame gate: frames are a Creator/Pro capability (server-enforced).
+    
     if (frame !== "none") {
         const plan = await getUserPlan(data.userId);
         if (plan.name !== "CREATOR" && plan.name !== "PRO") {
@@ -76,8 +76,8 @@ export const qrService = async(data : createLinkQr) => {
     }
 
     
-    // The server renderer runs under JSDOM and cannot reliably fetch remote
-    // images — hand it the logo as a data URL so it embeds for real.
+    
+    
     let renderLogoUrl = logoUrl;
     if (logoUrl) {
         const res = await fetch(logoUrl);
@@ -90,8 +90,8 @@ export const qrService = async(data : createLinkQr) => {
     try {
         const qrImageData = await generateQrImage({ margin, foregroundColor, backgroundColor, userId : currentLink.userId,shortUrl, logoUrl : renderLogoUrl , pattern, eyeStyle, eyeBallStyle});
 
-        // Frames are composed at SAVE time so the persisted Cloudinary asset
-        // IS the final design — preview, library, and download all match.
+        
+        
         const composed = frame === "none"
             ? qrImageData.buffer
             : await composeQrFrameInChild(qrImageData.buffer, frame, foregroundColor, backgroundColor);
@@ -129,9 +129,9 @@ export const qrService = async(data : createLinkQr) => {
 }
 
 
-// Route param is the LINK id (/:linkId/download): resolve that link's most
-// recently generated QR. The previous lookup compared a link id against
-// Qr.id, which could never match (endpoint always 404'd).
+
+
+
 export const qrDownloadService = async(userId : string, linkId : string) => {
     const existingQr = await prisma.qr.findFirst({
         where : {

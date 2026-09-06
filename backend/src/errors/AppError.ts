@@ -4,7 +4,7 @@ export class AppError extends Error {
     
     this.name = this.constructor.name;
 
-    Object.setPrototypeOf(this, new.target.prototype); //"Internal Server Error"
+    Object.setPrototypeOf(this, new.target.prototype); 
   }
 }
 

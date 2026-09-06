@@ -2,10 +2,7 @@ import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
 import { Check, Minus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/*
- * Checkbox — ember fill when checked, minus when mixed. The check glyph is
- * the state word, so color is never the only channel.
- */
+
 interface CheckboxProps {
   checked?: boolean | "mixed";
   defaultChecked?: boolean | "mixed";

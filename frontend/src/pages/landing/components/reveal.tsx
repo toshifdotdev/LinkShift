@@ -8,11 +8,7 @@ const riseVariants: Variants = {
   visible: { opacity: 1, y: 0 },
 };
 
-/**
- * Viewport reveal — plays once by default so the page settles into
- * stillness after each section (rhythm: still → reveal → still).
- * Opt into replay with `once={false}` for the few cinematic moments.
- */
+
 function Reveal({
   children,
   delay = 0,
@@ -38,7 +34,7 @@ function Reveal({
   );
 }
 
-/** Masked line reveal — content rises out of an overflow-hidden clip. */
+
 function MaskReveal({
   children,
   delay = 0,

@@ -37,7 +37,7 @@ export const deleteMeController = asyncHandler(async (req: AuthedRequest, res: R
 
     await deleteMe(userId, body.password, body.confirmation);
 
-    // Session cookie is dead with the account.
+    
     res.clearCookie("refreshToken");
     res.status(200).json({
         success: true,

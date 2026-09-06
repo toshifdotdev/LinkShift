@@ -1,15 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import QRCodeStyling from "qr-code-styling";
 
-/** mirrors generateQr.ts eyeStyleMap */
+
 const EYE_STYLE_MAP = {
   square: "square",
   dot: "dot",
   extraRounded: "extra-rounded",
 } as const;
 
-/** mirrors generateQr.ts patternStyleMap — canonical config values map to
- * qr-code-styling DotType strings the same way on preview and save. */
+
 const PATTERN_MAP = {
   square: "square",
   dots: "dots",
@@ -21,13 +20,7 @@ const PATTERN_MAP = {
 import { shortUrl } from "@/lib/short-url";
 import type { QrConfig } from "@/api/qr";
 
-/**
- * Live local preview rendered with the SAME underlying library the backend
- * uses (@solana/qr-code-styling is a server build of qr-code-styling) and
- * the SAME option mapping as generateQr.ts — so what you see is what the
- * persisted Cloudinary asset will look like. The authoritative image is
- * still produced server-side on save.
- */
+
 const FRAMES = {
   none: { pad: 0, border: 0, labelHeight: 0, label: "", borderEmber: false, double: false },
   clean: { pad: 26, border: 6, labelHeight: 0, label: "", borderEmber: false, double: false },
@@ -37,7 +30,7 @@ const FRAMES = {
   branded: { pad: 28, border: 8, labelHeight: 58, label: "SCAN ME", borderEmber: true, double: false },
 } as const;
 
-/* mirror backend FRAME_SPECS LABEL_GAP / LABEL_RADIUS (guarded by tests/qr-frame.test.ts) */
+
 const LABEL_GAP = 8;
 const LABEL_RADIUS = 6;
 
@@ -54,20 +47,18 @@ function QrPreview({
   frame?: FrameName;
   className?: string;
 }) {
-  /* mirrors composeQrFrame.ts geometry so preview == downloaded PNG */
+  
   const f = FRAMES[frame];
   const borderColor = f.borderEmber ? "#E8590C" : config.foregroundColor;
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const qrRef = useRef<QRCodeStyling | null>(null);
 
-  /* native design size (border-box): 300-unit QR + frame, like the backend canvas */
+  
   const nativeW = 300 + 2 * (f.border + f.pad);
   const nativeH = nativeW + (f.labelHeight > 0 ? LABEL_GAP + f.labelHeight : 0);
 
-  /* The preview scales the WHOLE design down uniformly (transform: scale) so
-     the on-screen proportions are exactly the final PNG's — never just the QR
-     svg while the CSS border/padding stay fixed. */
+  
   const [k, setK] = useState(1);
   useEffect(() => {
     const el = wrapRef.current;
@@ -81,7 +72,7 @@ function QrPreview({
 
   const data = shortUrl(shortId);
 
-  /* mount once */
+  
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -107,7 +98,7 @@ function QrPreview({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /* live updates */
+  
   useEffect(() => {
     qrRef.current?.update({
       data,

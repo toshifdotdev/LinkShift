@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-/**
- * User avatar with graceful initial fallback — never renders a broken
- * image. Falls back whenever src is missing or fails to load.
- */
+
 function Avatar({
   src,
   name,

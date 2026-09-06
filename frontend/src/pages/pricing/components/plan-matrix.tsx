@@ -16,9 +16,7 @@ import { cn } from "@/lib/utils";
 
 const GRID = "grid grid-cols-[minmax(9.5rem,1.15fr)_repeat(4,minmax(0,1fr))]";
 
-/* Continuous highlighted-column treatment: identical surface + hairline rails
-   on the Creator cell of EVERY row, so the column reads as one structure
-   from cap line to bottom border. */
+
 const CREATOR_CELL = "relative bg-brand/[0.045] border-x border-brand/25";
 const CELL = "px-2 lg:px-4";
 
@@ -42,7 +40,7 @@ function SectionLabel({ children }: { children: string }) {
 function PlanMatrix({ plans, cycle, currency, subscription, loadingPlan, onSubscribe }: PlanMatrixProps) {
   return (
     <div className="relative hidden md:block">
-      {/* header — cells fill row height so the creator tint reaches the cap */}
+      
       <div className={cn(GRID, "items-stretch border-b border-border")}>
         <div />
         {plans.map((plan) => (
@@ -56,8 +54,7 @@ function PlanMatrix({ plans, cycle, currency, subscription, loadingPlan, onSubsc
         ))}
       </div>
 
-      {/* CTA row — vertical padding lives INSIDE cells so the creator
-          surface is uninterrupted behind the button */}
+      
       <div className={cn(GRID, "items-stretch border-b border-border")}>
         <div className="py-4" />
         {plans.map((plan) => (
@@ -71,7 +68,7 @@ function PlanMatrix({ plans, cycle, currency, subscription, loadingPlan, onSubsc
         ))}
       </div>
 
-      {/* quotas */}
+      
       <div className={GRID}>
         <SectionLabel>Usage</SectionLabel>
         {plans.map((plan) => (
@@ -120,7 +117,7 @@ function PlanMatrix({ plans, cycle, currency, subscription, loadingPlan, onSubsc
         ))}
       </div>
 
-      {/* capabilities */}
+      
       <div className={GRID}>
         <SectionLabel>Capabilities</SectionLabel>
         {plans.map((plan) => (
