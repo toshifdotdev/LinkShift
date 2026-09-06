@@ -2,12 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [dev, master]
   pull_request:
 
 jobs:
   backend:
-    name: Backend — typecheck, build, unit tests
+    name: Backend — prisma generate, typecheck, build, unit tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -35,13 +35,109 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck + build (forced full pass)
+      # The generated client is gitignored (backend/src/generated/prisma) and
+      # must be produced before TypeScript can resolve its imports.
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Typecheck (forced full pass)
         run: npx tsc -b --force
 
       - name: Unit tests (hermetic)
         run: npx vitest run --exclude "tests/integration/**"
 
+      - name: Production build (prisma generate + tsc)
+        run: npm run build
+
       - name: Confirm no compiled artifacts outside dist
         run: |
           ! ls tests/*.js 2>/dev/null
           ! ls vitest.config.js 2>/dev/null
+
+  frontend:
+    name: Frontend — typecheck, tests, production build (prerender + sitemap)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    env:
+      # Production API base used by the build (`npm run build` → prerendered
+      # routes + sitemap). Same value the deployed frontend is built with.
+      VITE_API_URL: https://go.linkshift.in/api/v1
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc -b
+
+      - name: Tests
+        run: npx vitest run
+
+      - name: Production build (prerender public routes + sitemap)
+        run: npm run build
+
+      - name: Verify prerender + sitemap output exists
+        run: |
+          test -f dist/index.html
+          test -f dist/pricing/index.html
+          test -f dist/docs/qr-studio/index.html
+          test -f dist/sitemap.xml
+          test -f dist/llms.txt
+          test -f dist-ssr/prerender-entry.js
+
+  docker:
+    name: Docker image + deployment config validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Proves the production image builds from a clean checkout. No push,
+      # no registry credentials, no secrets.
+      - name: Build backend image
+        run: docker build --platform linux/amd64 -t linkshift-backend-ci backend/
+
+      # compose requires the env_file to exist and APP_IMAGE to be set.
+      # Placeholder values only — this validates structure, not secrets.
+      - name: Validate docker-compose configuration
+        working-directory: deploy
+        run: |
+          echo "APP_IMAGE=docker.io/example/linkshift-backend:ci" > .env
+          docker compose config --quiet
+          rm .env
+
+      # Caddy is not preinstalled on the runner; the official caddy:2 image
+      # validates the exact Caddyfile that ships with the repo.
+      - name: Validate Caddyfile
+        run: >
+          docker run --rm
+          -v "${{ github.workspace }}/deploy/Caddyfile:/etc/caddy/Caddyfile:ro"
+          caddy:2 caddy validate --config /etc/caddy/Caddyfile
+
+  secrets:
+    name: Secret scan (tracked files)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Current-tree scan of TRACKED files only (git grep) — ignored local
+      # files are never read, and git history is not scanned, so the
+      # intentionally removed old content cannot fail new builds.
+      # Patterns are high-signal credential prefixes; documented placeholders
+      # (rzp_test_…, whsec_placeholder, linkshift.admin@gmail.com) do not match.
+      - name: Scan tracked files for credential patterns
+        run: |
+          if git grep -nIE \
+            "sk_live_[0-9A-Za-z]{20,}|rzp_live_[0-9A-Za-z]{8,}|re_live_[0-9A-Za-z]{16,}|whsec_[0-9A-Za-z]{20,}|AKIA[0-9A-Z]{16}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----"; then
+            echo "::error::Possible credential committed — see matches above"
+            exit 1
+          fi
+          echo "No credential patterns found in tracked files."
