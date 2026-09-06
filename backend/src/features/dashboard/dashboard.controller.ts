@@ -90,20 +90,21 @@ export const csvExportController = asyncHandler(async(req : Request, res : Respo
     const { id } = validated.params as linkIdParams;
     const { days } = validated.query as queryDaysInput;
 
-
-    const csv = await exportLinkAnalytics(auth.id, id, days);
-
     res.status(200);
-
-    res.setHeader(
-        "Content-Type",
-        "text/csv; charset=utf-8"
-    );
-
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
     res.setHeader(
         "Content-Disposition",
         `attachment; filename="link-${id}-analytics.csv"`
     );
 
-    res.send(csv);
+    // Streams batch-by-batch so huge exports never buffer in memory.
+    const totalRows = await exportLinkAnalytics(
+        (chunk) => res.write(chunk),
+        auth.id,
+        id,
+        days
+    );
+
+    res.end();
+    void totalRows;
 })

@@ -12,6 +12,8 @@ export const createQrSchema = z.object({
     
     eyeBallStyle: z.enum(EyeBallStyle).optional(),
 
+    frame: z.enum(["none", "clean", "double", "accent", "label", "branded"]).default("none"),
+
     logoUrl: z.string().trim()
             .pipe(
                 z.url({ 
@@ -37,3 +39,8 @@ export type createLinkQr = {
     userId: string;
     linkId: string;
 } & z.infer<typeof createQrSchema>;
+export const qrFrameSchema = z.object({
+    frame: z.enum(["none", "clean", "double", "accent", "label", "branded"]).default("none"),
+});
+
+export type qrFrameInput = z.infer<typeof qrFrameSchema>;

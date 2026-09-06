@@ -3,4 +3,35 @@ backend/node_modules/
 backend/.env
 backend/src/generated/prisma/
 backend/dist
+backend/server.err.log
+backend/server.out.log
+.opencodeignore
+linkshift-audit.json
+overlay-dump.txt
+
+
+backend/*.tsbuildinfo
+design/
+.continue
+.qa
+node_modules
+
+# Frontend
+# frontend/node_modules/
+
+backend/tests/**/*.js
+backend/prisma/*.js
+backend/vitest.config.js
+
+# EC2 host runtime env for the deploy/ compose stack (contains secrets)
+deploy/.env
+
+/capture-all-themes.cjs
+/capture-all-themes.mjs
+/capture-themed.cjs
+/capture-theme-screenshots.cjs
+/capture-screenshots-cli.cjs
+/debug-*.cjs
+/test-login.cjs
+
 

@@ -1,6 +1,6 @@
 import { prisma } from "../../config"
 import { getCache, setCache } from "../../utils/cache";
-import { getAnalyticsCutoff } from "../billing/billing.service";
+import { getAnalyticsCutoff, getUserPlan, planRankOf } from "../billing/billing.service";
 import { analyticsMapper } from "./dashboard.mapper"
 
 
@@ -9,10 +9,22 @@ type TopLinks = {
     name: string | null;
     shortId: string;
     clicks: number;
+    domainHost: string;
 }
 
 type DailyStats = {
     day: Date;
+    clicks: bigint;
+};
+
+type HourRow = {
+    hour: number;
+    clicks: bigint;
+};
+
+type HeatRow = {
+    dow: number;
+    hour: number;
     clicks: bigint;
 };
 
@@ -22,12 +34,15 @@ type cacheBoard = {
     inactiveLinks : number, 
     totalScans : number, 
     topLinks : TopLinks[],
+    dailyStats : { day: Date; clicks: number }[],
+    hourlyStats : { hour: number; count: number }[],
 };
 
 export const dashboardService = async(id : string, requestedDays ?: number) => {
     const cutoff = await getAnalyticsCutoff(id, requestedDays);
+    const rank = planRankOf((await getUserPlan(id)).name);
 
-    const cachedKey = `dashboard:${id}:${requestedDays ?? "default"}`;
+    const cachedKey = `dashboard:v2:${id}:${requestedDays ?? "default"}`;
 
     let cachedDashboard = await getCache(cachedKey);
 
@@ -102,6 +117,9 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
             id: true,
             name: true,
             shortId: true,
+            domain: {
+                select: { host: true }
+            }
         },
     });
 
@@ -120,17 +138,57 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
                 name: link.name,
                 shortId: link.shortId,
                 clicks: item._count._all,
+                domainHost: link.domain.host,
             };
         })
         .filter((link): link is TopLinks => link !== null);
 
+
+    const dailyRows = await prisma.$queryRaw<DailyStats[]>`
+            SELECT
+                DATE(s."scannedAt") AS day,
+                COUNT(*) AS clicks
+            FROM "Scan" s
+            JOIN "Link" l
+                ON s."linkId" = l.id
+            WHERE
+                l."userId" = ${id}
+                AND s."scannedAt" >= ${cutoff}
+            GROUP BY DATE(s."scannedAt")
+            ORDER BY day ASC
+            `;
+
+    // Peak-hours is a STARTER+ entitlement; skip the query entirely below it.
+    const hourlyRows = rank >= planRankOf("STARTER")
+        ? await prisma.$queryRaw<HourRow[]>`
+            SELECT
+                EXTRACT(HOUR FROM s."scannedAt")::int AS hour,
+                COUNT(*) AS clicks
+            FROM "Scan" s
+            JOIN "Link" l
+                ON s."linkId" = l.id
+            WHERE
+                l."userId" = ${id}
+                AND s."scannedAt" >= ${cutoff}
+            GROUP BY 1
+            ORDER BY 1
+            `
+        : [];
 
     const analytics : cacheBoard = {
         totalLinks  , 
         activeLinks , 
         inactiveLinks, 
         totalScans, 
-        topLinks
+        topLinks,
+        dailyStats: dailyRows.map(item => ({
+            day: item.day,
+            clicks: Number(item.clicks)
+        })),
+        hourlyStats: hourlyRows.map(item => ({
+            hour: item.hour,
+            count: Number(item.clicks)
+        }))
     }
 
     await setCache(cachedKey, analytics, 30);
@@ -140,6 +198,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
 
 export const getAnalytics = async(id : string, linkId : string, requestedDays ?: number) => {
     const cutoff = await getAnalyticsCutoff(id, requestedDays);
+    const rank = planRankOf((await getUserPlan(id)).name);
     const where = {
         linkId,
         link: {
@@ -150,7 +209,7 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
         }
     };
 
-    const [ browserStats, deviceStats, countryStats, osStats, totalClicks, utmSource, utmMedium, utmCampaign, utmTerm, utmContent ] = await Promise.all([
+    const [ browserStats, deviceStats, countryStats, osStats, totalClicks, referrerStats, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, cityStats, hourlyRows, heatRows ] = await Promise.all([
         prisma.scan.groupBy({
             by : ['browser'],
             where,
@@ -197,6 +256,17 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
 
         prisma.scan.count({
             where
+        }),
+
+        prisma.scan.groupBy({
+            by : ["referrer"],
+            where,
+            _count : { _all : true },
+            orderBy : {
+                _count : {
+                    referrer : "desc"
+                }
+            }
         }),
 
         prisma.scan.groupBy({
@@ -259,19 +329,99 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
                 },
             },
         }),
+
+        prisma.scan.groupBy({
+            by : ['city'],
+            where,
+            _count : { _all : true },
+            orderBy : {
+                _count : {
+                    city : 'desc'
+                }
+            }
+        }),
+
+        prisma.$queryRaw<HourRow[]>`
+            SELECT
+                EXTRACT(HOUR FROM s."scannedAt")::int AS hour,
+                COUNT(*) AS clicks
+            FROM "Scan" s
+            JOIN "Link" l
+                ON s."linkId" = l.id
+            WHERE
+                s."linkId" = ${linkId}
+                AND l."userId" = ${id}
+                AND s."scannedAt" >= ${cutoff}
+            GROUP BY 1
+            ORDER BY 1
+            `,
+
+        prisma.$queryRaw<HeatRow[]>`
+            SELECT
+                EXTRACT(DOW FROM s."scannedAt")::int AS dow,
+                EXTRACT(HOUR FROM s."scannedAt")::int AS hour,
+                COUNT(*) AS clicks
+            FROM "Scan" s
+            JOIN "Link" l
+                ON s."linkId" = l.id
+            WHERE
+                s."linkId" = ${linkId}
+                AND l."userId" = ${id}
+                AND s."scannedAt" >= ${cutoff}
+            GROUP BY 1, 2
+            ORDER BY 1, 2
+            `,
     ])
+
+    // Breakdown sections are a plan entitlement: gated sections are stripped
+    // server-side so the client never receives data the plan doesn't include.
+    const starterUnlocked = rank >= planRankOf("STARTER");
+    const creatorUnlocked = rank >= planRankOf("CREATOR");
+    const proUnlocked = rank >= planRankOf("PRO");
 
     return {
         totalClicks,
-        browserStats, 
-        deviceStats, 
-        countryStats, 
-        osStats,
-        utmSource,
-        utmMedium,
-        utmCampaign,
-        utmTerm,
-        utmContent
+        deviceStats: deviceStats.map(item => ({
+            device: item.device ?? "Unknown",
+            count: item._count._all
+        })),
+        countryStats: countryStats.map(item => ({
+            country: item.country ?? "Unknown",
+            count: item._count._all
+        })),
+        browserStats: starterUnlocked
+            ? browserStats.map(item => ({ browser: item.browser ?? "Unknown", count: item._count._all }))
+            : [],
+        osStats: starterUnlocked
+            ? osStats.map(item => ({ os: item.os ?? "Unknown", count: item._count._all }))
+            : [],
+        referrerStats: creatorUnlocked
+            ? referrerStats.map(item => ({ referrer: item.referrer, count: item._count._all }))
+            : [],
+        utmSource: creatorUnlocked
+            ? utmSource.map(item => ({ utmSource: item.utmSource, count: item._count._all }))
+            : [],
+        utmMedium: creatorUnlocked
+            ? utmMedium.map(item => ({ utmMedium: item.utmMedium, count: item._count._all }))
+            : [],
+        utmCampaign: creatorUnlocked
+            ? utmCampaign.map(item => ({ utmCampaign: item.utmCampaign, count: item._count._all }))
+            : [],
+        utmTerm: creatorUnlocked
+            ? utmTerm.map(item => ({ utmTerm: item.utmTerm, count: item._count._all }))
+            : [],
+        utmContent: creatorUnlocked
+            ? utmContent.map(item => ({ utmContent: item.utmContent, count: item._count._all }))
+            : [],
+        hourlyStats: starterUnlocked
+            ? hourlyRows.map(item => ({ hour: item.hour, count: Number(item.clicks) }))
+            : [],
+        cityStats: creatorUnlocked
+            ? cityStats.map(item => ({ city: item.city ?? "Unknown", count: item._count._all }))
+            : [],
+        heatmapStats: proUnlocked
+            ? heatRows.map(item => ({ dow: item.dow, hour: item.hour, count: Number(item.clicks) }))
+            : [],
     };
 
 }
@@ -386,18 +536,20 @@ export const getChartData = async(id : string, linkId : string, requestedDays ?:
         }),
     ]);
 
+    // Identifiers are quoted: Prisma creates camelCase tables/columns, and
+    // unquoted SQL folds to lowercase (table "scan" does not exist).
     const dailyStats = await prisma.$queryRaw<DailyStats[]>`
             SELECT
-                DATE(s.scannedAt) AS day,
+                DATE(s."scannedAt") AS day,
                 COUNT(*) AS clicks
-            FROM Scan s
-            JOIN Link l
-                ON s.linkId = l.id
+            FROM "Scan" s
+            JOIN "Link" l
+                ON s."linkId" = l.id
             WHERE
-                s.linkId = ${linkId}
-                AND l.userId = ${id}
-                AND s.scannedAt >= ${cutoff}
-            GROUP BY DATE(s.scannedAt)
+                s."linkId" = ${linkId}
+                AND l."userId" = ${id}
+                AND s."scannedAt" >= ${cutoff}
+            GROUP BY DATE(s."scannedAt")
             ORDER BY day ASC
             `;
 

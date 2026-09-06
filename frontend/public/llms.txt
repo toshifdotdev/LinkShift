@@ -1,0 +1,68 @@
+# LinkShift
+
+> LinkShift is a URL shortener for people who care about every click: precise
+> short links on your own domain, matching QR codes, and per-link click
+> analytics. Free plan available; paid plans add custom domains, longer
+> analytics history, custom slugs and exports.
+
+Public site: https://linkshift.in
+
+## Product
+
+- [Home](https://linkshift.in/): what LinkShift does — shortening, QR codes, analytics, custom domains.
+- [Pricing](https://linkshift.in/pricing): Free, Starter, Creator and Pro plans with per-plan limits; INR and USD regional pricing.
+- [FAQ](https://linkshift.in/faq): short answers about links, QR codes, domains, analytics, billing and account security.
+
+## Documentation
+
+Index: https://linkshift.in/docs
+
+Getting started:
+- [Create your account](https://linkshift.in/docs/create-your-account)
+- [Shorten your first link](https://linkshift.in/docs/shorten-your-first-link)
+- [Read your dashboard](https://linkshift.in/docs/reading-your-dashboard)
+
+Links & routing:
+- [Manage and protect links](https://linkshift.in/docs/managing-links)
+- [Custom slugs](https://linkshift.in/docs/custom-slugs)
+- [Path & query forwarding](https://linkshift.in/docs/path-forwarding)
+- [Mobile app deep linking](https://linkshift.in/docs/mobile-app-deep-linking)
+
+Custom domains:
+- [Add and verify a domain](https://linkshift.in/docs/add-a-domain)
+- [Choose your default domain](https://linkshift.in/docs/default-domain)
+
+QR codes:
+- [Design a QR in the studio](https://linkshift.in/docs/qr-studio)
+- [QR allowances](https://linkshift.in/docs/qr-limits)
+
+Analytics & data:
+- [Metrics, defined](https://linkshift.in/docs/metrics-defined)
+- [Analytics history & ranges](https://linkshift.in/docs/history-and-ranges)
+- [Export CSV](https://linkshift.in/docs/csv-export)
+
+Billing & plans:
+- [Plans & limits](https://linkshift.in/docs/plans-and-limits)
+- [Upgrades, downgrades & payments](https://linkshift.in/docs/upgrades-and-payments)
+
+Account & security:
+- [Profile & sign-in](https://linkshift.in/docs/profile-and-sign-in)
+- [Delete your account](https://linkshift.in/docs/delete-your-account)
+
+Troubleshooting:
+- [App won't open from a link](https://linkshift.in/docs/app-wont-open)
+- [Paths or queries not arriving](https://linkshift.in/docs/paths-not-arriving)
+- [Domain verification failing](https://linkshift.in/docs/domain-verification-failing)
+
+## Company & policies
+
+- [Contact](https://linkshift.in/contact): support, billing, privacy and abuse reports (linkshift.admin@gmail.com).
+- [Privacy Policy](https://linkshift.in/privacy)
+- [Terms of Service](https://linkshift.in/terms)
+- [Refund & Cancellation Policy](https://linkshift.in/refunds)
+- [Shipping & Delivery Policy](https://linkshift.in/shipping)
+- [Acceptable Use Policy](https://linkshift.in/acceptable-use)
+
+LinkShift is operated as a sole proprietorship from Dehradun, Uttarakhand,
+India. The default shared short-link domain is go.linkshift.in; short links on
+that domain redirect visitors — they are not documentation pages.

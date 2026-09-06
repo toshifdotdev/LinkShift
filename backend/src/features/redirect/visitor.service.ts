@@ -7,14 +7,16 @@ export const extractVisitorInfo = (req : Request) => {
     const parser = new UAParser(uaString);
     const clientInfo = parser.getResult();
 
-    // using x-forwared-for  to bypass the reverse-proxy(e.g. nginx ip) and get original one 
-    const rawIp =  (req.headers['x-forwarded-for'] as string) || req.ip;
-    const ipAddress = rawIp ? rawIp.split(',')[0].trim() : undefined;
+    const ipAddress = req.ip?.trim() || undefined;
+
+    // HTTP spec spells it "referer"; accept the common misspelling too.
+    const rawReferrer = (req.headers.referer ?? req.headers.referrer) as string | undefined;
 
     return {
         device: clientInfo.device.type || undefined,      
         browser: clientInfo.browser.name || undefined,    
         os: clientInfo.os.name || undefined,           
         ipAddress: ipAddress || undefined,
+        referrer: rawReferrer?.trim().slice(0, 2048) || undefined,
     } 
 }

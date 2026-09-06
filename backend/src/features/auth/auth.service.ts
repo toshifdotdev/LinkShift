@@ -5,6 +5,7 @@ import { GoogleProfile, RefreshedTokens } from './auth.types';
 import { buildAuthResponse } from '../../utils/buildAuthResponse';
 import { generateRandomToken, hashToken } from '../../utils/token';
 import { sendPasswordResetEmail, sendVerificationEmail } from '../../utils/email';
+import { log } from '../../utils/logger';
 import { issueTokens } from '../../utils/issueToken';
 import { uploadImage } from '../../utils/uploadImage';
 import { deleteImage } from '../../utils/deleteImage';
@@ -15,11 +16,40 @@ export const registerUser = async (name : string, email : string, password : str
             email
         }
     })
-    if(existingUser !== null) {
+    const hashPassword = await bcrypt.hash(password , 10); // saltRounds = 10
+
+    // Reuse an abandoned unverified LOCAL account: the user never completed
+    // verification, so the account holds no data. Update name + password and
+    // re-issue a fresh verification email (sendVerificationEmail deletes the
+    // previous token and issues a new 30-minute one). Verified accounts and
+    // Google-linked accounts still 409 — never overwrite an active identity.
+    if (existingUser !== null) {
+        if (existingUser.verified === false && existingUser.provider === "LOCAL") {
+            await prisma.user.update({
+                where: { id: existingUser.id },
+                data: {
+                    name,
+                    passwordHash: hashPassword,
+                },
+            });
+
+            const { delivered } = await sendVerificationEmail(existingUser.id, existingUser.email, name);
+
+            if (!delivered) {
+                // The pre-existing account is kept (it already exists); the
+                // user can retry via resend-verification. Surface the failure
+                // so they know the email did not go out.
+                throw new AppError("We couldn't send the verification email. Please try again.", 503);
+            }
+
+            return {
+                email: existingUser.email,
+                message: "We've sent a verification email."
+            };
+        }
+
         throw new AppError("An account with this email already exists.", 409);
     }
-
-    const hashPassword = await bcrypt.hash(password , 10); // saltRounds = 10
 
     
 
@@ -32,7 +62,21 @@ export const registerUser = async (name : string, email : string, password : str
                         }
                     })
     
-    await sendVerificationEmail(createdUser.id,createdUser.email, createdUser.name);
+    const { delivered } = await sendVerificationEmail(createdUser.id,createdUser.email, createdUser.name);
+
+    if (!delivered) {
+        // Roll the partial registration back so an email-provider outage never
+        // leaves an orphaned unverified account (the user couldn't receive the
+        // verification link and a retry would collide on the email uniqueness
+        // constraint). EmailVerification cascades on user delete.
+        await prisma.user.delete({ where: { id: createdUser.id } }).catch((err) =>
+            log.error("register_rollback_failed", {
+                userId: createdUser.id,
+                error: err instanceof Error ? err.message : String(err),
+            })
+        );
+        throw new AppError("We couldn't send the verification email. Please try again.", 503);
+    }
 
 
     return {
@@ -43,6 +87,12 @@ export const registerUser = async (name : string, email : string, password : str
 }   
 
 
+// Enumeration resistance: unknown email, wrong password, Google-only accounts
+// and unverified accounts ALL return the identical generic 401. A pre-computed
+// dummy hash equalizes bcrypt cost for the unknown-email branch.
+const GENERIC_LOGIN_ERROR = "Invalid email or password.";
+const DUMMY_PASSWORD_HASH = bcrypt.hashSync("linkshift-timing-equalizer", 10);
+
 export const loginUser = async (email : string, password : string) => {
     const existingUser = await prisma.user.findUnique({
         where : {
@@ -50,31 +100,38 @@ export const loginUser = async (email : string, password : string) => {
         }
     })
 
-    if(!existingUser) {
-        throw new AppError("Email not exists", 404);
+    const rejectGeneric = async (): Promise<never> => {
+        // Equalize bcrypt cost whether or not the account exists.
+        await bcrypt.compare(password, existingUser?.passwordHash ?? DUMMY_PASSWORD_HASH);
+        throw new AppError(GENERIC_LOGIN_ERROR, 401);
+    };
+
+    if (!existingUser) {
+        return rejectGeneric();
     }
 
     if (!existingUser.verified) {
-        throw new AppError(
-            "Please verify your email before logging in.",
-            403
-        );
+        // Same generic payload — recovery is via resend-verification, which is
+        // itself enumeration-neutral.
+        await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+        return rejectGeneric();
     }
 
     if(!existingUser.passwordHash) {
-        throw new AppError("Please login with Google.", 400);
+        // Google-only account: no local password to compare.
+        await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
+        return rejectGeneric();
     }
 
     const comparePass = await bcrypt.compare(password, existingUser.passwordHash);
 
     if(!comparePass) {
-        throw new AppError("Incorrect credentials", 401);
+        return rejectGeneric();
     }
 
     const {accessToken, refreshToken} = await issueTokens(existingUser);
 
     return buildAuthResponse(existingUser, accessToken, refreshToken);
-    
 }
 
 
@@ -188,6 +245,9 @@ export const forgotPasswordService = async(email : string) => {
         }
     })
 
+    // Delivery failures are absorbed on purpose: the response must stay
+    // byte-identical (enumeration resistance), the stored token expires in
+    // 15 minutes, and a retry simply regenerates the link.
     await sendPasswordResetEmail(email, generatedToken);
     return {
         success: true,
@@ -218,12 +278,24 @@ export const resetPasswordService = async(token : string, password : string) => 
                     data : {
                         passwordHash : hashedPass,
                         resetPasswordToken : null,
-                        resetPasswordExpires : null
+                        resetPasswordExpires : null,
+                        // Same contract as changePasswordService: a credential
+                        // reset must end any live session so a stolen refresh
+                        // token cannot survive the new password.
+                        refreshTokenHash : null,
+                        refreshTokenExpiresAt : null,
                     }
-                })  
+                })
 }
 
 export const refreshService = async(token : string) : Promise<RefreshedTokens> => {
+    // Missing cookie (no cookie-parser entry at all) must be a clean 401 —
+    // hashToken(undefined) would throw a TypeError and surface as a generic
+    // 500 "Internal Server Error" instead.
+    if (!token) {
+        throw new AppError("Unauthorized", 401);
+    }
+
     const hashedRefreshToken = hashToken(token);
 
     const user = await prisma.user.findFirst({
@@ -274,6 +346,49 @@ export const logoutService = async(refreshToken : string) => {
         }
     })
 }
+
+export const changePasswordService = async (
+    userId: string,
+    currentPassword: string | undefined,
+    newPassword: string
+) => {
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, passwordHash: true },
+    });
+
+    if (!user) {
+        throw new AppError("Account not found.", 404);
+    }
+
+    // Accounts created via Google have no local password yet — no current
+    // credential to verify, the user is simply setting one.
+    if (user.passwordHash) {
+        if (!currentPassword) {
+            throw new AppError("Current password is required.", 400);
+        }
+        const ok = await bcrypt.compare(currentPassword, user.passwordHash);
+        if (!ok) {
+            throw new AppError("Current password is incorrect.", 403);
+        }
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Revoke the single-slot refresh session (one session per account) so
+    // the new credential is required on the next sign-in, and clear any
+    // stale password-reset tokens.
+    await prisma.user.update({
+        where: { id: userId },
+        data: {
+            passwordHash: hashedPassword,
+            refreshTokenHash: null,
+            refreshTokenExpiresAt: null,
+            resetPasswordToken: null,
+            resetPasswordExpires: null,
+        },
+    });
+};
 
 export const profileService = async(id : string) => {
     const user = await prisma.user.findUnique({
@@ -413,21 +528,20 @@ export const verifyEmailService = async(token : string) => {
 }
 
 export const resendVerificationService = async(email : string) => {
+    // Enumeration-neutral: identical success response whether or not the
+    // account exists / is already verified. Emails are sent only to real,
+    // unverified accounts.
     const user = await prisma.user.findUnique({
         where : {
             email
         }
     })
 
-    if(!user) {
-        throw new AppError("User not found", 404)
+    if(user && !user.verified) {
+        // Delivery failures are absorbed (see sendEmailSafely): this endpoint's
+        // 200 must look identical in every case, outage included.
+        await sendVerificationEmail(user.id, user.email, user.name);
     }
-
-    if(user.verified) {
-        throw new AppError("Your email is already verified.", 409);
-    }
-
-    await sendVerificationEmail(user.id, user.email, user.name);
 
     return;
 

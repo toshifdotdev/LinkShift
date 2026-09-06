@@ -10,6 +10,8 @@ export default defineConfig({
     seed: "tsx prisma/seed.ts",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    // CLI + migrations use the DIRECT (non-pooler) Neon endpoint — standard
+    // Neon practice; PgBouncer transaction mode is for the app's runtime pool.
+    url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
   },
 });

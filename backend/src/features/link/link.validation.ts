@@ -37,6 +37,32 @@ export const createLinkSchema  = z.object({
   utmCampaign: z.string().trim().max(150).optional(),
   utmTerm: z.string().trim().max(100).optional(),
   utmContent: z.string().trim().max(150).optional(),
+  deepLink: z.boolean().optional(),
+
+  appDeepLink: z.boolean().optional(),
+  appScheme: z.string()
+    .trim()
+    .max(100, "URI scheme cannot exceed 100 characters")
+    .regex(/^[a-zA-Z][a-zA-Z0-9+.-]*$/, "Invalid URI scheme (e.g. myapp)")
+    .optional(),
+  androidPackage: z.string()
+    .trim()
+    .max(255, "Android package cannot exceed 255 characters")
+    .regex(/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/, "Invalid Android package name (e.g. com.example.app)")
+    .optional(),
+  appPath: z.string().trim().max(1024, "In-app path cannot exceed 1024 characters").optional(),
+  iosStoreUrl: z.string()
+    .trim()
+    .pipe(
+      z.url({ message: "Invalid App Store URL format", protocol: /^https?$/ })
+        .max(2048, { message: "URL must be 2048 characters or less" })
+    ).optional(),
+  androidStoreUrl: z.string()
+    .trim()
+    .pipe(
+      z.url({ message: "Invalid Play Store URL format", protocol: /^https?$/ })
+        .max(2048, { message: "URL must be 2048 characters or less" })
+    ).optional(),
   }).superRefine((data, ctx) => {
 
       const hasAnyUtm =
@@ -70,6 +96,14 @@ export const createLinkSchema  = z.object({
                   message: "UTM campaign is required when using UTM parameters",
               });
           }
+      }
+
+      if (data.appDeepLink && !data.appScheme) {
+          ctx.addIssue({
+              code: "custom",
+              path: ["appScheme"],
+              message: "A URI scheme is required to enable mobile app deep linking",
+          });
       }
 });
 
@@ -108,13 +142,43 @@ export const updateLinkSchema = z.object({
   utmCampaign: z.string().trim().max(150).nullable().optional(),
   utmTerm: z.string().trim().max(100).nullable().optional(),
   utmContent: z.string().trim().max(150).nullable().optional(),
+  deepLink: z.boolean().optional(),
+
+  appDeepLink: z.boolean().optional(),
+  appScheme: z.string()
+    .trim()
+    .max(100, "URI scheme cannot exceed 100 characters")
+    .regex(/^[a-zA-Z][a-zA-Z0-9+.-]*$/, "Invalid URI scheme (e.g. myapp)")
+    .nullable().optional(),
+  androidPackage: z.string()
+    .trim()
+    .max(255, "Android package cannot exceed 255 characters")
+    .regex(/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)+$/, "Invalid Android package name (e.g. com.example.app)")
+    .nullable().optional(),
+  appPath: z.string().trim().max(1024, "In-app path cannot exceed 1024 characters").nullable().optional(),
+  iosStoreUrl: z.string()
+    .trim()
+    .pipe(
+      z.url({ message: "Invalid App Store URL format", protocol: /^https?$/ })
+        .max(2048, { message: "URL must be 2048 characters or less" })
+    ).nullable().optional(),
+  androidStoreUrl: z.string()
+    .trim()
+    .pipe(
+      z.url({ message: "Invalid Play Store URL format", protocol: /^https?$/ })
+        .max(2048, { message: "URL must be 2048 characters or less" })
+    ).nullable().optional(),
 
 }).partial().refine((data) => data.name !== undefined || data.targetUrl !== undefined || 
                               data.isActive !== undefined || data.expiresAt !== undefined ||
                               data.password !== undefined || data.slug !== undefined ||
                               data.domainId !== undefined ||  data.utmSource !== undefined ||
                               data.utmMedium !== undefined || data.utmCampaign !== undefined ||
-                              data.utmTerm !== undefined || data.utmContent !== undefined,{
+                              data.utmTerm !== undefined || data.utmContent !== undefined ||
+                              data.deepLink !== undefined || data.appDeepLink !== undefined ||
+                              data.appScheme !== undefined || data.androidPackage !== undefined ||
+                              data.appPath !== undefined || data.iosStoreUrl !== undefined ||
+                              data.androidStoreUrl !== undefined,{
   message: "At least one field must be provided.",
 });
 

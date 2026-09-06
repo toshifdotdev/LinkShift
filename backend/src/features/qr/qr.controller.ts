@@ -2,7 +2,8 @@ import { NextFunction, Request, Response } from "express";
 import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { qrService, qrDownloadService, uploadQrLogoService, deleteQrService} from "./qr.service";
-import { createLinkQr } from "./qr.validation";
+import { createLinkQr, qrFrameSchema } from "./qr.validation";
+import { log } from "../../utils/logger";
 
 type linkIdParams = {
     id : string
@@ -31,6 +32,7 @@ export const qrController = asyncHandler(async(req : Request, res : Response, ne
         pattern, 
         eyeStyle, 
         eyeBallStyle, 
+        frame,
         logoUrl,
         logoPublicId
         } = body;
@@ -38,6 +40,7 @@ export const qrController = asyncHandler(async(req : Request, res : Response, ne
     const qr = await qrService({
         userId : auth.id,
         linkId : id,
+        frame,
         foregroundColor,
         backgroundColor,
         margin,
@@ -68,8 +71,13 @@ export const qrDownloader = asyncHandler(async(req : Request, res : Response, ne
 
     const data = await qrDownloadService(auth.id, id);
 
-    const downloadUrl = data.imageUrl.replace("/upload/", "/upload/fl_attachment:LinkShift_QR/");
-    
+    // The stored asset is the FINAL design — frames/logos were composed at
+    // save time, so preview / library / download all match exactly.
+    const downloadUrl = data.imageUrl.replace(
+        "/upload/",
+        `/upload/fl_attachment:linkshift-qr-${data.shortId}/`,
+    );
+
     return res.redirect(downloadUrl);
 
 })
@@ -82,6 +90,11 @@ export const uploadQrLogoController = asyncHandler(async(req : Request, res : Re
     }
 
     if (!req.file) {
+        // Diagnostic: makes an unparseable multipart body diagnosable
+        // instead of a bare 400.
+        log.error("qr_logo_no_file", {
+            contentType: req.headers["content-type"] ?? null,
+        });
         throw new AppError("Image is required.", 400);
     }
 
@@ -112,3 +125,8 @@ export const deleteQrController = asyncHandler(async(req : Request, res : Respon
         message: "QR deleted successfully."
     });
 })
+/**
+ * Frame composition in a clean Node process (no JSDOM globals).
+ * Buffers travel as base64 over stdin/stdout.
+ */
+

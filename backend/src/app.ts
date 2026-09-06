@@ -6,18 +6,46 @@ import dashRouter from './features/dashboard/dashboard.routes'
 import linkRouter from './features/link/link.routes'
 import domainRouter from './features/domains/domain.routes'
 import billingRouter from './features/billing/billing.routes';
+import internalRouter from './features/internal/reconciliation.routes';
+import usersRouter from './features/users/users.routes';
+import supportRouter from './features/support/support.routes';
 import { errorMiddleware } from './middleware/error.middleware';
 import { AppError } from './errors/AppError';
 import { razorpayWebhookController } from './features/billing/billing.controller';
 import cors from "cors";
+import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import passport from "passport";
+import { config, prisma } from "./config";
+import { redisClient } from "./config/redis";
+import "./features/auth/google.strategy";
 
 export const app = express();
 
-app.set('trust proxy', true);
+// Trust proxy is deployment-specific: 0/unset = no proxy (local dev, req.ip is
+// the socket address); N = number of trusted reverse-proxy hops in front of this
+// process (e.g. 1 for a single nginx/PaaS LB, 2 for Cloudflare + nginx).
+// NEVER use `true` — it trusts client-supplied X-Forwarded-For entries and lets
+// callers forge their IP for rate-limiting and GeoIP.
+const trustProxyHops = Number(process.env.TRUST_PROXY_HOPS ?? 0);
+if (Number.isFinite(trustProxyHops) && trustProxyHops > 0) {
+    app.set('trust proxy', trustProxyHops);
+}
+
+// Cookie parsing and passport MUST be registered before any router — Express
+// runs middleware in registration order, and mounting these in server.ts
+// (after app.ts already attached every router) left them at the END of the
+// chain where they never executed. req.cookies stayed undefined and every
+// /auth/refresh & /auth/logout crashed with a TypeError -> generic 500,
+// silently killing the refresh-token flow.
+app.use(cookieParser());
+app.use(passport.initialize());
+
+app.use(helmet());
 
 app.use(
     cors({
-        origin: "http://localhost:5173",
+        origin: config.corsOrigins,
         credentials: true,
     })
 );
@@ -29,25 +57,52 @@ app.post(
 );
 
 app.use(express.json());
+/* Native HTML forms (the password-protected link unlock page) post
+   urlencoded bodies. */
+app.use(express.urlencoded({ extended: false }));
 
-app.get("/health", (req, res) => {
-    res.status(200).json({
-        status : "Ok."
+app.get("/health", async (_, res) => {
+    // Dependency-aware health: 200 only when critical deps respond. Redis is
+    // reported but does not fail the check (features degrade without it).
+    const checks: Record<string, string> = {};
+
+    try {
+        await prisma.$queryRaw`SELECT 1`;
+        checks.database = "up";
+    } catch {
+        checks.database = "down";
+    }
+
+    checks.redis = redisClient.isReady ? "up" : "down";
+
+    const healthy = checks.database === "up";
+
+    res.status(healthy ? 200 : 503).json({
+        status: healthy ? "ok" : "degraded",
+        checks,
     });
 });
 
 app.use("/api/v1/auth",authRouter);
-app.use("/api/v1/qr",qrRouter);
+app.use("/api/v1/qr",qrRouter); 
 app.use("/api/v1/links", linkRouter);
 
 app.get("/favicon.ico", (_, res) => {
     res.sendStatus(204);
 });
 
-app.use("/r",redirectRouter);
 app.use("/api/v1/dashboard",dashRouter);
 app.use("/api/v1/domains", domainRouter);
 app.use("/api/v1/billing", billingRouter)
+app.use("/api/v1/internal", internalRouter);
+app.use("/api/v1/users", usersRouter);
+app.use("/api/v1/support", supportRouter);
+
+// Public short links: canonical <domain>/<shortId>.
+// Mounted LAST so every /api/* router (and /health, /favicon.ico above)
+// takes precedence; the 7-char shortId validation in redirect.validation
+// prevents this root mount from capturing anything else.
+app.use("/",redirectRouter);
 
 app.use((req : Request, res : Response, next : NextFunction) => {
     next(new AppError("Route not found",404));

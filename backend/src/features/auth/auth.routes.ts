@@ -2,13 +2,15 @@ import { Router } from "express";
 import { loginController, registerController, googleCallbackController, forgotPasswordController, resetPasswordController, 
          refreshTokenController, logoutController, profileController, uploadAvatarConntroller, deleteAvatarController,
          verifyEmailController,
-         resendVerificationController} from "./auth.controller";
+         resendVerificationController, changePasswordController} from "./auth.controller";
 import { validate } from "../../middleware/validate.middleware";
-import { forgotPasswordSchema, loginUserSchema, registerUserSchema, resendVerificationSchema, resetPasswordSchema, verifyEmailSchema } from "./auth.validation";
-import { forgotPasswordLimiter, loginLimiter, registerLimiter, resendVerificationLimiter, resetPasswordLimiter } from "../../middleware/rateLimit.middleware";
+import { forgotPasswordSchema, loginUserSchema, registerUserSchema, resendVerificationSchema, resetPasswordSchema, verifyEmailSchema, changePasswordSchema } from "./auth.validation";
+import { forgotPasswordLimiter, loginLimiter, registerLimiter, resendVerificationLimiter, resetPasswordLimiter, changePasswordLimiter } from "../../middleware/rateLimit.middleware";
 import passport from "passport";
 import { authMiddleWare } from "../../middleware/auth.middleware";
+import { config } from "../../config";
 import { imageUpload } from "../../middleware/upload.middleware";
+import { clearOAuthStateCookie } from "./oauthState";
 
 const router = Router();
 
@@ -22,10 +24,8 @@ router.get('/google/callback', passport.authenticate("google", {
                                                             }),
                                                             googleCallbackController)
 router.get("/google/failure", (_, res) => {
-    res.status(401).json({
-        success: false,
-        message: "Google authentication failed."
-    });
+    clearOAuthStateCookie(res);
+    res.redirect(`${config.frontendUrl}/login?error=google`);
 });
 
 router.post('/forgot-password', validate(forgotPasswordSchema, "body"), forgotPasswordLimiter,forgotPasswordController);
@@ -34,6 +34,8 @@ router.post('/reset-password', validate(resetPasswordSchema, "body"), resetPassw
 router.post('/refresh', refreshTokenController);
 
 router.post('/logout', logoutController);
+
+router.post('/change-password', authMiddleWare, changePasswordLimiter, validate(changePasswordSchema, "body"), changePasswordController);
 
 router.get('/profile', authMiddleWare, profileController);
 

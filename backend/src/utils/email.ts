@@ -1,6 +1,8 @@
 import { Resend } from "resend";
 import { config, prisma } from "../config";
 import { generateRandomToken, hashToken } from "./token";
+import { buildEmailVerificationUrl, buildPasswordResetUrl } from "./emailUrls";
+import { log } from "./logger";
 
 export const resend = new Resend(config.resendApiKey);
 
@@ -11,18 +13,53 @@ interface SendEmailData {
     
 }
 
+export type EmailDeliveryResult = { delivered: boolean };
 
 export const sendEmail = async(data : SendEmailData) => {
-    await resend.emails.send({
-        from : "onboarding@resend.dev",
+    const payload = {
+        // Must be a verified sender on this Resend account. Production requires
+        // a domain you own (see EMAIL_FROM in .env.example / ENVIRONMENT.md).
+        from : config.emailFrom!,
         to : data.to,
         subject : data.subject,
         html : data.html
-    })
+    };
+
+    // Resend's SDK resolves with { data, error } instead of throwing on
+    // API-level failures — inspect `error` explicitly so a rejected send
+    // propagates to sendEmailSafely rather than looking successful.
+    const { data: result, error } = await resend.emails.send(payload);
+
+    if (error) {
+        throw new Error(`Resend send failed [${error.name}]: ${error.message}`);
+    }
+
+    return result;
 }
 
-export const sendPasswordResetEmail = async(email : string, token : string) => {
-    const resetLink = `${config.frontendUrl}/reset-password?token=${token}`;
+/**
+ * Provider outages must not surface as 500s mid-auth-flow. Delivery failures
+ * are logged here (never the recipient address) and reported to the caller
+ * via the result so it can degrade appropriately: registration rolls the
+ * account back, while reset/resend keep their enumeration-neutral response.
+ */
+export const sendEmailSafely = async(data : SendEmailData) : Promise<EmailDeliveryResult> => {
+    try {
+        await sendEmail(data);
+        return { delivered: true };
+    } catch (err) {
+        log.error("email_send_failed", {
+            subject: data.subject,
+            error: err instanceof Error ? err.message : String(err),
+        });
+        return { delivered: false };
+    }
+}
+
+export const sendPasswordResetEmail = async(email : string, token : string) : Promise<EmailDeliveryResult> => {
+    // Points at the FRONTEND origin — the reset page submits the new password
+    // through the API. (FRONTEND_URL must be the SPA origin, not the OAuth path.)
+    const resetLink = buildPasswordResetUrl(config.frontendUrl!, token);
 
     const html = `
          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -39,7 +76,7 @@ export const sendPasswordResetEmail = async(email : string, token : string) => {
         </div>
     `;
 
-    await sendEmail({
+    return sendEmailSafely({
         to : email,
         subject : "LinkShift - Reset Your Password",
         html : html
@@ -47,7 +84,7 @@ export const sendPasswordResetEmail = async(email : string, token : string) => {
 }
 
 
-export const sendVerificationEmail = async (userId: string, email: string, name : string | null) => {
+export const sendVerificationEmail = async (userId: string, email: string, name : string | null) : Promise<EmailDeliveryResult> => {
     // delete previous verification token -- to prevent error 
     await prisma.emailVerification.deleteMany({
         where : {
@@ -67,7 +104,9 @@ export const sendVerificationEmail = async (userId: string, email: string, name 
         }
     })
 
-    const verificationUrl = `${config.frontendUrl}/api/v1/auth/verify-email?token=${generatedToken}`;
+    // Points at the BACKEND verify-email route, which validates the token and
+    // then redirects the browser to the frontend login page.
+    const verificationUrl = buildEmailVerificationUrl(config.APP_URL!, generatedToken);
     const displayName = name ?? "there";
 
     const html = `
@@ -85,7 +124,7 @@ export const sendVerificationEmail = async (userId: string, email: string, name 
         </div>
     `;
 
-    await sendEmail({
+    return sendEmailSafely({
         to : email,
         subject : "LinkShift - Verify Your Email",
         html : html

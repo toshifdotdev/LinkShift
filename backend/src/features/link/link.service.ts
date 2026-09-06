@@ -5,10 +5,10 @@ import { AppError } from '../../errors/AppError';
 import { getLinkMapper } from './link.mapper';
 import { CreateLinkData, updateData } from './link.validation';
 import { queryData } from './link.query.validation';
-import { deleteCache } from '../../utils/cache';
+import { deleteCache, linkCacheKey } from '../../utils/cache';
 import { getAvailableShortId } from '../../utils/shortId';
 import { getValidatedDomain } from '../../utils/validate.domain';
-import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit, checkUtmAccess } from '../billing/billing.service';
+import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit, checkUtmAccess, checkDeepLinkAccess, checkAppDeepLinkAccess } from '../billing/billing.service';
 import { buildUtmUrl } from '../utm/utm.service';
 
 type CreateData = CreateLinkData&{
@@ -41,13 +41,28 @@ export const createLink = async (data : CreateData) => {
         utmMedium, 
         utmCampaign, 
         utmTerm, 
-        utmContent  
+        utmContent,
+        deepLink,
+        appDeepLink,
+        appScheme,
+        androidPackage,
+        appPath,
+        iosStoreUrl,
+        androidStoreUrl
     } = data;
 
     await checkLinkLimit(userId);
 
     if (slug) {
         await checkCustomSlugLimit(userId);
+    }
+
+    if (deepLink) {
+        await checkDeepLinkAccess(userId);
+    }
+
+    if (appDeepLink) {
+        await checkAppDeepLinkAccess(userId);
     }
 
     const hasAnyUtm =
@@ -91,7 +106,22 @@ export const createLink = async (data : CreateData) => {
                 utmMedium,
                 utmCampaign,
                 utmTerm,
-                utmContent
+                utmContent,
+                deepLink : deepLink ?? false,
+                appDeepLink: appDeepLink ?? false,
+                appScheme: appDeepLink ? appScheme ?? null : null,
+                androidPackage: appDeepLink ? androidPackage ?? null : null,
+                appPath: appDeepLink ? appPath ?? null : null,
+                iosStoreUrl: appDeepLink ? iosStoreUrl ?? null : null,
+                androidStoreUrl: appDeepLink ? androidStoreUrl ?? null : null
+            },
+            include: {
+                _count: {
+                    select: { scans : true }
+                },
+                domain: {
+                    select: { id : true, host : true }
+                }
             }
         });
 
@@ -113,7 +143,7 @@ export const createLink = async (data : CreateData) => {
 
     await deleteCache(`dashboard:${userId}`)
 
-    return createdLink;
+    return getLinkMapper(createdLink);
 }
 
 
@@ -167,6 +197,9 @@ export const getLinks = async (data : GetLinksData) => {
         include: {
         _count: {
             select: { scans : true } 
+        },
+        domain: {
+            select: { id : true, host : true }
         }
         },
     }),
@@ -201,6 +234,9 @@ export const getLink = async(id : string, linkId : string) => {
         include : {
             _count : { 
               select : { scans : true }
+            },
+            domain : {
+              select : { id : true, host : true }
             }
         }
     })
@@ -259,6 +295,25 @@ export const updateLink = async(data : UpdateLinkData) => {
 
     if (utmChanged) {
         await checkUtmAccess(data.userId);
+    }
+
+    if (data.deepLink === true) {
+        await checkDeepLinkAccess(data.userId);
+    }
+
+    if (data.appDeepLink === true) {
+        await checkAppDeepLinkAccess(data.userId);
+    }
+
+    const finalAppDeepLink = data.appDeepLink ?? existingLink.appDeepLink;
+    const finalAppScheme = data.appScheme !== undefined ? data.appScheme : existingLink.appScheme;
+    const finalAndroidPackage = data.androidPackage !== undefined ? data.androidPackage : existingLink.androidPackage;
+    const finalAppPath = data.appPath !== undefined ? data.appPath : existingLink.appPath;
+    const finalIosStoreUrl = data.iosStoreUrl !== undefined ? data.iosStoreUrl : existingLink.iosStoreUrl;
+    const finalAndroidStoreUrl = data.androidStoreUrl !== undefined ? data.androidStoreUrl : existingLink.androidStoreUrl;
+
+    if (finalAppDeepLink && !finalAppScheme) {
+        throw new AppError("A URI scheme is required to enable mobile app deep linking", 400);
     }
 
     const baseTargetUrl =
@@ -342,13 +397,39 @@ export const updateLink = async(data : UpdateLinkData) => {
             utmCampaign: finalUtmCampaign,
             utmTerm: finalUtmTerm,
             utmContent: finalUtmContent,
+            deepLink: data.deepLink ?? existingLink.deepLink,
+            appDeepLink: finalAppDeepLink,
+            appScheme: finalAppScheme ?? null,
+            androidPackage: finalAndroidPackage ?? null,
+            appPath: finalAppPath ?? null,
+            iosStoreUrl: finalIosStoreUrl ?? null,
+            androidStoreUrl: finalAndroidStoreUrl ?? null,
         },
         include : {
             _count : {
                 select : {scans : true}
+            },
+            domain : {
+                select : { id : true, host : true }
             }
         }
     })
+
+    // Invalidate every cache key this link could be served under: the redirect
+    // hot path caches per (host, shortId), and BOTH may change in one update
+    // (slug edit and/or domain switch). Resolve hosts for old + new domains.
+    const domainsForInvalidation = await prisma.domain.findMany({
+        where: { id: { in: [existingLink.domainId, domain.id] } },
+        select: { id: true, host: true },
+    });
+    const invalidationHosts = [...new Set(domainsForInvalidation.map(d => d.host))];
+    const invalidationSlugs = [...new Set([existingLink.shortId, shortId])];
+
+    await Promise.all(
+        invalidationHosts.flatMap(host =>
+            invalidationSlugs.map(slug => deleteCache(linkCacheKey(host, slug)))
+        )
+    );
 
     if (destinationChanged || slugChanged) {
         await prisma.linkChange.createMany({
@@ -372,7 +453,7 @@ export const updateLink = async(data : UpdateLinkData) => {
         });
     }
 
-    await deleteCache(`link:${link.shortId}`);
+    await deleteCache(linkCacheKey(domain.host, link.shortId));
     await deleteCache(`dashboard:${link.userId}`);
 
     return getLinkMapper(link);
@@ -390,9 +471,15 @@ export const deleteLink = async(data : DeleteLinkData) => {
         throw new AppError("Link Not Found", 404);
     }
 
-    await deleteCache(`link:${existingLink.shortId}`);
-    await deleteCache(`dashboard:${existingLink.userId}`);
+    // Invalidate every host this link could be cached under before removal.
+    const owningDomains = await prisma.domain.findMany({
+        where: { id: existingLink.domainId },
+        select: { host: true },
+    });
 
+    await Promise.all(
+        owningDomains.map(d => deleteCache(linkCacheKey(d.host, existingLink.shortId)))
+    );
 
     await prisma.link.delete({
         where : {

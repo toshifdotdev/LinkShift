@@ -1,0 +1,109 @@
+import type { HTMLAttributes, ReactNode } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "./button";
+import { Lamp } from "./lamp";
+
+/*
+ * The one consolidated empty/error treatment: a sunken well with a dashed
+ * hairline and a single gradient hair across the top. Empty states speak
+ * in the brand voice (Fraunces title); error states carry a destructive
+ * lamp — never color alone.
+ */
+
+interface EmptyStateProps extends HTMLAttributes<HTMLDivElement> {
+  marquee?: string;
+  title: string;
+  description?: string;
+  action?: ReactNode;
+}
+
+function EmptyState({
+  marquee,
+  title,
+  description,
+  action,
+  children,
+  className,
+  ...rest
+}: EmptyStateProps) {
+  return (
+    <div
+      data-slot="empty-state"
+      className={cn(
+        "relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-sunken/40 px-6 py-16 text-center sm:py-20",
+        className,
+      )}
+      {...rest}
+    >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-border-strong to-transparent"
+      />
+      {marquee && <p className="ls-marquee mb-5">{marquee}</p>}
+      <h3 className="font-display text-balance text-[clamp(1.4rem,2.6vw,1.85rem)] leading-[1.1] font-medium tracking-[-0.01em] text-foreground">
+        {title}
+      </h3>
+      {description && (
+        <p className="text-pretty mt-3 max-w-md text-sm leading-relaxed text-fg-secondary">
+          {description}
+        </p>
+      )}
+      {action && <div className="mt-7">{action}</div>}
+      {children && <div className="mt-6 w-full">{children}</div>}
+    </div>
+  );
+}
+
+interface ErrorStateProps {
+  marquee?: string;
+  title?: string;
+  message?: string;
+  onRetry?: () => void;
+  retryLabel?: string;
+  className?: string;
+}
+
+function ErrorState({
+  marquee = "Signal lost",
+  title = "Something went wrong",
+  message,
+  onRetry,
+  retryLabel = "Try again",
+  className,
+}: ErrorStateProps) {
+  return (
+    <div
+      role="alert"
+      data-slot="error-state"
+      className={cn(
+        "relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-destructive/30 bg-sunken/40 px-6 py-16 text-center sm:py-20",
+        className,
+      )}
+    >
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-destructive/40 to-transparent"
+      />
+      <Lamp tone="danger" className="mb-5">
+        {marquee}
+      </Lamp>
+      <h3 className="font-display text-balance text-[clamp(1.4rem,2.6vw,1.85rem)] leading-[1.1] font-medium tracking-[-0.01em] text-foreground">
+        {title}
+      </h3>
+      {message && (
+        <p className="text-pretty mt-3 max-w-md text-sm leading-relaxed text-fg-secondary">
+          {message}
+        </p>
+      )}
+      {onRetry && (
+        <div className="mt-7">
+          <Button variant="outline" onClick={onRetry}>
+            {retryLabel}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export { EmptyState, ErrorState, EmptyState as EditorialEmpty };
