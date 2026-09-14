@@ -17,15 +17,28 @@ import {
 } from "@/lib/seo";
 import { DOC_CATEGORIES } from "@/pages/docs/docs-data";
 import { FAQ_GROUPS } from "@/pages/faq/faq-page";
-import { PUBLIC_PATHS } from "./public-routes";
+import { PUBLIC_PATHS, PRERENDER_PATHS, ERROR_ROUTE_PATHS } from "./public-routes";
 
-export { PUBLIC_PATHS, ROUTE_SEO };
+export { PUBLIC_PATHS, PRERENDER_PATHS, ERROR_ROUTE_PATHS, ROUTE_SEO };
 
 export interface PrerenderHead {
     title: string;
     description: string;
     canonical: string;
     jsonLd?: Record<string, unknown>;
+    /**
+     * Absolute URL of the route's social card. Defaults to the shared card so
+     * build-time HTML matches what applySeo() writes at runtime — a divergence
+     * here means a crawler and a social unfurler disagree about the same page.
+     */
+    ogImage?: string;
+    ogImageAlt?: string;
+    /**
+     * Indexability directive written into the prerendered document. Omitted
+     * for indexable routes, which the prerender step stamps `index,follow`.
+     * Only the error document (`/404`) sets this.
+     */
+    robots?: string;
 }
 
 
@@ -83,6 +96,7 @@ export function headForPath(path: string): PrerenderHead {
             description: route.description,
             canonical: `https://linkshift.in${route.canonicalPath}`,
             jsonLd: jsonLdForPath(path),
+            robots: route.robots,
         };
     }
 

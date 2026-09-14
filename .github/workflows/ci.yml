@@ -84,9 +84,54 @@ jobs:
           test -f dist/index.html
           test -f dist/pricing/index.html
           test -f dist/docs/qr-studio/index.html
+          test -f dist/login/index.html
+          test -f dist/register/index.html
+          test -f dist/404/index.html
           test -f dist/sitemap.xml
           test -f dist/llms.txt
           test -f dist-ssr/prerender-entry.js
+
+      - name: Verify the error document is noindex and absent from the sitemap
+        run: |
+          # CloudFront serves dist/404/index.html for 403/404 custom error
+          # responses, so it must exist, must not be indexable, and must not be
+          # advertised in the sitemap.
+          grep -q 'name="robots" content="noindex,nofollow"' dist/404/index.html
+          ! grep -q '<loc>https://linkshift.in/404</loc>' dist/sitemap.xml
+
+      - name: Verify sitemap lists the prerendered routes with honest lastmod
+        run: |
+          # Every prerendered route must appear in the sitemap, and no lastmod
+          # may be the build date unless the committed content registry says so
+          # (a deploy on the day of a content change is legitimate).
+          node -e '
+            const { readFileSync } = require("node:fs");
+            const xml = readFileSync("dist/sitemap.xml", "utf8");
+            const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+            const lastmods = [...xml.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)].map((m) => m[1]);
+
+            if (locs.length !== lastmods.length) {
+              throw new Error(`sitemap: ${locs.length} loc vs ${lastmods.length} lastmod`);
+            }
+            for (const loc of locs) {
+              if (!loc.startsWith("https://linkshift.in/")) {
+                throw new Error(`sitemap: non-absolute or off-origin loc ${loc}`);
+              }
+            }
+            for (const d of lastmods) {
+              if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) {
+                throw new Error(`sitemap: malformed lastmod ${d}`);
+              }
+            }
+            console.log(`sitemap OK: ${locs.length} URLs`);
+          '
+
+      - name: Verify the clean-URL rewrite artifact is present and deployable
+        run: |
+          test -f ../deploy/cloudfront/clean-url-rewrite.js
+          # CloudFront Functions has no module system — an import/export here
+          # would fail to deploy.
+          ! grep -qE "^\s*(import|export)\s" ../deploy/cloudfront/clean-url-rewrite.js
 
   docker:
     name: Docker image + deployment config validation

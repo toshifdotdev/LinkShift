@@ -22,7 +22,7 @@ import { AnalyticsPage } from "@/pages/app/analytics/analytics-page";
 import { DomainsPage } from "@/pages/app/domains/domains-page";
 import { BillingPage } from "@/pages/app/billing/billing-page";
 import { SettingsPage } from "@/pages/app/settings/settings-page";
-import { useSeo } from "@/lib/seo";
+import { useSeo, ROUTE_SEO } from "@/lib/seo";
 
 
 function ScrollToTop() {
@@ -35,7 +35,13 @@ function ScrollToTop() {
 }
 
 function NotFound() {
-  useSeo({ title: "Page not found — LinkShift", robots: "noindex,nofollow" });
+  // Sourced from the same registry entry the prerendered /404 document uses, so
+  // the runtime head and the static error page agree. The canonical path is
+  // deliberately omitted: this component serves *any* unknown URL, and
+  // setCanonical() falls back to the real requested path, which is correct for
+  // a 404. Pointing every unknown URL at /404 would be wrong.
+  const { title, description, robots } = ROUTE_SEO["/404"];
+  useSeo({ title, description, robots });
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background px-5">
       <span

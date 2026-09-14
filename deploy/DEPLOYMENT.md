@@ -230,11 +230,89 @@ generated `sitemap.xml`, `llms.txt`, and **per-route prerendered HTML** —
 `dist/<route>/index.html` for every public route, so crawlers and AI agents
 receive real page content without executing JavaScript). Build once with
 `VITE_API_URL=https://go.linkshift.in/api/v1`, upload `dist/` to S3, serve
-via CloudFront. The distribution must map clean URLs to their files with an
-SPA fallback, e.g. a CloudFront function that rewrites
-`/<route>` → `/<route>/index.html` when no asset matches, falling back to
-`/index.html` for unknown paths (keeps client-side routing working). Not part
-of the EC2/Caddy stack.
+via CloudFront. Not part of the EC2/Caddy stack.
+
+### 12a. CloudFront clean-URL rewrite — REQUIRED manual step
+
+**This is not optional and is not applied by the repository.** The application
+will appear broken to crawlers until it is in place.
+
+The prerender step writes each public route to its own directory:
+
+| Public URL | S3 object key |
+|---|---|
+| `https://linkshift.in/` | `index.html` |
+| `https://linkshift.in/pricing` | `pricing/index.html` |
+| `https://linkshift.in/docs` | `docs/index.html` |
+| `https://linkshift.in/docs/qr-studio` | `docs/qr-studio/index.html` |
+
+S3 resolves object keys, not clean URLs. A request for `/pricing` matches no
+key, so **without a rewrite every prerendered page returns 403** and all the
+canonical tags emitted at build time point at dead URLs. The rewrite source
+lives in the repository at:
+
+```
+deploy/cloudfront/clean-url-rewrite.js
+```
+
+It is a **CloudFront Function (viewer request)**, not Lambda@Edge. Its
+contract is covered by `frontend/scripts/__tests__/cloudfront-rewrite.test.ts`,
+which also asserts that every route in `PUBLIC_PATHS` maps correctly — so the
+prerender set and the rewrite cannot drift.
+
+To deploy it (console or CLI — pick one; nothing here configures AWS):
+
+```bash
+aws cloudfront create-function \
+  --name linkshift-clean-url-rewrite \
+  --runtime cloudfront-js-2.0 \
+  --function-config Comment="SPA clean-URL rewrite",Runtime=cloudfront-js-2.0 \
+  --function-code fileb://deploy/cloudfront/clean-url-rewrite.js
+
+aws cloudfront publish-function \
+  --name linkshift-clean-url-rewrite \
+  --if-match <ETag from the previous command>
+```
+
+Then attach it to the distribution's **default cache behavior**, event type
+**Viewer request**, and associate the published function ARN. Validate the
+syntax before publishing with:
+
+```bash
+aws cloudfront test-function --name linkshift-clean-url-rewrite \
+  --if-match <ETag> --event-object fileb://event.json
+```
+
+### 12b. Custom error responses — and why `fallback to /index.html` was wrong
+
+An earlier version of this document suggested falling back to `/index.html`
+for unknown paths to keep client-side routing working. **Do not do that.**
+It conflicts with the prerender architecture and creates soft 404s:
+
+- Rewriting an unknown path to `/index.html` returns the homepage **with a
+  200 status**. Google reports that as a soft 404 and treats it as a duplicate
+  of `/`, then excludes the requested URL. The branded 404 route
+  (`NotFound` in `frontend/src/App.tsx`) never gets a chance to set its
+  `noindex,nofollow` metadata.
+- The rewrite deliberately maps an unknown path to `/unknown-path/index.html`,
+  which does not exist, so the error path is reached correctly.
+
+Configure the distribution's **Custom Error Responses** as follows:
+
+| HTTP error code | Response page path | Response code |
+|---|---|---|
+| 403 | `/404/index.html` | 404 |
+| 404 | `/404/index.html` | 404 |
+
+Both entries are needed: S3 returns **403** (not 404) for a missing object when
+the caller lacks `s3:ListBucket`, which is the normal least-privilege setup.
+
+**Prerequisite (already satisfied):** `/404` is in `ERROR_ROUTE_PATHS` in
+`frontend/src/prerender/public-routes.ts`, so the build writes
+`dist/404/index.html`. It is deliberately **not** in `PUBLIC_PATHS`, so it never
+appears in `sitemap.xml`, and it is prerendered `noindex,nofollow` — an error
+document must not be indexable. If the file is missing from an upload, the
+error responses above have nothing to serve.
 
 ## 13. Reconciliation (hourly)
 
@@ -264,6 +342,20 @@ reconciliation job's own single-run guarantee; the endpoint is fail-closed.
    `CORS_ORIGINS=https://linkshift.in`).
 7. DNS: `go.linkshift.in` A/AAAA → EC2 public IP (elastic IP recommended);
    `linkshift.in`/`www` → CloudFront (separate workstream).
+7a. **CloudFront distribution** for the marketing site: S3 origin with the
+    `dist/` upload, plus both of the following, or the site will not be
+    crawlable — see §12a and §12b:
+    - the clean-URL rewrite function from `deploy/cloudfront/clean-url-rewrite.js`
+      attached to the default cache behavior (viewer request);
+    - custom error responses 403 → `/404/index.html` and 404 → `/404/index.html`
+      (response code 404), **not** a fallback to `/index.html`.
+
+    The `/404/index.html` page itself is produced by the build and needs no
+    manual step; see §12b.
+7b. `www.linkshift.in` must 301 to `linkshift.in` at the CloudFront/DNS layer,
+    otherwise the canonical tags are the only thing preventing a duplicate
+    copy of the site.
+
 8. Cloudinary production account keys.
 9. Razorpay: live keys + webhook `https://go.linkshift.in/api/v1/billing/webhook`
    + plan IDs (blocked on account conversion).

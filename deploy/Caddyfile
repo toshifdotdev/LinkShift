@@ -1,6 +1,25 @@
 
+# go.linkshift.in — short-link / redirect host only.
+#
+# This host must never appear in search results: everything it serves is either
+# a user short link pointing at an arbitrary third-party destination or a
+# machine endpoint. Two defensive layers keep it out of the index:
+#
+#   1. X-Robots-Tag stamped here at the edge (survives even if the app is
+#      misconfigured or replaced).
+#   2. The application stamps the same header and serves a disallow-all
+#      robots.txt (see backend/src/middleware/crawler.middleware.ts).
+#
+# The marketing site (linkshift.in) is served separately from S3 + CloudFront
+# and is intentionally NOT covered by this block.
+#
+# NOTE: the app also serves /robots.txt with a disallow-all body. The edge
+# header here is the belt to that braces — do not remove either.
+
 go.linkshift.in {
 	encode zstd gzip
+
+	header X-Robots-Tag "noindex, nofollow"
 
 	reverse_proxy app:3000
 }

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { renderRoute, headForPath, jsonLdForPath, PUBLIC_PATHS } from "./prerender-entry";
+import {
+    renderRoute,
+    headForPath,
+    jsonLdForPath,
+    PUBLIC_PATHS,
+    PRERENDER_PATHS,
+    ERROR_ROUTE_PATHS,
+    ROUTE_SEO,
+} from "./prerender-entry";
 import { DOC_CATEGORIES } from "@/pages/docs/docs-data";
 
 // ---------------------------------------------------------------------------
@@ -15,6 +23,7 @@ describe("PUBLIC_PATHS", () => {
         for (const required of [
             "/", "/pricing", "/docs", "/faq", "/contact",
             "/privacy", "/terms", "/refunds", "/shipping", "/acceptable-use", "/register",
+            "/login",
         ]) {
             expect(PUBLIC_PATHS, `missing ${required}`).toContain(required);
         }
@@ -26,9 +35,19 @@ describe("PUBLIC_PATHS", () => {
         expect(new Set(PUBLIC_PATHS).size).toBe(PUBLIC_PATHS.length);
     });
 
+    it("prerenders /login for the same reason as /register", () => {
+        // /login carries deliberate ROUTE_SEO metadata (title, description and
+        // a canonical path) and is linked from the landing navbar, so it is an
+        // intended indexable page. Prerendering it gives crawlers real content
+        // instead of an empty SPA shell — the treatment /register already had.
+        expect(PUBLIC_PATHS).toContain("/login");
+        expect(PUBLIC_PATHS).toContain("/register");
+        expect(ROUTE_SEO["/login"]).toBeDefined();
+        expect(ROUTE_SEO["/login"].canonicalPath).toBe("/login");
+    });
+
     it("never prerenders private or authenticated routes", () => {
         for (const forbidden of [
-            "/login",
             "/app",
             "/app/links",
             "/app/settings",
@@ -39,6 +58,63 @@ describe("PUBLIC_PATHS", () => {
         ]) {
             expect(PUBLIC_PATHS, `${forbidden} must not be prerendered`).not.toContain(forbidden);
         }
+    });
+
+    it("keeps the token-bearing auth flows out of the prerender set", () => {
+        // These set robots: noindex,nofollow at runtime — baking them into the
+        // static bundle would publish a noindex page for no benefit.
+        for (const forbidden of ["/reset-password", "/verify-email", "/forgot-password"]) {
+            expect(PUBLIC_PATHS, `${forbidden} must stay non-prerendered`).not.toContain(forbidden);
+        }
+    });
+});
+
+describe("ERROR_ROUTE_PATHS", () => {
+    it("prerenders /404 as a static error document", () => {
+        // CloudFront's 403/404 custom error responses serve /404/index.html
+        // (deploy/DEPLOYMENT.md §12b), so the file must exist in dist/.
+        expect(ERROR_ROUTE_PATHS).toContain("/404");
+        expect(PRERENDER_PATHS).toContain("/404");
+    });
+
+    it("keeps /404 out of PUBLIC_PATHS so it never reaches the sitemap", () => {
+        // PUBLIC_PATHS is the sitemap set. A 404 is a utility error document,
+        // not content — listing it would advertise a dead end to crawlers.
+        expect(PUBLIC_PATHS).not.toContain("/404");
+    });
+
+    it("derives the prerender set as indexable routes plus error documents", () => {
+        expect(new Set(PRERENDER_PATHS)).toEqual(new Set([...PUBLIC_PATHS, ...ERROR_ROUTE_PATHS]));
+        expect(PRERENDER_PATHS.length).toBe(PUBLIC_PATHS.length + ERROR_ROUTE_PATHS.length);
+    });
+
+    it("marks the error document noindex and every indexable route indexable", () => {
+        // A prerendered 404 must never be indexable, and no page that is in the
+        // sitemap may carry a noindex directive.
+        expect(headForPath("/404").robots).toBe("noindex,nofollow");
+        for (const path of PUBLIC_PATHS) {
+            expect(headForPath(path).robots, path).toBeUndefined();
+        }
+    });
+
+    it("renders the real not-found copy into the error document", () => {
+        const html = renderRoute("/404");
+        expect(html).toContain("Page not found");
+        expect(html).toContain("The page you requested does not exist.");
+    });
+
+    it("keeps the runtime 404 head in step with the prerendered document", () => {
+        // The NotFound component renders ROUTE_SEO["/404"] at runtime; the
+        // build renders headForPath("/404"). Both read the same registry entry,
+        // so the SPA and the static error page cannot disagree.
+        const head = headForPath("/404");
+        const runtime = ROUTE_SEO["/404"];
+
+        expect(runtime.title).toBe(head.title);
+        expect(runtime.description).toBe(head.description);
+        expect(runtime.robots).toBe(head.robots);
+        expect(head.robots).toBe("noindex,nofollow");
+        expect(head.canonical).toBe(`${ORIGIN}/404`);
     });
 });
 

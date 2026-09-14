@@ -19,5 +19,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "scripts/**/*.ts", "src/prerender/sitemap.ts", "src/prerender/content-updated.ts", "src/prerender/public-routes.ts"]
 }

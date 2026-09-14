@@ -3,12 +3,18 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { renderRoute, headForPath, PUBLIC_PATHS } from "../dist-ssr/prerender-entry.js";
+import { renderRoute, headForPath, PRERENDER_PATHS } from "../dist-ssr/prerender-entry.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const distDir = join(root, "dist");
 const template = readFileSync(join(distDir, "index.html"), "utf8");
 const ORIGIN = "https://linkshift.in";
+
+// Kept in step with frontend/src/lib/seo.ts. Duplicated rather than imported
+// because this script runs against the built SSR bundle, which does not
+// re-export the client SEO constants.
+const DEFAULT_OG_IMAGE = `${ORIGIN}/brand/og-image.png`;
+const DEFAULT_OG_IMAGE_ALT = "LinkShift — link shortening, QR codes and analytics";
 
 
 function replaceMetaContent(html, selector, content) {
@@ -45,9 +51,20 @@ function buildPage(path) {
     html = replaceMetaContent(html, 'name="twitter:title"', head.title);
     html = replaceMetaContent(html, 'name="twitter:description"', head.description);
 
+    // Social card + its alt text. Both routes fall back to the shared card, so
+    // the build output matches what applySeo() writes on the client.
+    const ogImage = head.ogImage ?? DEFAULT_OG_IMAGE;
+    const ogImageAlt = head.ogImageAlt ?? DEFAULT_OG_IMAGE_ALT;
+    html = replaceMetaContent(html, 'property="og:image"', ogImage);
+    html = replaceMetaContent(html, 'property="og:image:alt"', ogImageAlt);
+    html = replaceMetaContent(html, 'name="twitter:image"', ogImage);
+    html = replaceMetaContent(html, 'name="twitter:image:alt"', ogImageAlt);
+
     
     
-    const robotsMeta = '<meta name="robots" content="index,follow" />';
+    // Indexable by default. The error document (/404) overrides this with
+    // noindex,nofollow — a prerendered 404 must never be indexable.
+    const robotsMeta = `<meta name="robots" content="${escapeHtml(head.robots ?? "index,follow")}" />`;
     html = html.replace("</head>", `    ${robotsMeta}\n</head>`);
 
     if (head.jsonLd) {
@@ -66,7 +83,7 @@ function buildPage(path) {
 }
 
 let count = 0;
-for (const path of PUBLIC_PATHS) {
+for (const path of PRERENDER_PATHS) {
     const html = buildPage(path);
     const outFile =
         path === "/" ? join(distDir, "index.html") : join(distDir, path, "index.html");

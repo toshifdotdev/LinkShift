@@ -5,7 +5,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { PUBLIC_PATHS } from "./src/prerender/public-routes.ts";
-
+import { buildSitemap } from "./src/prerender/sitemap.ts";
 
 function sitemapPlugin(): Plugin {
   let outDir: string | null = null;
@@ -18,17 +18,10 @@ function sitemapPlugin(): Plugin {
     },
     closeBundle() {
       if (!outDir) return;
-      const ORIGIN = "https://linkshift.in";
-      const today = new Date().toISOString().slice(0, 10);
-
-      const urls = PUBLIC_PATHS.map(
-        (path) =>
-          `  <url>\n    <loc>${ORIGIN}${path}</loc>\n    <lastmod>${today}</lastmod>\n  </url>`,
-      ).join("\n");
-
-      const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`;
-
-      writeFileSync(resolve(outDir, "sitemap.xml"), xml, "utf8");
+      // PUBLIC_PATHS, deliberately not PRERENDER_PATHS: the sitemap lists
+      // indexable content only. /404 is prerendered but is an error document,
+      // so it must never appear here.
+      writeFileSync(resolve(outDir, "sitemap.xml"), buildSitemap(PUBLIC_PATHS), "utf8");
       console.log(`\x1b[36m[sitemap]\x1b[0m sitemap.xml written (${PUBLIC_PATHS.length} URLs)`);
     },
   };

@@ -11,7 +11,12 @@ export default defineConfig({
     },
     test: {
         environment: "jsdom",
-        include: ["src/**/*.test.{ts,tsx}"],
+        include: [
+            "src/**/*.test.{ts,tsx}",
+            // Build-time and edge artifacts live outside src/ because they use
+            // Node built-ins; src/ is compiled with DOM-only types.
+            "scripts/**/*.test.ts",
+        ],
         setupFiles: ["./src/test/setup.ts"],
         css: false,
     },

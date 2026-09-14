@@ -10,6 +10,7 @@ import internalRouter from './features/internal/reconciliation.routes';
 import usersRouter from './features/users/users.routes';
 import supportRouter from './features/support/support.routes';
 import { errorMiddleware } from './middleware/error.middleware';
+import { redirectHostRobots, redirectHostNoIndex } from './middleware/crawler.middleware';
 import { AppError } from './errors/AppError';
 import { razorpayWebhookController } from './features/billing/billing.controller';
 import cors from "cors";
@@ -49,6 +50,11 @@ app.post(
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: false }));
+
+
+app.use(redirectHostNoIndex);
+
+app.get("/robots.txt", redirectHostRobots);
 
 app.get("/health", async (_, res) => {
     
