@@ -59,6 +59,17 @@ function renderDialog() {
   );
 }
 
+describe("CreateLinkDialog expiry input", () => {
+  it("keeps a native datetime-local input that inherits the active theme", async () => {
+    renderDialog();
+    fireEvent.click(screen.getByRole("button", { name: /Advanced/ }));
+    const expiry = await screen.findByLabelText(/expires at/i);
+
+    expect(expiry).toHaveAttribute("type", "datetime-local");
+    expect(expiry).not.toHaveClass("[color-scheme:dark]");
+  });
+});
+
 describe("CreateLinkDialog short-link preview", () => {
   it("defaults the preview to the account's default domain", async () => {
     renderDialog();

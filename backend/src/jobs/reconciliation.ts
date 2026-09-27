@@ -15,17 +15,6 @@ type LiveSubscriptionRow = Prisma.SubscriptionGetPayload<{
 }>;
 
 
-
-
-
-
-
-
-
-
-
-
-
 const LEASE_TTL_MINUTES = 15;
 const STALE_AP_HOURS = 24;
 const PROVIDER_CALL_DELAY_MS = 100;
@@ -93,9 +82,6 @@ async function finishRun(
 }
 
 
-
-
-
 async function fetchProviderSubscription(providerSubscriptionId: string) {
     await sleep(PROVIDER_CALL_DELAY_MS);
     try {
@@ -105,9 +91,6 @@ async function fetchProviderSubscription(providerSubscriptionId: string) {
         return null;
     }
 }
-
-
-
 
 
 const PROVIDER_LIVE_TARGET: Record<string, string> = {
@@ -351,11 +334,6 @@ async function repairSubscription(
     void warning;
     return "repaired";
 }
-
-
-
-
-
 
 
 async function backfillPaymentsForSubscription(

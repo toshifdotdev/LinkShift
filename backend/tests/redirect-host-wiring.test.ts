@@ -59,8 +59,8 @@ describe("GET /robots.txt on the short-link host", () => {
         // dev/preview proxy both hosts can reach this process, so this route
         // must NOT answer for the marketing host. It falls through, and with
         // no static host in front of the app the request continues into the
-        // redirect router (where "/robots.txt" is not a 7-char short id) — the
-        // point is that no disallow-all body is produced here.
+        // redirect router (where "/robots.txt" contains a dot rejected by the
+        // param schema) — the point is that no disallow-all body is produced here.
         const res = await request(app).get("/robots.txt").set("Host", "linkshift.in");
 
         expect(res.text).not.toBe(ROBOTS_BODY);
@@ -76,7 +76,7 @@ describe("X-Robots-Tag on the short-link host", () => {
     });
 
     it("is present on a validation-failure (400) path", async () => {
-        // A 2-char short id fails the 7-char param schema before any lookup,
+        // A 2-char short id fails the 3–50 char param schema before any lookup,
         // so this path is fully deterministic.
         const res = await request(app).get("/no").set("Host", REDIRECT_HOST_HEADER);
 
@@ -122,7 +122,7 @@ describe("redirect behaviour is unchanged by the crawler guard", () => {
     it("still rejects an over-long short id with 400", async () => {
         const res = await request(app).get("/robots.txtx").set("Host", REDIRECT_HOST_HEADER);
 
-        // 8 chars → param schema rejects it, exactly as before this change.
+        // 11 chars with a dot → param schema rejects it (invalid character).
         expect(res.status).toBe(400);
     });
 

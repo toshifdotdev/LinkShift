@@ -60,6 +60,16 @@ function renderDialog(override?: Partial<LinkItem>) {
   );
 }
 
+describe("EditLinkDialog expiry input", () => {
+  it("keeps a native datetime-local input that inherits the active theme", () => {
+    renderDialog();
+    const expiry = screen.getByLabelText("Expires at");
+
+    expect(expiry).toHaveAttribute("type", "datetime-local");
+    expect(expiry).not.toHaveClass("[color-scheme:dark]");
+  });
+});
+
 describe("EditLinkDialog short-link preview", () => {
   it("defaults the preview to the account's default domain and current slug", async () => {
     renderDialog();

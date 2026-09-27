@@ -307,7 +307,6 @@ function CreateLinkDialog({
                     type="datetime-local"
                     value={expiresAt}
                     onChange={(e) => setExpiresAt(e.target.value)}
-                    className="[color-scheme:dark]"
                   />
                   <FieldHint>The link stops resolving (410) after this moment.</FieldHint>
                 </Field>

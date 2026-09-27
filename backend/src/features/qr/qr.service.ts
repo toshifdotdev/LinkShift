@@ -1,4 +1,4 @@
-import { config, prisma } from "../../config"
+import { prisma } from "../../config"
 import { AppError } from "../../errors/AppError";
 import { createLinkQr } from './qr.validation';
 import { generateQrImage } from '../../utils/generateQr';
@@ -26,6 +26,11 @@ export const qrService = async(data : createLinkQr) => {
         where : {
             id : data.linkId,
             userId : data.userId
+        },
+        include: {
+            domain: {
+                select: { host: true }
+            }
         }
     })
     
@@ -36,7 +41,7 @@ export const qrService = async(data : createLinkQr) => {
 
    
     
-    const shortUrl = `${config.APP_URL}/${currentLink.shortId}`;
+    const shortUrl = `https://${currentLink.domain.host}/${currentLink.shortId}`;
 
     const foregroundColor = data.foregroundColor ?? "#000000";
     const backgroundColor = data.backgroundColor ?? "#FFFFFF";
@@ -71,7 +76,7 @@ export const qrService = async(data : createLinkQr) => {
         }
     })
 
-    if(existingQr) {
+    if(existingQr && existingQr.updatedAt >= currentLink.updatedAt) {
         return buildQrResponse(existingQr, currentLink.shortId)
     }
 

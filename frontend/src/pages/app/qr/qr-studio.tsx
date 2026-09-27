@@ -683,7 +683,7 @@ function QrStudio({
               {selectedLink ? (
                 <>
                   <div className="rounded-md bg-background p-4">
-                    <QrPreview config={payload} shortId={selectedLink.shortId} frame={design.frame} className="mx-auto max-w-[260px]" />
+                    <QrPreview config={payload} shortId={selectedLink.shortId} domainHost={selectedLink.domainHost} frame={design.frame} className="mx-auto max-w-[260px]" />
                   </div>
                   <div className="mt-4 flex justify-center">
                     <CodeChip truncate prefix={`${selectedLink.domainHost || DEFAULT_SHORT_DOMAIN}/`}>

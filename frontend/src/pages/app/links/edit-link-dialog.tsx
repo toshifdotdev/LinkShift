@@ -244,7 +244,6 @@ function EditLinkDialog({
                   type="datetime-local"
                   value={expiry}
                   onChange={(e) => setExpiry(e.target.value)}
-                  className="[color-scheme:dark]"
                 />
                 <FieldError>
                   {isExpiredCheck(expiry) ? "This moment is in the past. The link will 410 immediately." : null}

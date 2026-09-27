@@ -39,11 +39,13 @@ type FrameName = keyof typeof FRAMES;
 function QrPreview({
   config,
   shortId,
+  domainHost,
   frame = "none",
   className,
 }: {
   config: QrConfig;
   shortId: string;
+  domainHost?: string | null;
   frame?: FrameName;
   className?: string;
 }) {
@@ -70,7 +72,7 @@ function QrPreview({
     return () => ro.disconnect();
   }, [nativeW]);
 
-  const data = shortUrl(shortId);
+  const data = shortUrl(shortId, domainHost);
 
   
   useEffect(() => {
