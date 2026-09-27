@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Info } from "lucide-react";
 import { useState } from "react";
 import { ApiError } from "@/api/client";
 import { updateLink } from "@/api/links";
@@ -11,6 +10,15 @@ import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { UpgradeHint } from "./upgrade-hint";
+import { UtmFields } from "./utm-fields";
+import {
+  UTM_REQUIRED_MESSAGE,
+  hasAnyUtm,
+  utmFromLink,
+  utmMissingRequired,
+  utmUpdatePatch,
+  type UtmValues,
+} from "./utm";
 import { cn } from "@/lib/utils";
 import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import { toLocalInputValue, fromLocalInputValue } from "./utils";
@@ -42,6 +50,7 @@ function EditLinkDialog({
   const { user } = useSession();
   const plan = user?.plan.name ?? "FREE";
   const canUseSlug = plan !== "FREE";
+  const canUseUtm = plan === "CREATOR" || plan === "PRO";
   const canUseDeepLink = plan === "PRO";
 
   
@@ -61,9 +70,19 @@ function EditLinkDialog({
   const [appPath, setAppPath] = useState(link.appPath ?? "");
   const [iosStoreUrl, setIosStoreUrl] = useState(link.iosStoreUrl ?? "");
   const [androidStoreUrl, setAndroidStoreUrl] = useState(link.androidStoreUrl ?? "");
+  /** Tags stored on the link when the dialog opened; the save-time diff baseline. The
+      page mounts this dialog with key={link.id}, so seeding from props is enough. */
+  const [storedUtm] = useState<UtmValues>(() => utmFromLink(link));
+  const [utm, setUtm] = useState<UtmValues>(() => utmFromLink(link));
+  const [utmEdited, setUtmEdited] = useState(false);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
   const domains = useDomains();
+
+  function changeUtm(next: UtmValues) {
+    setUtm(next);
+    setUtmEdited(true);
+  }
 
   
   const domainHost =
@@ -108,6 +127,13 @@ function EditLinkDialog({
       setFieldError("New password does not meet all requirements.");
       return;
     }
+    /* Tags are sent only once the user touches them, so saving an unrelated field never
+       re-triggers the server's Creator plan check. */
+    const utmPatch = canUseUtm && utmEdited ? utmUpdatePatch(storedUtm, utm) : {};
+    if (utmEdited && utmMissingRequired(utm)) {
+      setFieldError(UTM_REQUIRED_MESSAGE);
+      return;
+    }
     if (canUseDeepLink && appDeepLink) {
       if (!appScheme.trim()) {
         setFieldError("A URI scheme is required to enable mobile app deep linking.");
@@ -141,6 +167,7 @@ function EditLinkDialog({
       appPath: canUseDeepLink ? (appDeepLink ? appPath.trim() || null : null) : undefined,
       iosStoreUrl: canUseDeepLink ? (appDeepLink ? iosStoreUrl.trim() || null : null) : undefined,
       androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null : null) : undefined,
+      ...utmPatch,
     });
   }
 
@@ -184,15 +211,18 @@ function EditLinkDialog({
             </Field>
 
             
-            {link.targetUrl.includes("utm_") && (
-              <div className="flex items-start gap-2.5 rounded-md border border-border bg-elevated/60 px-3.5 py-3">
-                <Info className="mt-0.5 size-3.5 shrink-0 text-fg-muted" aria-hidden="true" />
-                <p className="text-xs leading-relaxed text-fg-muted">
-                  This link has UTM parameters attached. Editing existing UTM values requires
-                  recreating the link with new tags. That's the current path.
-                </p>
-              </div>
-            )}
+            <UtmFields
+              utm={utm}
+              onChange={changeUtm}
+              canUseUtm={canUseUtm}
+              subtitle={
+                hasAnyUtm(storedUtm)
+                  ? "These are the tags saved on this link. Clear a field to remove that tag from the destination."
+                  : "Optional. Source, medium and campaign are required once you start tagging."
+              }
+              lockedFeature="Edit the campaign tags on this link"
+              lockedRequirement="Creator or above"
+            />
 
             <div className="grid gap-4 sm:grid-cols-2">
               <Field>

@@ -99,6 +99,12 @@ export interface LinkItem {
   clicks: number;
   domainId: string;
   domainHost: string;
+  /** Campaign tags stored on the link. Absent only for data fetched before UTM was exposed. */
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmTerm?: string | null;
+  utmContent?: string | null;
 }
 
 export interface LinksPagination {

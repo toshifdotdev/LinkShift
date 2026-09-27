@@ -12,6 +12,14 @@ import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { UpgradeHint } from "./upgrade-hint";
+import { UtmFields } from "./utm-fields";
+import {
+  UTM_REQUIRED_MESSAGE,
+  emptyUtm,
+  utmCreatePayload,
+  utmMissingRequired,
+  type UtmValues,
+} from "./utm";
 import { cn } from "@/lib/utils";
 import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import type { LinkItem } from "@/types/api";
@@ -59,7 +67,7 @@ function CreateLinkDialog({
   const [appPath, setAppPath] = useState("");
   const [iosStoreUrl, setIosStoreUrl] = useState("");
   const [androidStoreUrl, setAndroidStoreUrl] = useState("");
-  const [utm, setUtm] = useState({ source: "", medium: "", campaign: "", term: "", content: "" });
+  const [utm, setUtm] = useState<UtmValues>(emptyUtm);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
   const domains = useDomains({ enabled: open });
@@ -89,7 +97,7 @@ function CreateLinkDialog({
     setAppPath("");
     setIosStoreUrl("");
     setAndroidStoreUrl("");
-    setUtm({ source: "", medium: "", campaign: "", term: "", content: "" });
+    setUtm(emptyUtm());
     setFieldError(null);
   };
 
@@ -122,9 +130,8 @@ function CreateLinkDialog({
       setFieldError("Password does not meet all requirements.");
       return;
     }
-    const hasUtm = Boolean(utm.source || utm.medium || utm.campaign || utm.term || utm.content);
-    if (hasUtm && (!utm.source || !utm.medium || !utm.campaign)) {
-      setFieldError("UTM source, medium and campaign are required when tagging a campaign.");
+    if (utmMissingRequired(utm)) {
+      setFieldError(UTM_REQUIRED_MESSAGE);
       return;
     }
     if (appDeepLink) {
@@ -156,11 +163,7 @@ function CreateLinkDialog({
       appPath: appDeepLink ? appPath.trim() || undefined : undefined,
       iosStoreUrl: appDeepLink ? iosStoreUrl.trim() || undefined : undefined,
       androidStoreUrl: appDeepLink ? androidStoreUrl.trim() || undefined : undefined,
-      utmSource: utm.source.trim() || undefined,
-      utmMedium: utm.medium.trim() || undefined,
-      utmCampaign: utm.campaign.trim() || undefined,
-      utmTerm: utm.term.trim() || undefined,
-      utmContent: utm.content.trim() || undefined,
+      ...utmCreatePayload(utm),
     });
   }
 
@@ -352,35 +355,7 @@ function CreateLinkDialog({
                 </Field>
 
                 
-                <div className="rounded-md border border-border p-3.5">
-                  <p className="flex items-center gap-2 text-[13px] font-medium text-fg-secondary">
-                    UTM campaign tagging
-                    {!canUseUtm && (
-                      <span className="inline-flex items-center gap-1 font-mono text-[9px] tracking-[0.16em] text-brand uppercase">
-                        <Lock className="size-2.5" /> Creator and above
-                      </span>
-                    )}
-                  </p>
-                  {canUseUtm ? (
-                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                      <Input value={utm.source} onChange={(e) => setUtm({ ...utm, source: e.target.value })} placeholder="utm_source *" aria-label="UTM source (required)" />
-                      <Input value={utm.medium} onChange={(e) => setUtm({ ...utm, medium: e.target.value })} placeholder="utm_medium *" aria-label="UTM medium (required)" />
-                      <Input value={utm.campaign} onChange={(e) => setUtm({ ...utm, campaign: e.target.value })} placeholder="utm_campaign *" aria-label="UTM campaign (required)" className="sm:col-span-2" />
-                      <Input value={utm.term} onChange={(e) => setUtm({ ...utm, term: e.target.value })} placeholder="utm_term (optional)" aria-label="UTM term" />
-                      <Input value={utm.content} onChange={(e) => setUtm({ ...utm, content: e.target.value })} placeholder="utm_content (optional)" aria-label="UTM content" />
-                      <p className="text-xs text-fg-muted sm:col-span-2">
-                        Appended to the destination URL. Every scan carries it.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="mt-2">
-                      <UpgradeHint
-                        feature="Tag scans by campaign, source, and medium. Reported in analytics and CSV exports."
-                        requirement="Creator or above"
-                      />
-                    </div>
-                  )}
-                </div>
+                <UtmFields utm={utm} onChange={setUtm} canUseUtm={canUseUtm} />
 
                 
                 <div className="rounded-md border border-border p-3.5">

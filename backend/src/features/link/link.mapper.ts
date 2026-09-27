@@ -25,6 +25,11 @@ type LinkResponse = {
     clicks: number;
     domainId: string;
     domainHost: string;
+    utmSource: string | null;
+    utmMedium: string | null;
+    utmCampaign: string | null;
+    utmTerm: string | null;
+    utmContent: string | null;
     deepLink: boolean;
     appDeepLink: boolean;
     appScheme: string | null;
@@ -47,6 +52,11 @@ export const getLinkMapper = (link : LinkWithScanCount) : LinkResponse => {
         clicks: link._count.scans,
         domainId: link.domainId,
         domainHost: link.domain.host,
+        utmSource: link.utmSource,
+        utmMedium: link.utmMedium,
+        utmCampaign: link.utmCampaign,
+        utmTerm: link.utmTerm,
+        utmContent: link.utmContent,
         deepLink: link.deepLink,
         appDeepLink: link.appDeepLink,
         appScheme: link.appScheme,

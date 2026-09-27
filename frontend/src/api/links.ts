@@ -47,6 +47,12 @@ export interface UpdateLinkPayload {
   expiresAt: string | null;
   
   password?: string | null;
+  /** Send only the tags that changed. `null` clears a stored tag; an omitted key keeps it. */
+  utmSource?: string | null;
+  utmMedium?: string | null;
+  utmCampaign?: string | null;
+  utmTerm?: string | null;
+  utmContent?: string | null;
   deepLink?: boolean;
   
   appDeepLink?: boolean;

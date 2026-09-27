@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it, vi, afterEach, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -226,3 +226,90 @@ describe("EditLinkDialog mobile app deep linking (Pro-gated)", () => {
     expect(screen.getByText(/App deep linking pauses while you're not on Pro/i)).toBeInTheDocument();
   });
 });
+
+describe("EditLinkDialog UTM campaign tagging", () => {
+  afterEach(() => {
+    planState.plan = "PRO";
+  });
+
+  beforeEach(() => {
+    vi.mocked(updateLink).mockClear();
+  });
+
+  /** A link as the API returns it now that the mapper exposes the stored tags. */
+  const tagged: Partial<LinkItem> = {
+    targetUrl: "https://example.com/?utm_source=newletter&utm_medium=email&utm_campaign=spring&utm_term=deal",
+    utmSource: "newsletter",
+    utmMedium: "email",
+    utmCampaign: "spring",
+    utmTerm: "deal",
+    utmContent: null,
+  };
+
+  function lastPayload() {
+    return vi.mocked(updateLink).mock.calls.at(-1)?.[1];
+  }
+
+  it("seeds the fields with the tags stored on the link", () => {
+    renderDialog(tagged);
+    expect(screen.getByLabelText("UTM source (required)")).toHaveValue("newsletter");
+    expect(screen.getByLabelText("UTM medium (required)")).toHaveValue("email");
+    expect(screen.getByLabelText("UTM campaign (required)")).toHaveValue("spring");
+    expect(screen.getByLabelText("UTM term")).toHaveValue("deal");
+    expect(screen.getByLabelText("UTM content")).toHaveValue("");
+    expect(screen.getByText(/tags saved on this link/i)).toBeInTheDocument();
+  });
+
+  it("omits every UTM key when the tags are untouched", async () => {
+    renderDialog(tagged);
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(updateLink).toHaveBeenCalled());
+    expect(lastPayload()).not.toHaveProperty("utmSource");
+    expect(lastPayload()).not.toHaveProperty("utmMedium");
+    expect(lastPayload()).not.toHaveProperty("utmCampaign");
+    expect(lastPayload()).not.toHaveProperty("utmTerm");
+    expect(lastPayload()).not.toHaveProperty("utmContent");
+  });
+
+  it("sends only the edited tag, and null for a cleared one", async () => {
+    renderDialog(tagged);
+    fireEvent.change(screen.getByLabelText("UTM campaign (required)"), { target: { value: "summer" } });
+    fireEvent.change(screen.getByLabelText("UTM term"), { target: { value: "" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(updateLink).toHaveBeenCalled());
+    expect(lastPayload()?.utmCampaign).toBe("summer");
+    expect(lastPayload()?.utmTerm).toBeNull();
+    expect(lastPayload()).not.toHaveProperty("utmSource");
+    expect(lastPayload()).not.toHaveProperty("utmMedium");
+  });
+
+  it("blocks submit when a required tag is cleared", async () => {
+    renderDialog(tagged);
+    fireEvent.change(screen.getByLabelText("UTM source (required)"), { target: { value: "" } });
+    const callsBefore = vi.mocked(updateLink).mock.calls.length;
+
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() =>
+      expect(screen.getByText(/UTM source, medium and campaign are required/i)).toBeInTheDocument(),
+    );
+    expect(vi.mocked(updateLink).mock.calls.length).toBe(callsBefore);
+  });
+
+  it("FREE: shows the upgrade hint instead of the inputs and never sends UTM keys", async () => {
+    planState.plan = "FREE";
+    renderDialog(tagged);
+    expect(screen.queryByLabelText("UTM source (required)")).not.toBeInTheDocument();
+    expect(screen.getByText(/Edit the campaign tags on this link/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+    await waitFor(() => expect(updateLink).toHaveBeenCalled());
+    expect(lastPayload()).not.toHaveProperty("utmSource");
+  });
+
+  it("no longer tells the user the link must be recreated to change tags", () => {
+    renderDialog(tagged);
+    expect(screen.queryByText(/recreating the link/i)).not.toBeInTheDocument();
+  });
+});
+

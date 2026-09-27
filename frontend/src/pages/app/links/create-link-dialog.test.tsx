@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, afterEach } from "vitest";
+import { describe, expect, it, vi, afterEach, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -222,3 +222,59 @@ describe("CreateLinkDialog mobile app deep linking (Pro-gated)", () => {
     ).toBeInTheDocument();
   });
 });
+
+describe("CreateLinkDialog UTM campaign tagging", () => {
+  afterEach(() => {
+    planState.plan = "PRO";
+  });
+
+  beforeEach(() => {
+    vi.mocked(createLink).mockClear();
+  });
+
+  async function openAdvancedWithDestination() {
+    renderDialog();
+    const select = await screen.findByLabelText("Domain");
+    await waitFor(() => expect(select).toHaveValue("d1"));
+    fireEvent.change(screen.getByLabelText("Destination URL"), {
+      target: { value: "https://example.com/app" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Advanced/ }));
+  }
+
+  it("PRO: sends the tags trimmed and omits the blank ones", async () => {
+    await openAdvancedWithDestination();
+    fireEvent.change(screen.getByLabelText("UTM source (required)"), { target: { value: " newsletter " } });
+    fireEvent.change(screen.getByLabelText("UTM medium (required)"), { target: { value: "email" } });
+    fireEvent.change(screen.getByLabelText("UTM campaign (required)"), { target: { value: "spring" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Create link" }));
+    await waitFor(() => expect(createLink).toHaveBeenCalled());
+    const payload = vi.mocked(createLink).mock.calls.at(-1)?.[0];
+    expect(payload?.utmSource).toBe("newsletter");
+    expect(payload?.utmMedium).toBe("email");
+    expect(payload?.utmCampaign).toBe("spring");
+    expect(payload?.utmTerm).toBeUndefined();
+    expect(payload?.utmContent).toBeUndefined();
+  });
+
+  it("PRO: blocks submit when only some required tags are filled", async () => {
+    await openAdvancedWithDestination();
+    fireEvent.change(screen.getByLabelText("UTM source (required)"), { target: { value: "newsletter" } });
+    const callsBefore = vi.mocked(createLink).mock.calls.length;
+
+    fireEvent.click(screen.getByRole("button", { name: "Create link" }));
+    await waitFor(() =>
+      expect(screen.getByText(/UTM source, medium and campaign are required/i)).toBeInTheDocument(),
+    );
+    expect(vi.mocked(createLink).mock.calls.length).toBe(callsBefore);
+  });
+
+  it("FREE: shows the upgrade hint instead of the tag inputs", async () => {
+    planState.plan = "FREE";
+    await openAdvancedWithDestination();
+    expect(screen.queryByLabelText("UTM source (required)")).not.toBeInTheDocument();
+    expect(screen.getByText(/Tag scans by campaign, source, and medium/i)).toBeInTheDocument();
+  });
+});
+
