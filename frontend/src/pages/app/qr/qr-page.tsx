@@ -1,7 +1,7 @@
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { Download, ImagePlus, QrCode, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { listLinks } from "@/api/links";
 import { downloadQrImage, fetchQrImage } from "@/api/qr";
@@ -18,6 +18,7 @@ import { useToaster } from "@/components/ui/toaster";
 import { QrStudio } from "./qr-studio";
 import { cn } from "@/lib/utils";
 import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
+import { resolveLinkRef } from "@/lib/link-ref";
 import type { LinkItem } from "@/types/api";
 
 const PAGE_SIZE = 50;
@@ -64,6 +65,38 @@ function QrPage() {
   const [studioOpen, setStudioOpen] = useState(false);
   const [studioLink, setStudioLink] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const linkRefParam = searchParams.get("link");
+
+  /*
+   * A link's action menu lands here with ?link=<slug> meaning "show me this
+   * link's code". QR Studio works in database ids, so the reference goes
+   * through the same resolver Analytics uses, which also still understands a
+   * bookmark that carries an old database id. No parameter, no lookup: an
+   * ordinary visit to this page costs exactly what it always cost.
+   */
+  const refLookup = useQuery({
+    queryKey: ["link-ref", linkRefParam],
+    queryFn: ({ signal }) => resolveLinkRef(linkRefParam!, signal),
+    enabled: Boolean(linkRefParam),
+    staleTime: 5 * 60_000,
+  });
+
+  /*
+   * Seed the studio once per reference, so closing it stays closed even while
+   * the address bar still carries ?link=. A reference that matches nothing —
+   * the resolver reports that as a null slug — is left alone rather than
+   * opening the studio on an empty selection: the page behaves exactly as it
+   * did before anyone added a query parameter to it.
+   */
+  const seededFor = useRef<string | null>(null);
+  useEffect(() => {
+    const resolved = refLookup.data;
+    if (!linkRefParam || seededFor.current === linkRefParam || !resolved?.shortId) return;
+    seededFor.current = linkRefParam;
+    setStudioLink(resolved.id);
+    setStudioOpen(true);
+  }, [refLookup.data, linkRefParam]);
 
   
   const links = useInfiniteQuery({

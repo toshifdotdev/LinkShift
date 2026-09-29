@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, useSearchParams } from "react-router-dom";
 import { getLink } from "@/api/links";
 import { AnalyticsPage } from "./analytics-page";
 
@@ -17,13 +17,29 @@ vi.mock("@/components/ui/toaster", () => ({
   useToaster: () => ({ toast: vi.fn() }),
 }));
 
+/* The page reads the links list twice over: once to resolve the ?link=
+   reference in the URL, once for the account view's drill-down. Both go through
+   this spy so a test can decide what the account looks like. */
+const listLinksMock = vi.fn();
+
+function linkListResult(data: unknown[] = []) {
+  return {
+    success: true,
+    data,
+    pagination: {
+      page: 1,
+      limit: 50,
+      totalRecords: data.length,
+      totalPages: 1,
+      hasNextPage: false,
+      hasPreviousPage: false,
+    },
+  };
+}
+
 vi.mock("@/api/links", () => ({
   getLink: vi.fn(),
-  listLinks: vi.fn().mockResolvedValue({
-    success: true,
-    data: [],
-    pagination: { page: 1, limit: 50, totalRecords: 0, totalPages: 0, hasNextPage: false, hasPreviousPage: false },
-  }),
+  listLinks: (...args: unknown[]) => listLinksMock(...args),
 }));
 
 const getStats = vi.fn();
@@ -110,19 +126,32 @@ function chartsResponse() {
   };
 }
 
+/* Reads back what the address bar would show, so tests can assert on the
+   reference the URL carries rather than on router internals. */
+function UrlProbe() {
+  const [params] = useSearchParams();
+  return <div data-testid="url-ref">{params.get("link") ?? ""}</div>;
+}
+
 function renderPage(entry = "/app/analytics") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[entry]}>
+        <UrlProbe />
         <AnalyticsPage />
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
+function urlRef() {
+  return screen.getByTestId("url-ref").textContent;
+}
+
 beforeEach(() => {
   planState.plan = "PRO";
+  listLinksMock.mockResolvedValue(linkListResult());
 });
 
 describe("AnalyticsPage account view — activity feed", () => {
@@ -295,5 +324,105 @@ describe("AnalyticsPage link workspace — viz + plan gating", () => {
     expect(screen.getByText(/Requires Creator/)).toBeInTheDocument();
     expect(screen.getByText(/Requires Pro/)).toBeInTheDocument();
     expect(screen.queryByText("Cities")).not.toBeInTheDocument();
+  });
+});
+
+/* The link a dashboard URL points at is the link a user *names* — the slug they
+   chose, which is also what the public short link is built from. The database id
+   stays internal: the page resolves the reference, fetches with the id exactly as
+   before, and quietly upgrades bookmarks made while the URL still held a CUID. */
+describe("AnalyticsPage link reference in the URL", () => {
+  const DATABASE_ID = "cmtgueyrjf36se2e92rdqumpb";
+
+  function linkRow() {
+    return {
+      id: DATABASE_ID,
+      name: "IG promo",
+      targetUrl: "https://example.com",
+      shortId: "igpromo",
+      isActive: true,
+      deepLink: false,
+      appDeepLink: false,
+      appScheme: null,
+      androidPackage: null,
+      appPath: null,
+      iosStoreUrl: null,
+      androidStoreUrl: null,
+      expiresAt: null,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+      clicks: 10,
+      domainId: "dom-1",
+      domainHost: "lnk.sh",
+    };
+  }
+
+  beforeEach(() => {
+    vi.mocked(getLink).mockResolvedValue({ success: true, data: linkRow() });
+    getStats.mockResolvedValue({
+      success: true,
+      data: { totalLinks: 1, activeLinks: 1, inactiveLinks: 0, totalScans: 4, topLinks: [] },
+    });
+    getActivity.mockResolvedValue({ success: true, data: [] });
+    getLinkAnalytics.mockResolvedValue(proAnalyticsResponse());
+    getLinkCharts.mockResolvedValue(chartsResponse());
+  });
+
+  /* Reaching the workspace costs two sequential awaits — resolve the URL
+     reference, then fetch analytics — so assert in that order and let a loaded
+     suite worker catch up instead of racing its first render. */
+  async function expectWorkspaceLoaded() {
+    await waitFor(() => expect(screen.getByText("Total clicks")).toBeInTheDocument(), { timeout: 4000 });
+  }
+
+  it("puts the slug in the URL when a link is opened from the account view", async () => {
+    listLinksMock.mockResolvedValue(linkListResult([linkRow()]));
+
+    renderPage();
+
+    fireEvent.click(await screen.findByRole("button", { name: /IG promo/ }));
+
+    await waitFor(() => expect(urlRef()).toBe("igpromo"));
+    expect(urlRef()).not.toContain(DATABASE_ID);
+  });
+
+  it("fetches analytics with the internal id while the URL stays readable", async () => {
+    listLinksMock.mockResolvedValue(linkListResult([linkRow()]));
+
+    renderPage("/app/analytics?link=igpromo");
+
+    await waitFor(() => expect(getLink).toHaveBeenCalledWith(DATABASE_ID));
+    await expectWorkspaceLoaded();
+    expect(getLinkAnalytics).toHaveBeenCalledWith(DATABASE_ID, 30);
+    expect(getLinkCharts).toHaveBeenCalledWith(DATABASE_ID, 30);
+    expect(urlRef()).toBe("igpromo");
+  });
+
+  it("resolves a legacy ?link=<cuid> bookmark and rewrites the URL to the slug", async () => {
+    listLinksMock.mockResolvedValue(linkListResult([linkRow()]));
+
+    renderPage(`/app/analytics?link=${DATABASE_ID}`);
+
+    /* the bookmark is not broken by the change: it resolves, analytics load … */
+    await waitFor(() => expect(getLink).toHaveBeenCalledWith(DATABASE_ID));
+    await expectWorkspaceLoaded();
+    const kpi = screen.getByText("Total clicks");
+
+    /* … and the address bar ends up canonical */
+    await waitFor(() => expect(urlRef()).toBe("igpromo"));
+
+    /* the very same node: upgrading the URL renamed the address bar only, it did
+       not drop the workspace behind a second lookup. */
+    expect(screen.getByText("Total clicks")).toBe(kpi);
+  });
+
+  it("passes an unresolvable reference through instead of breaking it", async () => {
+    /* default spy returns an empty list: nothing to match the reference against */
+
+    renderPage(`/app/analytics?link=${DATABASE_ID}`);
+
+    await waitFor(() => expect(getLink).toHaveBeenCalledWith(DATABASE_ID));
+    await expectWorkspaceLoaded();
+    expect(urlRef()).toBe(DATABASE_ID);
   });
 });

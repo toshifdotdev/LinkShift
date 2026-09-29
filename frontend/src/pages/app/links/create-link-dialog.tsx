@@ -389,7 +389,10 @@ function CreateLinkDialog({
                       </label>
                       <p className="text-xs text-fg-muted">
                         <span className="font-mono text-[11px] text-fg-secondary">…/slug/products/5?ref=x</span>{" "}
-                        resolves to the same path and query on your destination.
+                        resolves to the same path and query on your destination. Visitors add
+                        that tail themselves, so nothing is stored here and the short link you
+                        share never changes. Campaign tags are appended to the destination
+                        alongside whatever a visitor types.
                       </p>
                     </div>
                   ) : (

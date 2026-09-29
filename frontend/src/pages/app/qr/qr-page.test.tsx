@@ -7,26 +7,41 @@ import type { LinkItem, LinksPagination } from "@/types/api";
 type ObserverEntry = { isIntersecting: boolean };
 type ObserverCallback = (entries: ObserverEntry[]) => void;
 
-const { listLinksMock, fetchQrImageMock, observers } = vi.hoisted(() => ({
+type StudioProps = {
+  open: boolean;
+  initialLinkId?: string | null;
+  onOpenChange: (open: boolean) => void;
+  onSaved?: () => void;
+};
+
+const { listLinksMock, fetchQrImageMock, observers, studioProps } = vi.hoisted(() => ({
   listLinksMock: vi.fn(),
   fetchQrImageMock: vi.fn(),
   observers: [] as Array<{ callback: ObserverCallback; observed: Element[] }>,
+  studioProps: { latest: null as StudioProps | null },
 }));
 
 vi.mock("@/api/links", () => ({ listLinks: listLinksMock }));
 vi.mock("@/api/qr", () => ({ fetchQrImage: fetchQrImageMock, downloadQrImage: vi.fn() }));
 vi.mock("@/api/token", () => ({ getAccessToken: () => "test-token" }));
 vi.mock("@/components/ui/toaster", () => ({ useToaster: () => ({ toast: vi.fn() }) }));
-vi.mock("./qr-studio", () => ({ QrStudio: () => null }));
+/* What the page owes the studio is a props pair — open, and which link to
+   preselect — so the double records them instead of rendering its internals. */
+vi.mock("./qr-studio", () => ({
+  QrStudio: (props: StudioProps) => {
+    studioProps.latest = props;
+    return null;
+  },
+}));
 
 import { QrPage } from "./qr-page";
 
-function makeLink(id: string, name: string): LinkItem {
+function makeLink(id: string, name: string, shortId = `short${id}`, domainHost = "go.linkshift.in"): LinkItem {
   return {
     id,
     name,
     targetUrl: "https://example.com",
-    shortId: `short${id}`,
+    shortId,
     isActive: true,
     deepLink: false,
     appDeepLink: false,
@@ -40,7 +55,7 @@ function makeLink(id: string, name: string): LinkItem {
     updatedAt: "2026-01-01T00:00:00.000Z",
     clicks: 0,
     domainId: "d1",
-    domainHost: "go.linkshift.in",
+    domainHost,
   };
 }
 
@@ -56,11 +71,11 @@ function page(data: LinkItem[], page: number, hasNextPage: boolean, totalRecords
   return { success: true as const, data, pagination };
 }
 
-function renderPage() {
+function renderPage(entry = "/app/qr") {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={["/app/qr"]}>
+      <MemoryRouter initialEntries={[entry]}>
         <QrPage />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -82,6 +97,7 @@ async function triggerIntersection() {
 beforeEach(() => {
   vi.clearAllMocks();
   observers.length = 0;
+  studioProps.latest = null;
   class FakeIntersectionObserver {
     callback: ObserverCallback;
     observed: Element[] = [];
@@ -177,3 +193,123 @@ describe("QrPage gallery — infinite loading (regression: 100-item hard cap)", 
     expect(screen.queryByText("Scroll to load more")).not.toBeInTheDocument();
   });
 });
+
+/*
+ * A link's action menu has nowhere to send the user but this page, and the
+ * address bar only ever carries a slug — which is not what QR Studio selects on,
+ * so the page has to translate the reference before the studio can open on it.
+ */
+describe("QrPage — opening the studio from ?link=", () => {
+  const DATABASE_ID = "cmtgueyrjf36se2e92rdqumpb";
+
+  const shelf = () => [
+    makeLink(DATABASE_ID, "IG promo", "igpromo"),
+    makeLink("l2", "Launch page", "launch", "nadeem.io"),
+  ];
+
+  /*
+   * One double serves both callers. The gallery asks for a sorted page; the
+   * reference resolver asks for a plain search, which the backend runs over
+   * name, destination and slug alike. The shape of the call decides the answer.
+   */
+  function serve(rows: LinkItem[]) {
+    listLinksMock.mockImplementation((params: { search?: string; sort?: string }) =>
+      Promise.resolve(
+        params.sort
+          ? page(rows, 1, false, rows.length)
+          : page(
+              rows.filter((l) => l.shortId === params.search || l.id === params.search),
+              1,
+              false,
+              1,
+            ),
+      ),
+    );
+  }
+
+  /*
+   * react-query carries on in microtasks once a request settles, so a macrotask
+   * turn puts every resulting state update on record before a test asks a
+   * question about it — the "it stayed shut" assertions must not pass on timing.
+   */
+  async function settled() {
+    await act(async () => {
+      await new Promise((resolve) => {
+        window.setTimeout(resolve, 0);
+      });
+    });
+  }
+
+  it("opens the studio with the slug's link already selected", async () => {
+    serve(shelf());
+
+    renderPage("/app/qr?link=igpromo");
+
+    await waitFor(() => expect(studioProps.latest).toMatchObject({ open: true, initialLinkId: DATABASE_ID }));
+    /* the slug travelled through the shared resolver: a list search for it */
+    expect(listLinksMock).toHaveBeenCalledWith(expect.objectContaining({ search: "igpromo" }), expect.anything());
+  });
+
+  it("still opens it for a bookmark that carries the old database id", async () => {
+    serve(shelf());
+
+    renderPage(`/app/qr?link=${DATABASE_ID}`);
+
+    await waitFor(() => expect(studioProps.latest).toMatchObject({ open: true, initialLinkId: DATABASE_ID }));
+  });
+
+  it("hands over the link, not the reference, so the studio's own rules apply", async () => {
+    serve(shelf());
+
+    renderPage("/app/qr?link=launch");
+
+    await waitFor(() => expect(studioProps.latest).toMatchObject({ open: true, initialLinkId: "l2" }));
+    /* the gallery keeps showing that code on the domain the link actually uses */
+    expect(screen.getByText("nadeem.io/")).toBeInTheDocument();
+  });
+
+  it("asks for nothing and opens nothing when there is no parameter", async () => {
+    serve(shelf());
+
+    renderPage();
+
+    expect(await screen.findByText("IG promo")).toBeInTheDocument();
+    await settled();
+
+    expect(studioProps.latest).toMatchObject({ open: false, initialLinkId: null });
+    const searched = listLinksMock.mock.calls.map(([params]) => (params as { search?: string }).search);
+    expect(searched.filter(Boolean)).toEqual([]);
+  });
+
+  it("leaves the page exactly as it was when the reference matches no link", async () => {
+    serve(shelf());
+
+    renderPage("/app/qr?link=ghostslug");
+
+    await waitFor(() =>
+      expect(listLinksMock).toHaveBeenCalledWith(expect.objectContaining({ search: "ghostslug" }), expect.anything()),
+    );
+    await settled();
+
+    expect(studioProps.latest).toMatchObject({ open: false });
+    expect(screen.getByText("IG promo")).toBeInTheDocument();
+    expect(screen.getByText("Launch page")).toBeInTheDocument();
+    expect(screen.queryByText("Couldn't load your QR library")).not.toBeInTheDocument();
+  });
+
+  it("stays closed once dismissed, even with the parameter still in the address bar", async () => {
+    serve(shelf());
+
+    renderPage("/app/qr?link=igpromo");
+    await waitFor(() => expect(studioProps.latest).toMatchObject({ open: true, initialLinkId: DATABASE_ID }));
+
+    const studio = studioProps.latest!;
+    await act(async () => {
+      studio.onOpenChange(false);
+    });
+    await settled();
+
+    expect(studioProps.latest).toMatchObject({ open: false });
+  });
+});
+

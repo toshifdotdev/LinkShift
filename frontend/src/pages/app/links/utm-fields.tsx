@@ -50,7 +50,8 @@ function UtmFields({
             />
           ))}
           <p className="text-xs text-fg-muted sm:col-span-2">
-            Appended to the destination URL. Every scan carries it.
+            Appended to the destination URL, not to the short link you share. Every scan
+            carries it.
           </p>
         </div>
       ) : (

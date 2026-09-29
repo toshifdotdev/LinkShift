@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyDeepLink } from "../src/utils/completeRedirect";
+import { buildUtmUrl } from "../src/features/utm/utm.service";
 
 /** Express 5 (path-to-regexp v8) delivers `/:shortId/*rest` captures as an
     array of segments; Express 4 gave a string. Both shapes must work. */
@@ -88,3 +89,52 @@ describe("applyDeepLink safety", () => {
         expect(result).toBe("not a url");
     });
 });
+
+/* Campaign tagging and path forwarding are configured separately but meet inside
+   one string: createLink/updateLink store buildUtmUrl(destination, tags), and the
+   redirect handler later runs applyDeepLink over that stored value. This is the
+   only place that composition is pinned end to end. */
+describe("UTM tagging composed with path forwarding", () => {
+    const stored = buildUtmUrl("https://example.com/base?ref=owner", {
+        utmSource: "instagram",
+        utmMedium: "social",
+        utmCampaign: "spring",
+    });
+
+    it("tagging leaves the destination path untouched", () => {
+        expect(new URL(stored).pathname).toBe("/base");
+        expect(new URL(stored).searchParams.get("ref")).toBe("owner");
+    });
+
+    it("forwards the visitor's tail onto the tagged destination in one pass", () => {
+        const url = new URL(
+            applyDeepLink(stored, reqWith(["products", "5"], "/spring/products/5?ref=qr")),
+        );
+
+        expect(url.pathname).toBe("/base/products/5");
+        expect(url.searchParams.get("utm_source")).toBe("instagram");
+        expect(url.searchParams.get("utm_medium")).toBe("social");
+        expect(url.searchParams.get("utm_campaign")).toBe("spring");
+        expect(url.searchParams.getAll("ref")).toEqual(["owner", "qr"]);
+    });
+
+    it("a visitor's utm_* entry is added alongside the owner's, never in place of it", () => {
+        const url = new URL(
+            applyDeepLink(stored, reqWith([], "/spring?utm_source=podcast&gclid=abc")),
+        );
+
+        expect(url.searchParams.getAll("utm_source")).toEqual(["instagram", "podcast"]);
+        expect(url.searchParams.get("gclid")).toBe("abc");
+    });
+
+    it("a stale tag inside the saved destination is normalised at rest, leaving only visitor input duplicated", () => {
+        const retagged = buildUtmUrl("https://example.com/base?utm_source=stale", {
+            utmSource: "newsletter",
+        });
+        expect(new URL(retagged).searchParams.getAll("utm_source")).toEqual(["newsletter"]);
+
+        const url = new URL(applyDeepLink(retagged, reqWith([], "/spring?utm_source=podcast")));
+        expect(url.searchParams.getAll("utm_source")).toEqual(["newsletter", "podcast"]);
+    });
+});
+

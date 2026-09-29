@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { BarChart3, Copy, ExternalLink, MoreHorizontal, Pencil, QrCode, Trash2 } from "lucide-react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
 import { useToaster } from "@/components/ui/toaster";
+import { linkRef } from "@/lib/link-ref";
 import { shortUrl, DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import type { LinkItem } from "@/types/api";
 
@@ -76,16 +77,18 @@ function LinkActionsMenu({
                 <Copy className="size-3.5" />
                 Copy short link
               </MenuPrimitive.Item>
+              {/* Dashboard URLs carry the slug, never the database id — the page
+                  it navigates to resolves the reference back to the id itself. */}
               <MenuPrimitive.Item
                 className={itemClass}
-                onClick={() => navigate(`/app/analytics?link=${link.id}`)}
+                onClick={() => navigate(`/app/analytics?link=${encodeURIComponent(linkRef(link))}`)}
               >
                 <BarChart3 className="size-3.5" />
                 Analytics
               </MenuPrimitive.Item>
               <MenuPrimitive.Item
                 className={itemClass}
-                onClick={() => navigate(`/app/qr?link=${link.id}`)}
+                onClick={() => navigate(`/app/qr?link=${encodeURIComponent(linkRef(link))}`)}
               >
                 <QrCode className="size-3.5" />
                 QR code

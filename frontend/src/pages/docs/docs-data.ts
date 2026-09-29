@@ -167,6 +167,10 @@ export const DOC_CATEGORIES: DocCategory[] = [
             text: "On Android, iOS and desktop alike the visitor is simply redirected to the composed URL. If the link also has Mobile App Deep Linking enabled, the same appended tail is handed into the app target instead.",
           },
           {
+            kind: "p",
+            text: "UTM campaign tagging is a separate setting and works in the other direction: tags you configure are added to the destination URL, while forwarding is driven by what the visitor types after your short link. The two combine without interfering. Appended path segments and query parameters arrive after your tags, and a tag a visitor supplies themselves is kept as an additional parameter instead of replacing yours. Neither setting changes the short link you hand out; it stays the clean canonical URL.",
+          },
+          {
             kind: "note",
             text: "Path Forwarding is a Pro and Enterprise capability. On lower plans the control is replaced by an upgrade explanation, and the API enforces the same rule.",
           },

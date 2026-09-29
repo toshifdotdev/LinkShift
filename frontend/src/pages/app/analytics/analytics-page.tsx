@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ArrowUpRight, Download, Link2, Lock, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
@@ -16,6 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
 import { FadeIn } from "@/components/ui/motion";
 import { shortUrl, DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
+import { linkRef, resolveLinkRef } from "@/lib/link-ref";
 import { cn } from "@/lib/utils";
 import { UpgradeHint } from "@/pages/app/links/upgrade-hint";
 import { BreakdownPanel } from "./breakdown-panel";
@@ -107,8 +108,8 @@ function AccountView({ days }: { days: AnalyticsDays }) {
     select: (d) => d.data,
   });
 
-  function openLink(id: string) {
-    setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set("link", id); return n; });
+  function openLink(ref: string) {
+    setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set("link", ref); return n; });
   }
 
   const statsData = stats.data;
@@ -233,7 +234,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
               <li key={l.id}>
                 <button
                   type="button"
-                  onClick={() => openLink(l.id)}
+                  onClick={() => openLink(linkRef(l))}
                   className="group flex w-full cursor-pointer items-center gap-3 rounded-md border border-transparent px-3 py-2 text-left transition-colors hover:border-border hover:bg-elevated/60"
                 >
                   <Link2 className="size-3.5 shrink-0 text-fg-muted" aria-hidden="true" />
@@ -296,7 +297,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
                 <li key={l.id}>
                   <button
                     type="button"
-                    onClick={() => openLink(l.id)}
+                    onClick={() => openLink(linkRef(l))}
                     className="group flex w-full cursor-pointer items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-elevated/50 sm:px-6"
                   >
                     <span
@@ -715,11 +716,37 @@ function AnalyticsPage() {
   const { user } = useSession();
   const plan = user?.plan.name ?? "FREE";
 
-  const linkId = searchParams.get("link");
+  const linkRefParam = searchParams.get("link");
   const rangeParam = Number(searchParams.get("range") ?? 30);
   const rangeOption = RANGE_OPTIONS.find((r) => r.days === rangeParam) ?? RANGE_OPTIONS[1];
   const validRange = rangeOption.days;
   const [pendingLock, setPendingLock] = useState<{ days: number; minPlan: string } | null>(null);
+
+  /*
+   * The address bar carries the human-readable slug; analytics endpoints speak
+   * database ids. Resolving here keeps the CUID out of every visible URL while
+   * `LinkWorkspace` and its API calls stay exactly as they were, and it doubles
+   * as the compatibility layer for bookmarks saved while the URL still held the
+   * id — those resolve, load normally, and get rewritten to the slug.
+   */
+  const linkLookup = useQuery({
+    queryKey: ["link-ref", linkRefParam],
+    queryFn: ({ signal }) => resolveLinkRef(linkRefParam!, signal),
+    enabled: Boolean(linkRefParam),
+    staleTime: 5 * 60_000,
+  });
+  const resolvedLink = linkLookup.data;
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const slug = resolvedLink?.shortId;
+    if (!slug || !linkRefParam || slug === linkRefParam) return;
+    /* Hand the canonical key what we already know before swapping the URL, so
+       the rewrite is a rename of the address bar and not a second lookup that
+       tears the workspace down behind a skeleton. */
+    queryClient.setQueryData(["link-ref", slug], resolvedLink);
+    setSearchParams((prev) => { const n = new URLSearchParams(prev); n.set("link", slug); return n; }, { replace: true });
+  }, [resolvedLink, linkRefParam, setSearchParams, queryClient]);
 
   const rangeLockedNow = rangeLocked(rangeOption, plan);
 
@@ -757,10 +784,20 @@ function AnalyticsPage() {
 
       {pendingLock ? (
         <LockedRangeBanner days={pendingLock.days} minPlan={pendingLock.minPlan} />
-      ) : linkId ? (
-        <LinkWorkspace linkId={linkId} days={validRange as AnalyticsDays} />
-      ) : (
+      ) : !linkRefParam ? (
         <AccountView days={validRange as AnalyticsDays} />
+      ) : resolvedLink ? (
+        <LinkWorkspace linkId={resolvedLink.id} days={validRange as AnalyticsDays} />
+      ) : (
+        <div className="space-y-5" aria-busy="true" aria-label="Loading link analytics">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-24" />
+          <div className="grid gap-5 lg:grid-cols-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-44" />
+            ))}
+          </div>
+        </div>
       )}
     </FadeIn>
   );

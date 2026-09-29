@@ -419,7 +419,9 @@ function EditLinkDialog({
                   </label>
                   <FieldHint>
                     <span className="font-mono text-[11px]">…/{link.shortId}/products/5?ref=x</span>{" "}
-                    resolves to the same path and query on your destination.
+                    resolves to the same path and query on your destination. Visitors add that
+                    tail themselves, so this link's short URL never changes. Campaign tags are
+                    appended to the destination alongside whatever a visitor types.
                   </FieldHint>
                 </>
               ) : link.deepLink ? (
