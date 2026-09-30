@@ -1,5 +1,7 @@
 
 
+import { nonceAttr } from "./csp";
+
 export type AppDeepLinkConfig = {
     appScheme: string;
     androidPackage: string | null;
@@ -88,6 +90,7 @@ export const renderAppInterstitial = (opts: {
     fallbackUrl: string;
     storeUrl?: string | null;
     appName?: string | null;
+    nonce?: string;
 }): string => {
     const cfg = {
         appUrl: opts.appUrl,
@@ -96,6 +99,7 @@ export const renderAppInterstitial = (opts: {
         platform: opts.platform,
     };
     const appLabel = escapeHtml(opts.appName?.trim() || "the app");
+    const nonce = nonceAttr(opts.nonce ?? "");
     const storeBtn = opts.storeUrl
         ? `\n        <a id="get-app" class="btn" href="#" rel="noopener">Get the app</a>`
         : "";
@@ -109,7 +113,7 @@ export const renderAppInterstitial = (opts: {
 <meta name="robots" content="noindex,nofollow" />
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23F9F9F9'/%3E%3Cg transform='translate(8.32,11.4) scale(.4643)' fill='none' stroke='%23141A22' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M61.54,60.37L38.87,81.51A13,13,0,0,1,30,85L24,85A19,21.5,0,0,1,24,42L64,42'/%3E%3Cpath d='M39.53,27.27A29,29,0,1,1,77.2,60.3'/%3E%3Cpath d='M66.32,32.4L75.68,40.1Q78,42,75.68,43.9L66.32,51.6Q64,53.5,64,50.5L64,33.5Q64,30.5,66.32,32.4Z' fill='%23141A22' stroke='%23141A22' stroke-width='5' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E" />
 <title>LinkShift — Opening app</title>
-<style>
+<style${nonce}>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: #0d0d0d; color: #f5f1eb; min-height: 100vh; }
@@ -191,7 +195,7 @@ export const renderAppInterstitial = (opts: {
   <footer class="foot">
     <a href="https://linkshift.in">linkshift.in</a>
   </footer>
-  <script>
+  <script${nonce}>
     (function () {
       var cfg = ${jsonForScript(cfg)};
       var left = false;

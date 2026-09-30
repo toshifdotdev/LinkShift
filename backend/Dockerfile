@@ -19,12 +19,21 @@ ENV NODE_ENV=production \
     PORT=3000
 
 COPY package.json package-lock.json ./
+# tsx ships as a production dependency because prisma/seed.ts is TypeScript and
+# prisma.config.ts runs the seed through it. Migrations and seeding remain
+# explicit deployment steps (`docker compose run --rm app npx prisma migrate
+# deploy`); the container start command never runs them.
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./
+
+# prisma/seed.ts imports the generated client from ../src/generated/prisma, and
+# the prisma-client generator emits TypeScript there. Without this the seed
+# fails to resolve its own import inside the production image.
+COPY --from=build /app/src/generated ./src/generated
 
 COPY GeoLite2-City.mmdb ./
 

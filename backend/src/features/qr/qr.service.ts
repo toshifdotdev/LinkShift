@@ -8,6 +8,8 @@ import { buildQrResponse } from "../../utils/buildQrResponse";
 import { deleteImage } from "../../utils/deleteImage";
 import { checkQrLimit, getUserPlan } from "../billing/billing.service";
 import { uploadBuffer } from "../../utils/uploadBuffer";
+import { fetchLogoAsDataUri } from "../../utils/qrLogoFetch";
+import { log } from "../../utils/logger";
 
 export const qrService = async(data : createLinkQr) => {
 
@@ -83,17 +85,25 @@ export const qrService = async(data : createLinkQr) => {
     
     
     
-    let renderLogoUrl = logoUrl;
+    // Server-side fetch of the logo is bounded to approved image hosts. A
+    // disallowed or unreachable logo degrades to a QR without the overlay
+    // rather than failing the whole request, which is the pre-existing
+    // behaviour of this branch.
+    let renderLogoUrl: string | null = null;
     if (logoUrl) {
-        const res = await fetch(logoUrl);
-        if (res.ok) {
-            const buf = Buffer.from(await res.arrayBuffer());
-            renderLogoUrl = `data:${res.headers.get("content-type") ?? "image/png"};base64,${buf.toString("base64")}`;
+        try {
+            renderLogoUrl = await fetchLogoAsDataUri(logoUrl);
+        } catch (err) {
+            log.warn("qr_logo_fetch_failed", {
+                userId: currentLink.userId,
+                reason: err instanceof Error ? err.message : "unknown",
+            });
+            renderLogoUrl = null;
         }
     }
 
     try {
-        const qrImageData = await generateQrImage({ margin, foregroundColor, backgroundColor, userId : currentLink.userId,shortUrl, logoUrl : renderLogoUrl , pattern, eyeStyle, eyeBallStyle});
+        const qrImageData = await generateQrImage({ margin, foregroundColor, backgroundColor, userId : currentLink.userId,shortUrl, logoUrl : renderLogoUrl ?? undefined , pattern, eyeStyle, eyeBallStyle});
 
         
         

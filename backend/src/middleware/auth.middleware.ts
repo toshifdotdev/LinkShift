@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from "../config";
 import { AppError } from "../errors/AppError";
 import { CustomJwtPayload } from "../features/auth/auth.types";
+import { JWT_ALGORITHM } from "../utils/jwt";
 
 export const authMiddleWare = (req : Request, res : Response, next : NextFunction) => {
     const authHeader = req.headers.authorization;
@@ -13,7 +14,9 @@ export const authMiddleWare = (req : Request, res : Response, next : NextFunctio
     }
 
     try {
-        const decoded = jwt.verify(token, config.jwtSecret as string) as CustomJwtPayload;
+        const decoded = jwt.verify(token, config.jwtSecret as string, {
+            algorithms: [JWT_ALGORITHM],
+        }) as CustomJwtPayload;
 
         
         

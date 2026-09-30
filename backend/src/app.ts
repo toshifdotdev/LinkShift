@@ -14,11 +14,11 @@ import { redirectHostRobots, redirectHostNoIndex } from './middleware/crawler.mi
 import { AppError } from './errors/AppError';
 import { razorpayWebhookController } from './features/billing/billing.controller';
 import cors from "cors";
-import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import { config, prisma } from "./config";
 import { redisClient } from "./config/redis";
+import { cspNonce, securityHeaders } from "./middleware/security";
 import "./features/auth/google.strategy";
 
 export const app = express();
@@ -32,7 +32,11 @@ if (Number.isFinite(trustProxyHops) && trustProxyHops > 0) {
 app.use(cookieParser());
 app.use(passport.initialize());
 
-app.use(helmet());
+// Must precede the security headers so the nonce is present when Helmet
+// builds the Content-Security-Policy header.
+app.use(cspNonce);
+
+app.use(securityHeaders);
 
 app.use(
     cors({

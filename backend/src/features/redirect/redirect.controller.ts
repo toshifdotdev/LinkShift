@@ -5,6 +5,7 @@ import { unlockData } from "./redirect.validation";
 import { getHost } from "../../utils/getHost";
 import { extractQuery, extractRest } from "../../utils/appDeepLink";
 import { renderUnlockPage } from "../../utils/unlockPage";
+import { cspNonceFor } from "../../utils/csp";
 
 type RedirectParams = {
     shortId : string;
@@ -43,7 +44,7 @@ export const redirect = asyncHandler(async(req : Request, res : Response) => {
         res.status(401)
             .set("Cache-Control", "no-store")
             .type("html")
-            .send(renderUnlockPage({ shortId, rest, query }));
+            .send(renderUnlockPage({ shortId, rest, query, nonce: cspNonceFor(res) }));
         return;
     }
 

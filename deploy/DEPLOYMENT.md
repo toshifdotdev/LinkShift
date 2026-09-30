@@ -57,8 +57,13 @@ Built from `backend/Dockerfile` (multi-stage):
   the build context, and the Dockerfile only `COPY`s explicit paths
   (`package*.json`, `prisma.config.ts`, `prisma/`, `src/`, `tsconfig.json`,
   `GeoLite2-City.mmdb`, `dist`).
-- No dev dependencies (`typescript`, `vitest`, `tsx`, `supertest`, `@types/*`),
-  no tests, no git metadata, no local build leftovers.
+- No dev dependencies (`typescript`, `vitest`, `supertest`, `@types/*`), no
+  tests, no git metadata, no local build leftovers.
+- `tsx` is the one build tool kept in the runtime image. `prisma/seed.ts` is
+  TypeScript and `prisma.config.ts` runs the seed through `tsx`, so it is a
+  production dependency. The image also copies the generated Prisma client
+  (`src/generated/`) out of the build stage, because the `prisma-client`
+  generator emits TypeScript there and the seed imports it.
 - No local PostgreSQL/Redis — those are external (Neon/Upstash).
 
 ## 3. Why secrets are supplied at runtime
@@ -151,8 +156,9 @@ instance (see §14). The Dockerfile itself is arch-neutral.
 Migrations are **not** run at container startup — deploy order is:
 **migrate first, then start the new image.**
 
-The `prisma` CLI ships inside the image (runtime dependency), and the image
-contains `prisma/` + `prisma.config.ts`, whose datasource uses
+The `prisma` CLI ships inside the image (runtime dependency), as does `tsx`
+and the generated client under `src/generated/`, both of which the seed needs.
+The image also contains `prisma/` + `prisma.config.ts`, whose datasource uses
 `DIRECT_URL` (falling back to `DATABASE_URL`) — the direct (non-pooled)
 Neon endpoint required by migrations. Run from the EC2 host:
 
@@ -231,6 +237,14 @@ generated `sitemap.xml`, `llms.txt`, and **per-route prerendered HTML** —
 receive real page content without executing JavaScript). Build once with
 `VITE_API_URL=https://go.linkshift.in/api/v1`, upload `dist/` to S3, serve
 via CloudFront. Not part of the EC2/Caddy stack.
+
+`VITE_API_URL` must include the `/api/v1` path segment: the client appends
+endpoint paths such as `/auth/login` to it (`frontend/src/api/client.ts`,
+`buildUrl`), so a bare origin would resolve to `/auth/login` and 404. It is
+public build-time configuration, never a secret — see
+`frontend/.env.example`. During `npm run dev` the variable is not consulted:
+the client uses the relative `/api/v1` and Vite proxies it to
+`http://localhost:3000`.
 
 ### 12a. CloudFront clean-URL rewrite — REQUIRED manual step
 
@@ -340,6 +354,13 @@ reconciliation job's own single-run guarantee; the endpoint is fail-closed.
    (`NODE_ENV=production`, `TRUST_PROXY_HOPS=1` behind Caddy,
    `APP_URL=https://go.linkshift.in`, `FRONTEND_URL=https://linkshift.in`,
    `CORS_ORIGINS=https://linkshift.in`).
+
+   `CORS_ORIGINS` is a comma-separated allow-list and must never be `*`. An
+   empty value is treated as "unset" and falls back to `FRONTEND_URL`; with
+   `NODE_ENV=production` an empty allow-list and a wildcard both fail the boot
+   with an explicit error rather than silently rejecting every origin. Leave
+   `QR_LOGO_ALLOWED_HOSTS` at its default (`res.cloudinary.com`) unless QR
+   logos are ever hosted somewhere else.
 7. DNS: `go.linkshift.in` A/AAAA → EC2 public IP (elastic IP recommended);
    `linkshift.in`/`www` → CloudFront (separate workstream).
 7a. **CloudFront distribution** for the marketing site: S3 origin with the

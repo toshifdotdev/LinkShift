@@ -351,9 +351,17 @@ export const updateLink = async(data : UpdateLinkData) => {
     }
 
     
-    const expiryDate  = data.expiresAt
-    ? new Date(data.expiresAt)
-    : null;
+    // Three distinct cases, which the previous truthy check collapsed into
+    // two: an omitted `expiresAt` must leave the stored value untouched
+    // (Prisma skips `undefined`), an explicit `null` must clear it, and a
+    // date must be applied. Passing `null` for an omitted field silently
+    // deleted the expiry whenever any unrelated field was edited.
+    const expiryDate : Date | null | undefined =
+    data.expiresAt === undefined
+    ? undefined
+    : data.expiresAt === null
+    ? null
+    : new Date(data.expiresAt);
 
     let passwordHash : string | null | undefined = data.password;
 

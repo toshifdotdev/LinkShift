@@ -15,6 +15,7 @@ import {
     isAndroidChromium,
     renderAppInterstitial,
 } from "../../utils/appDeepLink";
+import { cspNonceForReq } from "../../utils/csp";
 
 export type CachedLink = {
     id: string;
@@ -100,6 +101,7 @@ const resolveDestination = async (link: CachedLink, req: Request): Promise<Resol
                     appUrl: buildAppUrl(cfg, rest, query),
                     fallbackUrl: finalUrl,
                     storeUrl: platform === "ios" ? cfg.iosStoreUrl : cfg.androidStoreUrl,
+                    nonce: cspNonceForReq(req),
                 }),
             };
         }
@@ -238,10 +240,26 @@ export const unlockService = async(shortId : string, password : string, host : s
         throw new AppError("This short link doesn't exist.", 404);
     }
 
+    // A password must not become a way around the owner's access rules.
+    // These checks deliberately mirror the plain redirect path above and run
+    // before the password comparison, so a disabled or expired link is
+    // rejected identically whether or not it is password protected, and a
+    // correct password for an inactive link is never revealed.
+    if(!targetUrl.isActive) {
+        throw new AppError("This link has been disabled by its owner.", 403);
+    }
+    if (targetUrl.expiresAt && new Date(targetUrl.expiresAt) < new Date()) {
+        throw new AppError("This link has expired.", 410);
+    }
 
-    if (!targetUrl.passwordHash) {
+    if(!targetUrl.passwordHash) {
         throw new AppError("This link is not password protected.",400);
     }
+
+    // Guard the quota here too: the scan is written by resolveDestination
+    // below, so without this an unlocked link would produce unlimited scans
+    // regardless of the plan's redirect allowance.
+    await checkRedirectLimit(targetUrl.userId);
 
     const comparePass = await bcrypt.compare(password, targetUrl.passwordHash);
 

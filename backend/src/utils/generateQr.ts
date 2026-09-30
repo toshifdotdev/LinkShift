@@ -5,6 +5,7 @@ import { JSDOM } from 'jsdom';
 import type { CornerSquareType, DotType } from "@solana/qr-code-styling";
 import { EyeBallStyle, EyeStyle, PatternStyle } from '../generated/prisma/enums';
 import { uploadBuffer } from './uploadBuffer';
+import { assertInlineLogo } from './qrLogoFetch';
 
 const fakeBrowser = new JSDOM('', { resources: "usable" });
 global.window = fakeBrowser.window as any;
@@ -95,7 +96,11 @@ export const generateQrImage = async (data: qrCodeData) => {
     
     if (data.logoUrl) {
         try {
-            const logoRes = await fetch(data.logoUrl);
+            // Only an already-inlined data URI is accepted here. The raw URL
+            // is fetched and validated by qrService; re-fetching it inside
+            // the renderer would be a second, unguarded request sink.
+            const inlineLogo = assertInlineLogo(data.logoUrl);
+            const logoRes = await fetch(inlineLogo);
             if (logoRes.ok) {
                 const logoBuf = Buffer.from(await logoRes.arrayBuffer());
                 const logoSize = Math.round(300 * 0.3); 

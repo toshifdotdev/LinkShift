@@ -3,6 +3,7 @@ import { AppError } from "../errors/AppError";
 import { log } from "../utils/logger";
 import { config } from "../config";
 import { clearOAuthStateCookie } from "../features/auth/oauthState";
+import { cspNonceFor, nonceAttr } from "../utils/csp";
 
 
 function escapeHtml(s: string): string {
@@ -60,9 +61,10 @@ function copyFor(statusCode: number, message: string): { kicker: string; headlin
     };
 }
 
-export function renderPublicError(statusCode: number, message: string): string {
+export function renderPublicError(statusCode: number, message: string, nonce?: string): string {
     const safe = escapeHtml(message || "");
     const { kicker, headline, note, ctaHref, ctaLabel } = copyFor(statusCode, safe);
+    const nonceAttribute = nonceAttr(nonce ?? "");
     return `<!doctype html>
 <html lang="en">
 <head>
@@ -71,7 +73,7 @@ export function renderPublicError(statusCode: number, message: string): string {
 <meta name="color-scheme" content="dark" />
 <meta name="robots" content="noindex,nofollow" />
 <title>LinkShift — ${kicker}</title>
-<style>
+<style${nonceAttribute}>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: #0d0d0d; color: #f5f1eb; min-height: 100vh; }
@@ -174,7 +176,7 @@ export const createVisitorRateLimitHandler =
         }
         res.set("Cache-Control", "no-store")
             .type("html")
-            .send(renderPublicError(429, message.message));
+            .send(renderPublicError(429, message.message, cspNonceFor(res)));
     };
 
 export const errorMiddleware = (err : unknown, req : Request, res : Response, next : NextFunction) => {
@@ -221,10 +223,14 @@ export const errorMiddleware = (err : unknown, req : Request, res : Response, ne
             if (err.statusCode === 429 && prefersJson(req)) {
                 return res.status(429).json({ success: false, message: err.message });
             }
-            return res.status(err.statusCode).send(renderPublicError(err.statusCode, err.message));
+            return res.status(err.statusCode).send(
+                renderPublicError(err.statusCode, err.message, cspNonceFor(res))
+            );
         }
         else {
-           return res.status(500).send(renderPublicError(500, "Internal Server Error"));
+           return res.status(500).send(
+               renderPublicError(500, "Internal Server Error", cspNonceFor(res))
+           );
 
         }
     }
