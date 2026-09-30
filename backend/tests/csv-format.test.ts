@@ -20,7 +20,9 @@ describe("CSV export formatting", () => {
     it("exposes the documented header set", () => {
         expect(CSV_HEADERS[0]).toBe("Scanned At");
         expect(CSV_HEADERS).toContain("IP Address");
-        expect(CSV_HEADERS).toHaveLength(14);
+        expect(CSV_HEADERS).toContain("Human Click");
+        expect(CSV_HEADERS).toContain("Bot Reason");
+        expect(CSV_HEADERS).toHaveLength(16);
     });
 
     it("formats a scan row with quoted CSV fields", () => {
@@ -37,8 +39,22 @@ describe("CSV export formatting", () => {
     });
 
     it("renders null values as bare empty fields (escapeCsvValue contract)", () => {
-        const row = formatScanRow({ ...SAMPLE, utmSource: null, utmMedium: null, utmCampaign: "launch" } as never);
+const row = formatScanRow({ ...SAMPLE, utmSource: null, utmMedium: null, utmCampaign: "launch" } as never);
         // utmSource/utmMedium are null → consecutive empty fields before "launch"
-        expect(row).toContain(',,,"launch"');
-    });
-});
+          expect(row).toContain(',,,"launch"');
+      });
+
+      it("marks a human click yes and a bot request no", () => {
+          expect(formatScanRow({ ...SAMPLE } as never)).toContain('"yes"');
+          expect(
+              formatScanRow({ ...SAMPLE, isBot: true, botReason: "social-preview" } as never),
+          ).toContain('"no"');
+          expect(
+              formatScanRow({ ...SAMPLE, isBot: true, botReason: "social-preview" } as never),
+          ).toContain('"social-preview"');
+      });
+
+      it("defaults to human when no classification is present", () => {
+          expect(formatScanRow(SAMPLE as never)).toContain('"yes"');
+      });
+  });

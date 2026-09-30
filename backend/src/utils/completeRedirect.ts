@@ -5,7 +5,7 @@ import { CachedLink } from "../features/redirect/redirect.service";
 import { extractVisitorInfo } from "../features/redirect/visitor.service";
 import { getLocation } from "./geoIp";
 import { storageIp } from "./ipPrivacy";
-
+import { classifyRequest } from "./botDetection";
 
 export const applyDeepLink = (targetUrl: string, req: Request): string => {
     try {
@@ -48,6 +48,12 @@ export const completeTargetUrl = async(targetUrl : CachedLink, req : Request) =>
 
     
     
+    const verdict = classifyRequest({
+        userAgent: req.headers["user-agent"],
+        ip: ipAddress,
+    });
+
+    
     let location = ipAddress
     ? await getLocation(ipAddress)
     : undefined;
@@ -63,6 +69,8 @@ export const completeTargetUrl = async(targetUrl : CachedLink, req : Request) =>
                 ipAddress : storageIp(ipAddress),
                 referrer : referrer ?? null,
                 linkId : targetUrl.id,
+                isBot : verdict.isBot,
+                botReason : verdict.reason,
                 utmSource: targetUrl.utmSource,
                 utmMedium: targetUrl.utmMedium,
                 utmCampaign: targetUrl.utmCampaign,

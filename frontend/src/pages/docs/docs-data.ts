@@ -394,6 +394,33 @@ export const DOC_CATEGORIES: DocCategory[] = [
           },
         ],
       },
+      {
+        slug: "what-we-record",
+        title: "What we record on a click",
+        summary: "The exact signals behind your analytics, and the IP address we don't keep.",
+        body: [
+          {
+            kind: "p",
+            text: "Every completed redirect writes one scan row. It holds the timestamp, the device, browser and operating system the visitor's browser reports, the country and city resolved from the request, the referring page, and any UTM parameters on the link. That is the whole record — there is no fingerprinting, no device identifier, and no cross-site profile.",
+          },
+          {
+            kind: "note",
+            text: "The visitor's IP address is stored truncated, never in full. IPv4 addresses are kept to the first three octets (network-level precision only) and IPv6 addresses are kept to the first 48 bits. This is not configurable per account and cannot be switched off to a less-private mode — a full address would identify a household, and we do not need one to count a click.",
+          },
+          {
+            kind: "p",
+            text: "Because the address is truncated, we can tell you that clicks came from a network, but we cannot tell you who at that address clicked. If you need to distinguish individual visitors, use a UTM campaign or a unique link per channel instead.",
+          },
+          {
+            kind: "note",
+            text: "Scan rows are kept for your plan's history window — 30 days on Free up to 3 years on Pro — and are removed after it. Bots and link-preview crawlers are currently counted as clicks; filtered click counts are not available yet.",
+          },
+          {
+            kind: "p",
+            text: "On the redirect hop itself we place no cookies, no advertising and no cross-site trackers. The session cookie on your dashboard account is HTTP-only and is never set for visitors who only click a link. The full statement is in our Privacy Policy.",
+          },
+        ],
+      },
     ],
   },
   {

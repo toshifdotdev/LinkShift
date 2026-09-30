@@ -6,12 +6,12 @@ export const FREE_PLAN: ApiPlan = {
   monthlyPrice: 0,
   yearlyPrice: 0,
   currency: "INR",
-  maxLinks: 50,
+  maxLinks: 100,
   maxQrPerMonth: 10,
   maxDomains: 0,
-  maxRedirectsPerMonth: 2500,
+  maxRedirectsPerMonth: 10000,
   analyticsDays: 30,
-  maxCustomSlugsPerMonth: 0,
+  maxCustomSlugsPerMonth: 10,
   maxDestinationChangesPerMonth: 3,
 };
 
@@ -48,10 +48,6 @@ export function formatAnalytics(days: number): string {
 }
 
 
-const OVERRIDES: Record<string, Record<string, string>> = {
-  FREE: { destinationEdits: "—", customSlugs: "—" },
-};
-
 export interface LimitRow {
   key: string;
   label: string;
@@ -66,13 +62,12 @@ export const LIMIT_ROWS: LimitRow[] = [
   {
     key: "customSlugs",
     label: "Custom slugs / mo",
-    value: (p) => OVERRIDES[p.name]?.customSlugs ?? formatLimit(p.maxCustomSlugsPerMonth),
+    value: (p) => formatLimit(p.maxCustomSlugsPerMonth),
   },
   {
     key: "destinationEdits",
     label: "Destination edits / mo",
-    value: (p) =>
-      OVERRIDES[p.name]?.destinationEdits ?? formatLimit(p.maxDestinationChangesPerMonth),
+    value: (p) => formatLimit(p.maxDestinationChangesPerMonth),
   },
   { key: "analytics", label: "Analytics history", value: (p) => formatAnalytics(p.analyticsDays) },
 ];

@@ -28,23 +28,23 @@ enum EyeBallStyle {
 }
 
 enum AuthProvider {
-    LOCAL
-    GOOGLE
+  LOCAL
+  GOOGLE
 }
 
 enum SubscriptionStatus {
-    ACTIVE
+  ACTIVE
 
-    PENDING
+  PENDING
 
-    AUTHORIZATION_PENDING
-    PAYMENT_RETRY
+  AUTHORIZATION_PENDING
+  PAYMENT_RETRY
 
-    HALTED
-    PAUSED
-    CANCELLED
-    COMPLETED
-    EXPIRED
+  HALTED
+  PAUSED
+  CANCELLED
+  COMPLETED
+  EXPIRED
 }
 
 enum PaymentProvider {
@@ -79,101 +79,101 @@ enum BillingCycle {
 }
 
 enum Currency {
-    INR
-    USD
+  INR
+  USD
 }
 
 enum WebhookEventStatus {
-    PENDING
-    PROCESSING
-    PROCESSED
-    FAILED
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
 }
 
 model WebhookEvent {
-    id          String   @id @default(cuid())
-    eventId     String   @unique
-    eventType   String
-    status      WebhookEventStatus @default(PENDING)
-    claimedAt   DateTime?
-    processedAt DateTime?
-    createdAt   DateTime @default(now())
+  id          String             @id @default(cuid())
+  eventId     String             @unique
+  eventType   String
+  status      WebhookEventStatus @default(PENDING)
+  claimedAt   DateTime?
+  processedAt DateTime?
+  createdAt   DateTime           @default(now())
 
-    @@index([status])
+  @@index([status])
 }
 
 model User {
-  id                     String      @id @default(cuid())
-  name                   String?   
-  email                  String      @unique
-  verified               Boolean     @default(false)
+  id       String  @id @default(cuid())
+  name     String?
+  email    String  @unique
+  verified Boolean @default(false)
 
-  passwordHash           String?
-  resetPasswordToken     String?
-  resetPasswordExpires   DateTime?
+  passwordHash         String?
+  resetPasswordToken   String?
+  resetPasswordExpires DateTime?
 
-  googleId               String?     @unique
-  avatarUrl              String?
-  avatarPublicId         String?
-  provider               AuthProvider
+  googleId       String?      @unique
+  avatarUrl      String?
+  avatarPublicId String?
+  provider       AuthProvider
 
-  refreshTokenHash       String? 
-  refreshTokenExpiresAt  DateTime?
+  refreshTokenHash      String?
+  refreshTokenExpiresAt DateTime?
 
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-  links      Link[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  links     Link[]
 
-  domains    Domain[]
+  domains Domain[]
 
-  emailVerification     EmailVerification?
+  emailVerification EmailVerification?
 
-  subscriptions  Subscription[]
-  payments       Payment[]
-  linkChanges    LinkChange[]
+  subscriptions Subscription[]
+  payments      Payment[]
+  linkChanges   LinkChange[]
 }
 
 model EmailVerification {
-  id            String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  tokenHash     String   @unique
+  tokenHash String @unique
 
-  expiresAt     DateTime
+  expiresAt DateTime
 
-  userId        String @unique
-  user   User   @relation(fields:[userId], references:[id], onDelete:Cascade)
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 }
 
 model Domain {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  host       String   @unique
-  verified   Boolean  @default(false)
+  host       String    @unique
+  verified   Boolean   @default(false)
   verifiedAt DateTime?
-  isDefault  Boolean  @default(false)
+  isDefault  Boolean   @default(false)
 
-  userId     String?
-  user       User?    @relation(fields: [userId], references: [id])
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
 
-  links      Link[]
+  links Link[]
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Link {
-  id         String   @id @default(cuid())
-  userId     String
-  name       String?
+  id           String    @id @default(cuid())
+  userId       String
+  name         String?
   passwordHash String?
-  targetUrl  String
-  shortId    String   
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  expiresAt  DateTime?
+  targetUrl    String
+  shortId      String
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  expiresAt    DateTime?
 
   utmSource   String?
   utmMedium   String?
@@ -181,53 +181,51 @@ model Link {
   utmTerm     String?
   utmContent  String?
 
-  deepLink    Boolean @default(false)
+  deepLink Boolean @default(false)
 
-  appDeepLink     Boolean  @default(false)
+  appDeepLink     Boolean @default(false)
   appScheme       String?
   androidPackage  String?
   appPath         String?
   iosStoreUrl     String?
   androidStoreUrl String?
 
-  user   User   @relation(fields: [userId], references: [id])
-  qr     Qr[]
-  scans  Scan[]
-  linkChanges    LinkChange[]
+  user        User         @relation(fields: [userId], references: [id])
+  qr          Qr[]
+  scans       Scan[]
+  linkChanges LinkChange[]
 
   domainId String
 
   domain Domain @relation(fields: [domainId], references: [id])
 
-  @@index([userId])
-
   @@unique([domainId, shortId])
+  @@index([userId])
 }
 
 model Qr {
-  id               String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  linkId           String
+  linkId String
 
-  imageUrl         String
-  imagePublicId    String
+  imageUrl      String
+  imagePublicId String
 
-  foregroundColor  String?  @default("#000000")
-  backgroundColor  String?  @default("#FFFFFF")
+  foregroundColor String? @default("#000000")
+  backgroundColor String? @default("#FFFFFF")
 
-  logoUrl          String?
-  logoPublicId     String?
-  
+  logoUrl      String?
+  logoPublicId String?
 
-  pattern          PatternStyle  @default(square)
-  eyeStyle         EyeStyle      @default(square)
-  eyeBallStyle     EyeBallStyle  @default(square)
+  pattern      PatternStyle @default(square)
+  eyeStyle     EyeStyle     @default(square)
+  eyeBallStyle EyeBallStyle @default(square)
 
-  margin           Int?     @default(2)
-  frame            String   @default("none")
+  margin Int?   @default(2)
+  frame  String @default("none")
 
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
@@ -235,15 +233,15 @@ model Qr {
 }
 
 model Scan {
-  id         String   @id @default(cuid())
-  linkId     String
-  device     String?
-  browser    String?
-  os         String?
-  country    String?
-  city       String?
-  ipAddress  String?
-  referrer   String?
+  id        String  @id @default(cuid())
+  linkId    String
+  device    String?
+  browser   String?
+  os        String?
+  country   String?
+  city      String?
+  ipAddress String?
+  referrer  String?
 
   utmSource   String?
   utmMedium   String?
@@ -251,22 +249,25 @@ model Scan {
   utmTerm     String?
   utmContent  String?
 
-  scannedAt  DateTime @default(now())
+isBot       Boolean  @default(false)
+  botReason String?
+
+  scannedAt DateTime @default(now())
 
   link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
-
-  @@index([linkId])
+@@index([linkId])
   @@index([linkId, scannedAt])
+  @@index([linkId, isBot, scannedAt])
+  @@index([isBot, scannedAt])
 }
 
-
 model Plan {
-  id            String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  name          PlanName @unique
+  name PlanName @unique
 
-  monthlyPrice  Int
-  yearlyPrice   Int?
+  monthlyPrice Int
+  yearlyPrice  Int?
 
   razorpayMonthlyPlanId String?
   razorpayYearlyPlanId  String?
@@ -276,11 +277,11 @@ model Plan {
 
   razorpayUsdMonthlyPlanId String?
   razorpayUsdYearlyPlanId  String?
-  
-  maxLinks      Int?
-  maxQrPerMonth Int?
-  maxDomains    Int?
-  maxRedirectsPerMonth Int?
+
+  maxLinks                      Int?
+  maxQrPerMonth                 Int?
+  maxDomains                    Int?
+  maxRedirectsPerMonth          Int?
   maxRedirectsWithGracePerMonth Int?
 
   maxCustomSlugsPerMonth Int?
@@ -289,37 +290,36 @@ model Plan {
 
   analyticsDays Int
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  payments      Payment[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  payments  Payment[]
 
-  subscriptions Subscription[]
+  subscriptions        Subscription[]
   pendingSubscriptions Subscription[] @relation("PendingSubscriptionPlan")
 }
 
-
 model Subscription {
-  id     String @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId String 
-  user   User   @relation(fields: [userId],references: [id],onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  planId String 
-  plan   Plan   @relation(fields: [planId],references: [id])
+  planId String
+  plan   Plan   @relation(fields: [planId], references: [id])
 
   currency Currency @default(INR)
 
   status SubscriptionStatus @default(ACTIVE)
 
-  provider PaymentProvider  @default(NONE)
+  provider PaymentProvider @default(NONE)
 
   billingCycle BillingCycle
 
   providerSubscriptionId String?
-  providerCustomerId String?
+  providerCustomerId     String?
 
   pendingPlanId String?
-  pendingPlan   Plan? @relation("PendingSubscriptionPlan", fields: [pendingPlanId], references: [id])
+  pendingPlan   Plan?   @relation("PendingSubscriptionPlan", fields: [pendingPlanId], references: [id])
 
   changeScheduledAt DateTime?
 
@@ -340,31 +340,30 @@ model Subscription {
   @@index([userId])
 }
 
-
 model Payment {
   id String @id @default(cuid())
-  
+
   planId String
-  plan   Plan  @relation(fields: [planId], references: [id])
+  plan   Plan   @relation(fields: [planId], references: [id])
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   subscriptionId String?
-  subscription   Subscription? @relation(fields: [subscriptionId],references: [id],onDelete: SetNull)
+  subscription   Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
 
   provider PaymentProvider
 
-  providerOrderId     String
-  providerPaymentId   String?
-  providerSignature   String?
-  providerRefundId    String?
-  billingCycle        BillingCycle
+  providerOrderId   String
+  providerPaymentId String?
+  providerSignature String?
+  providerRefundId  String?
+  billingCycle      BillingCycle
 
   amount   Int
   currency Currency @default(INR)
 
-  status PaymentStatus
+  status   PaymentStatus
   category PaymentCategory?
 
   refunds Refund[]
@@ -399,26 +398,24 @@ model ReconciliationRun {
   finishedAt  DateTime? @db.Timestamptz(3)
 }
 
-
 enum LinkChangeType {
-    DESTINATION
-    CUSTOM_SLUG
+  DESTINATION
+  CUSTOM_SLUG
 }
 
 model LinkChange {
-    id        String         @id @default(cuid())
+  id String @id @default(cuid())
 
-    userId    String
-    linkId    String
+  userId String
+  linkId String
 
-    type      LinkChangeType
+  type LinkChangeType
 
-    createdAt DateTime       @default(now())
+  createdAt DateTime @default(now())
 
-    user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
-    link       Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
 
-    @@index([userId, type, createdAt])
-    @@index([linkId])
+  @@index([userId, type, createdAt])
+  @@index([linkId])
 }
-

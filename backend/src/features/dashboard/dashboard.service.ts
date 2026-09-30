@@ -2,7 +2,7 @@ import { prisma } from "../../config"
 import { getCache, setCache } from "../../utils/cache";
 import { getAnalyticsCutoff, getUserPlan, planRankOf } from "../billing/billing.service";
 import { analyticsMapper } from "./dashboard.mapper"
-
+import { withHumanClicks } from "./clickFilters";
 
 type TopLinks = {
     id: string;
@@ -50,7 +50,6 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
         return JSON.parse(cachedDashboard);
     }
 
-
     const [ totalLinks , activeLinks, inactiveLinks, totalScans, topScanGroups ] = await Promise.all([
         prisma.link.count({
             where : {
@@ -70,12 +69,12 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
             }
         }),
 
-
         prisma.scan.count({
             where: {
                 link: {
                     userId: id
                 },
+                isBot: false,
                 scannedAt : {
                     gte : cutoff
                 }
@@ -88,6 +87,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
                 link: {
                     userId: id,
                 },
+                isBot: false,
                 scannedAt: {
                     gte: cutoff,
                 },
@@ -143,7 +143,6 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
         })
         .filter((link): link is TopLinks => link !== null);
 
-
     const dailyRows = await prisma.$queryRaw<DailyStats[]>`
             SELECT
                 DATE(s."scannedAt") AS day,
@@ -153,6 +152,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
                 ON s."linkId" = l.id
             WHERE
                 l."userId" = ${id}
+                AND s."isBot" = false
                 AND s."scannedAt" >= ${cutoff}
             GROUP BY DATE(s."scannedAt")
             ORDER BY day ASC
@@ -169,6 +169,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
                 ON s."linkId" = l.id
             WHERE
                 l."userId" = ${id}
+                AND s."isBot" = false
                 AND s."scannedAt" >= ${cutoff}
             GROUP BY 1
             ORDER BY 1
@@ -199,7 +200,9 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
 export const getAnalytics = async(id : string, linkId : string, requestedDays ?: number) => {
     const cutoff = await getAnalyticsCutoff(id, requestedDays);
     const rank = planRankOf((await getUserPlan(id)).name);
-    const where = {
+    
+    
+    const where = withHumanClicks({
         linkId,
         link: {
             userId: id
@@ -207,9 +210,10 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
         scannedAt : {
             gte : cutoff
         }
-    };
+    });
+    const botWhere = { ...where, isBot: true };
 
-    const [ browserStats, deviceStats, countryStats, osStats, totalClicks, referrerStats, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, cityStats, hourlyRows, heatRows ] = await Promise.all([
+    const [ browserStats, deviceStats, countryStats, osStats, totalClicks, referrerStats, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, cityStats, botRequests, hourlyRows, heatRows ] = await Promise.all([
         prisma.scan.groupBy({
             by : ['browser'],
             where,
@@ -341,6 +345,10 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
             }
         }),
 
+        prisma.scan.count({
+            where: botWhere,
+        }),
+
         prisma.$queryRaw<HourRow[]>`
             SELECT
                 EXTRACT(HOUR FROM s."scannedAt")::int AS hour,
@@ -351,6 +359,7 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
             WHERE
                 s."linkId" = ${linkId}
                 AND l."userId" = ${id}
+                AND s."isBot" = false
                 AND s."scannedAt" >= ${cutoff}
             GROUP BY 1
             ORDER BY 1
@@ -367,6 +376,7 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
             WHERE
                 s."linkId" = ${linkId}
                 AND l."userId" = ${id}
+                AND s."isBot" = false
                 AND s."scannedAt" >= ${cutoff}
             GROUP BY 1, 2
             ORDER BY 1, 2
@@ -381,6 +391,7 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
 
     return {
         totalClicks,
+        botRequests,
         deviceStats: deviceStats.map(item => ({
             device: item.device ?? "Unknown",
             count: item._count._all
@@ -426,20 +437,18 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
 
 }
 
-
-
 export const getActivity = async(id : string, requestedDays ?: number) => {
     const cutoff = await getAnalyticsCutoff(id, requestedDays);
 
     const scans = await prisma.scan.findMany({
-        where : {
+        where : withHumanClicks({
             link : {
                 userId : id
             },
             scannedAt: {
                 gte: cutoff,
             },
-        },
+        }),
         include : {
             link : {
                 select : {
@@ -456,11 +465,11 @@ export const getActivity = async(id : string, requestedDays ?: number) => {
     return scans.map(analyticsMapper);
 }
 
-
 export const getChartData = async(id : string, linkId : string, requestedDays ?: number) => {
     const cutoff = await getAnalyticsCutoff(id, requestedDays);
 
-    const where = {
+    
+    const where = withHumanClicks({
         linkId,
         link: {
             userId: id
@@ -468,7 +477,7 @@ export const getChartData = async(id : string, linkId : string, requestedDays ?:
         scannedAt : {
             gte : cutoff
         }
-    };
+    });
 
     const[browserStats, countryStats, deviceStats, osStats, utmSourceStats, utmMediumStats, utmCampaignStats, utmTermStats, utmContentStats] = await Promise.all([
         prisma.scan.groupBy({
@@ -545,13 +554,14 @@ export const getChartData = async(id : string, linkId : string, requestedDays ?:
             FROM "Scan" s
             JOIN "Link" l
                 ON s."linkId" = l.id
-            WHERE
-                s."linkId" = ${linkId}
-                AND l."userId" = ${id}
-                AND s."scannedAt" >= ${cutoff}
-            GROUP BY DATE(s."scannedAt")
-            ORDER BY day ASC
-            `;
+WHERE
+                  s."linkId" = ${linkId}
+                  AND l."userId" = ${id}
+                  AND s."isBot" = false
+                  AND s."scannedAt" >= ${cutoff}
+              GROUP BY DATE(s."scannedAt")
+              ORDER BY day ASC
+              `;
 
     return {
         browserStats : browserStats.map(item => ({

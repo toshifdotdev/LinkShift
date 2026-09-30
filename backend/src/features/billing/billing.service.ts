@@ -6,7 +6,6 @@ import { config } from "../../config/env";
 import { ChangePlanInput, SubscriptionInput, SubscriptionVerificationInput } from "./billing.validation";
 import { Prisma } from "../../generated/prisma/client";
 
-
 export const getPlansService = async(currency : "INR" | "USD") => {
     const result = await prisma.plan.findMany({
         where : {
@@ -45,8 +44,6 @@ export const getPlansService = async(currency : "INR" | "USD") => {
 
 }
 
-
-
 export const razorpayWebhookService = async(signature : string, data : Buffer, eventId: string) => {
     
     
@@ -83,6 +80,7 @@ export const razorpayWebhookService = async(signature : string, data : Buffer, e
     } catch (e) {
         if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
             // Row exists, continue to claim
+            
         } else {
             throw e;
         }
@@ -135,14 +133,10 @@ type WebhookProcessResult = {
     warning?: string;
 };
 
-
-
 export const TERMINAL_SUBSCRIPTION_STATUSES = ["CANCELLED", "COMPLETED", "EXPIRED"] as const;
 
 export const isTerminalSubscriptionStatus = (status: string) =>
     (TERMINAL_SUBSCRIPTION_STATUSES as readonly string[]).includes(status);
-
-
 
 export const mapProviderPlan = async (planId: string | undefined | null) => {
     if (!planId) {
@@ -160,8 +154,6 @@ export const mapProviderPlan = async (planId: string | undefined | null) => {
         },
     });
 };
-
-
 
 export const cycleFromPlanMatch = (
     plan: NonNullable<Awaited<ReturnType<typeof mapProviderPlan>>>,
@@ -472,7 +464,7 @@ const processWebhookEvent = async (payload: any): Promise<WebhookProcessResult |
             break;
         }
 
-        case "subscription.authenticated": { // 1st
+        case "subscription.authenticated": { 
             
             
             const subscription = payload.payload.subscription.entity;
@@ -944,7 +936,6 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         },
     });
 
-
     if (existingSubscription) {
         if (existingSubscription.status === "HALTED") {
             throw new AppError(
@@ -954,7 +945,6 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         }
         throw new AppError("You already have an active subscription. Please manage your current subscription before purchasing another plan.", 409);
     }
-
 
     const selectedPlan = await prisma.plan.findUnique({
         where : {
@@ -976,7 +966,6 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
                          ? selectedPlan.razorpayUsdMonthlyPlanId 
                          : selectedPlan.razorpayUsdYearlyPlanId
     }
-
 
     if (!razorpayPlanId) {
         throw new AppError(`${currency}Razorpay plan is not configured`, 500);
@@ -1035,7 +1024,6 @@ export const subscriptionService = async(userId : string, plan : SubscriptionInp
         throw e;
     }
 }
-
 
 export const verifySubscriptionService = async(userId : string, data : SubscriptionVerificationInput) => {
     const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = data;
@@ -1319,7 +1307,6 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         });
     }
 
-
     return {
         subscriptionId: subscription.id,
         providerSubscriptionId: razorpaySubscription.id,
@@ -1334,7 +1321,6 @@ export const changePlanService = async(userId : string, plan : ChangePlanInput["
         status: razorpaySubscription.status,
     };
 }
-
 
 export const getSubscriptionService = async (userId: string) => {
     const subscription = await prisma.subscription.findFirst({
@@ -1365,17 +1351,10 @@ export const LIVE_SUBSCRIPTION_STATUSES = [
     "PAUSED",
 ] as const;
 
-
-
 const TOTAL_COUNT_MONTHLY = 1200;
 const TOTAL_COUNT_YEARLY = 100;
 
-
-
-
-
 export const AUTHORIZATION_EXPIRY_HOURS = 24;
-
 
 const ENTITLEMENT_GRACE_MS = 24 * 60 * 60 * 1000;
 
@@ -1406,7 +1385,6 @@ export const isEntitled = (subscription: SubscriptionWithPlan | null): boolean =
     
     return false;
 };
-
 
 export const getEntitledSubscription = async (
     userId: string
@@ -1515,7 +1493,6 @@ type PlanLimitType =
     | "DESTINATION_CHANGES"
     | "CUSTOM_SLUGS";
 
-
 export const checkPlanLimit = async (userId: string,type: PlanLimitType) => {
     const plan = await getUserPlan(userId);
 
@@ -1599,7 +1576,6 @@ export const checkQrLimit = async (userId: string) => {
 
     const { periodStart, periodEnd } = getBillingPeriod(subscription);
 
-
     const qrCount = await prisma.qr.count({
         where: {
             link: {
@@ -1647,7 +1623,6 @@ export const checkDomainLimit = async (userId: string) => {
     };
 };
 
-
 export const checkRedirectLimit = async (userId: string) => {
     const subscription = await getEntitledSubscription(userId);
 
@@ -1667,9 +1642,13 @@ export const checkRedirectLimit = async (userId: string) => {
         };
     }
 
-
+    
+    
+    
+    
     const redirectCount = await prisma.scan.count({
         where: {
+            isBot: false,
             link: {
                 userId,
             },
@@ -1714,23 +1693,22 @@ const PRO_DESTINATION_CHANGE_ABUSE_LIMIT = 5000;
 export const checkDestinationLimit = async (userId: string) => {
     const subscription = await getEntitledSubscription(userId);
 
-    if (!subscription) {
-        throw new AppError("No active subscription found", 403);
-    }
-
-    const plan = subscription.plan;
+    
+    
+    
+    const plan = subscription
+        ? subscription.plan
+        : await getUserPlan(userId);
 
     const { periodStart, periodEnd } = getBillingPeriod(subscription);
 
     const limit = plan.maxDestinationChangesPerMonth;
-
 
     
     if (limit === null) {
         if (plan.name !== "PRO") {
             return;
         }
-
 
         const used = await prisma.linkChange.count({
             where: {
@@ -1772,15 +1750,15 @@ export const checkDestinationLimit = async (userId: string) => {
     }
 };
 
-
 export const checkCustomSlugLimit = async (userId: string) => {
     const subscription = await getEntitledSubscription(userId);
 
-     if (!subscription) {
-        throw new AppError("No active subscription found", 403);
-    }
-
-    const plan = subscription.plan;
+    
+    
+    
+    const plan = subscription
+        ? subscription.plan
+        : await getUserPlan(userId);
 
     const { periodStart, periodEnd } = getBillingPeriod(subscription);
 
@@ -1790,7 +1768,6 @@ export const checkCustomSlugLimit = async (userId: string) => {
     if (limit === null) {
         return;
     }
-
 
     const used = await prisma.linkChange.count({
         where: {
@@ -1825,7 +1802,6 @@ export const checkUtmAccess = async (userId: string) => {
         );
     }
 };
-
 
 const ANALYTICS_PERIODS = [
     7,
@@ -1879,11 +1855,9 @@ export const checkCsvExportAccess = async (userId: string) => {
     }
 };
 
-
 export const PLAN_ORDER = ["FREE", "STARTER", "CREATOR", "PRO", "ENTERPRISE"] as const;
 export const planRankOf = (name: string): number =>
     (PLAN_ORDER as readonly string[]).indexOf(name);
-
 
 const DEEP_LINK_PLANS = ["PRO", "ENTERPRISE"];
 
@@ -1897,7 +1871,6 @@ export const checkDeepLinkAccess = async (userId: string) => {
         throw new AppError("Path forwarding is available on the Pro plan", 403);
     }
 };
-
 
 export const hasAppDeepLinkAccess = async (userId: string): Promise<boolean> => {
     const plan = await getUserPlan(userId);
@@ -1921,7 +1894,7 @@ export const getUsageService = async (userId: string) => {
 
     const periodFilter = { gte: periodStart };
 
-    const [totalLinks, customSlugs, destinationEdits, redirects, qrCodes, domainCount] = await Promise.all([
+    const [totalLinks, customSlugs, destinationEdits, redirects, botRequests, qrCodes, domainCount] = await Promise.all([
         prisma.link.count({ where: { userId } }),
         prisma.linkChange.count({
             where: { userId, type: "CUSTOM_SLUG", createdAt: periodFilter },
@@ -1929,8 +1902,14 @@ export const getUsageService = async (userId: string) => {
         prisma.linkChange.count({
             where: { userId, type: "DESTINATION", createdAt: periodFilter },
         }),
+        
         prisma.scan.count({
-            where: { link: { userId }, scannedAt: periodFilter },
+            where: { link: { userId }, isBot: false, scannedAt: periodFilter },
+        }),
+        
+        
+        prisma.scan.count({
+            where: { link: { userId }, isBot: true, scannedAt: periodFilter },
         }),
         prisma.qr.count({
             where: { link: { userId }, createdAt: periodFilter },
@@ -1943,7 +1922,15 @@ export const getUsageService = async (userId: string) => {
         links: { used: totalLinks, cap: plan.maxLinks },
         customSlugs: { used: customSlugs, cap: plan.maxCustomSlugsPerMonth },
         destinationEdits: { used: destinationEdits, cap: plan.maxDestinationChangesPerMonth },
-        redirects: { used: redirects, cap: plan.maxRedirectsPerMonth },
+        
+        
+        
+        redirects: {
+            used: redirects,
+            cap: plan.maxRedirectsPerMonth,
+            graceCap: plan.maxRedirectsWithGracePerMonth,
+        },
+        botRequests,
         qrCodes: { used: qrCodes, cap: plan.maxQrPerMonth },
         domains: { used: domainCount, cap: plan.maxDomains },
         analyticsDays: plan.analyticsDays,

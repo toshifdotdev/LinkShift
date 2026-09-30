@@ -263,7 +263,7 @@ describe("AnalyticsPage link workspace — viz + plan gating", () => {
     renderPage("/app/analytics?link=abc");
 
     /* derived + headline KPIs */
-    expect(await screen.findByText("Total clicks")).toBeInTheDocument();
+    expect(await screen.findByText("Human clicks")).toBeInTheDocument();
     expect(screen.getByText("Avg / day")).toBeInTheDocument();
     expect(screen.getByText("Best day")).toBeInTheDocument();
     expect(screen.getByText("Active days")).toBeInTheDocument();
@@ -280,13 +280,45 @@ describe("AnalyticsPage link workspace — viz + plan gating", () => {
     expect(screen.getByText(/PEAK · Wednesday 14:00 UTC · 10 clicks/)).toBeInTheDocument();
   });
 
+  it("discloses excluded bot traffic instead of hiding it", async () => {
+    getLinkAnalytics.mockResolvedValue({
+      success: true,
+      analytics: {
+        ...proAnalyticsResponse().analytics,
+        totalClicks: 10,
+        botRequests: 34,
+      },
+    });
+
+    renderPage("/app/analytics?link=abc");
+
+    expect(await screen.findByText("Human clicks")).toBeInTheDocument();
+    expect(screen.getByText(/34 bot requests? recorded and excluded/i)).toBeInTheDocument();
+  });
+
+  it("shows no bot note when a link has no bot traffic", async () => {
+    getLinkAnalytics.mockResolvedValue({
+      success: true,
+      analytics: {
+        ...proAnalyticsResponse().analytics,
+        totalClicks: 10,
+        botRequests: 0,
+      },
+    });
+
+    renderPage("/app/analytics?link=abc");
+
+    expect(await screen.findByText("Human clicks")).toBeInTheDocument();
+    expect(screen.queryByText(/bot request/i)).not.toBeInTheDocument();
+  });
+
   it("FREE: shows locked slots for every gated viz and keeps the basic KPIs", async () => {
     planState.plan = "FREE";
     getLinkAnalytics.mockResolvedValue(freeAnalyticsResponse());
 
     renderPage("/app/analytics?link=abc");
 
-    expect(await screen.findByText("Total clicks")).toBeInTheDocument();
+    expect(await screen.findByText("Human clicks")).toBeInTheDocument();
     expect(screen.getByText("Avg / day")).toBeInTheDocument();
 
     /* Peak hours + Clients both gate on Starter */
@@ -372,7 +404,7 @@ describe("AnalyticsPage link reference in the URL", () => {
      reference, then fetch analytics — so assert in that order and let a loaded
      suite worker catch up instead of racing its first render. */
   async function expectWorkspaceLoaded() {
-    await waitFor(() => expect(screen.getByText("Total clicks")).toBeInTheDocument(), { timeout: 4000 });
+    await waitFor(() => expect(screen.getByText("Human clicks")).toBeInTheDocument(), { timeout: 4000 });
   }
 
   it("puts the slug in the URL when a link is opened from the account view", async () => {
@@ -406,14 +438,14 @@ describe("AnalyticsPage link reference in the URL", () => {
     /* the bookmark is not broken by the change: it resolves, analytics load … */
     await waitFor(() => expect(getLink).toHaveBeenCalledWith(DATABASE_ID));
     await expectWorkspaceLoaded();
-    const kpi = screen.getByText("Total clicks");
+    const kpi = screen.getByText("Human clicks");
 
     /* … and the address bar ends up canonical */
     await waitFor(() => expect(urlRef()).toBe("igpromo"));
 
     /* the very same node: upgrading the URL renamed the address bar only, it did
        not drop the workspace behind a second lookup. */
-    expect(screen.getByText("Total clicks")).toBe(kpi);
+    expect(screen.getByText("Human clicks")).toBe(kpi);
   });
 
   it("passes an unresolvable reference through instead of breaking it", async () => {

@@ -18,6 +18,10 @@ export const CSV_HEADERS = [
     "Country",
     "City",
     "IP Address",
+    
+    
+    "Human Click",
+    "Bot Reason",
 ];
 
 type ScanRow = {
@@ -33,6 +37,8 @@ type ScanRow = {
     country: string | null;
     city: string | null;
     ipAddress: string | null;
+    isBot?: boolean;
+    botReason?: string | null;
 };
 
 export const formatScanRow = (scan: ScanRow): string =>
@@ -49,14 +55,9 @@ export const formatScanRow = (scan: ScanRow): string =>
         scan.country,
         scan.city,
         scan.ipAddress,
+        scan.isBot ? "no" : "yes",
+        scan.botReason ?? null,
     ]);
-
-
-
-
-
-
-
 
 export const exportLinkAnalytics = async (
     write: (chunk: string) => void,

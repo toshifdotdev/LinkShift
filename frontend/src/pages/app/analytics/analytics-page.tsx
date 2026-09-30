@@ -531,11 +531,20 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
           ) : (
             <>
               <KpiCell
-                label="Total clicks"
+                label="Human clicks"
                 value={a?.totalClicks ?? 0}
                 valueClassName="text-brand"
                 className="px-4 py-5 sm:px-5 sm:py-6"
               />
+              {(a?.botRequests ?? 0) > 0 ? (
+                <p className="px-4 pb-4 -mt-1 text-[11px] leading-relaxed text-fg-muted sm:px-5">
+                  {(a?.botRequests ?? 0).toLocaleString()} bot request
+                  {(a?.botRequests ?? 0) === 1 ? "" : "s"} recorded and excluded
+                  — chat link previews, email scanners, crawlers and monitors.
+                  They are stored, not counted, and never charged against your
+                  plan.
+                </p>
+              ) : null}
               <KpiCell label="Avg / day" value={avgPerDay} className="px-4 py-5 sm:px-5 sm:py-6" />
               <KpiCell label="Best day" value={bestDay} className="px-4 py-5 sm:px-5 sm:py-6" />
               <KpiCell label="Active days" value={activeDays} className="px-4 py-5 sm:px-5 sm:py-6" />

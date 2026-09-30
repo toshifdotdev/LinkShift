@@ -14,18 +14,18 @@ const plans = [
         name: PlanName.FREE,
         monthlyPrice: 0,
         yearlyPrice: 0,
-        maxCustomSlugsPerMonth : 0,
+        maxCustomSlugsPerMonth : 10,
         maxDestinationChangesPerMonth : 3,
 
         usdMonthlyPrice: 0,
         usdYearlyPrice: 0,
-        
 
-        maxLinks: 50,
+
+        maxLinks: 100,
         maxQrPerMonth: 10,
         maxDomains: 0,
-        maxRedirectsPerMonth: 2500,
-        maxRedirectsWithGracePerMonth: 5000,
+        maxRedirectsPerMonth: 10000,
+        maxRedirectsWithGracePerMonth: 15000,
 
         analyticsDays: 30,
     },

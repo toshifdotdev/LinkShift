@@ -120,7 +120,7 @@ export interface BillingUsage {
   links: { used: number; cap: number | null };
   customSlugs: { used: number; cap: number | null };
   destinationEdits: { used: number; cap: number | null };
-  redirects: { used: number; cap: number | null };
+  redirects: { used: number; cap: number | null; graceCap?: number | null };
   qrCodes: { used: number; cap: number | null };
   domains: { used: number; cap: number | null };
   analyticsDays: number;

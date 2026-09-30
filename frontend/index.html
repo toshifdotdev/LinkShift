@@ -50,6 +50,27 @@
     
     <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
 
+    <!--
+      Marketing analytics for the public site only. Cookie-free and
+      cookieless by design (no cross-site identifiers, no fingerprinting),
+      matching the privacy claims in the legal policy and docs.
+
+      Disabled unless VITE_PLAUSIBLE_DOMAIN is set at build time, so local and
+      preview builds never report. Kept as an inline module (rather than a
+      hard <script src>) so one env var turns it on and off without editing
+      this file, and so nothing is requested when it is unset.
+    -->
+    <script type="module">
+      const analyticsDomain = import.meta.env.VITE_PLAUSIBLE_DOMAIN;
+      if (analyticsDomain) {
+        const s = document.createElement("script");
+        s.defer = true;
+        s.dataset.domain = analyticsDomain;
+        s.src = "https://plausible.io/js/script.js";
+        document.head.appendChild(s);
+      }
+    </script>
+
     <script>
       try {
         if (localStorage.getItem("ls:access-token")) {

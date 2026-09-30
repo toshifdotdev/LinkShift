@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
 import { FadeIn } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
+import { graceLabel } from "@/lib/redirect-grace";
 
 
 
@@ -192,6 +193,11 @@ function BillingPage() {
               label="Redirects / month"
               used={usage.data.redirects.used}
               cap={usage.data.redirects.cap}
+              capLabel={graceLabel(
+                usage.data.redirects.used,
+                usage.data.redirects.cap,
+                usage.data.redirects.graceCap,
+              )}
             />
             <UsageRow
               icon={<Pencil className="size-3.5" />}

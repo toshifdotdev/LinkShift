@@ -173,6 +173,7 @@ export interface HeatPoint {
 
 export interface LinkAnalytics {
   totalClicks: number;
+  botRequests?: number;
   browserStats: Array<{ browser: string; count: number }>;
   deviceStats: Array<{ device: string; count: number }>;
   countryStats: Array<{ country: string; count: number }>;
