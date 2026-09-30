@@ -26,18 +26,16 @@ function AppLayout() {
   const { user } = useSession();
   const [navOpen, setNavOpen] = useState(false);
 
+  const nav = useActiveNav();
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
       
       <MobileNav open={navOpen} onClose={() => setNavOpen(false)} />
       <div className="lg:pl-64">
-        <Topbar
-          nav={useActiveNav()}
-          navOpen={navOpen}
-          onOpenNav={() => setNavOpen(true)}
-        />
-        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <Topbar nav={nav} navOpen={navOpen} onOpenNav={() => setNavOpen(true)} />
+        <main className="mx-auto w-full max-w-6xl px-5 py-8 lg:px-8 lg:py-10">
           <ErrorBoundary resetKey={location.pathname}>
             <motion.div
               key={location.pathname}
@@ -67,10 +65,12 @@ function AppShellSkeleton() {
         </div>
       </div>
       <div className="lg:pl-64">
-        <div className="flex h-14 items-center border-b border-border px-4 sm:px-6">
-          <Skeleton className="h-4 w-28" />
+        <div className="flex h-16 items-center border-b border-border px-5 lg:px-8">
+          <div className="mx-auto w-full max-w-6xl">
+            <Skeleton className="h-4 w-28" />
+          </div>
         </div>
-        <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
+        <main className="mx-auto w-full max-w-6xl px-5 py-8 lg:px-8 lg:py-10">
           <Skeleton className="h-8 w-56" />
           <Skeleton className="mt-2 h-4 w-80" />
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -29,7 +29,7 @@ function Topbar({
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background">
-      <div className="flex h-14 items-center gap-3 px-4 sm:px-6">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-2.5 px-5 lg:px-8">
         <button
           type="button"
           aria-label="Open navigation"
@@ -40,8 +40,9 @@ function Topbar({
           <Menu className="size-5" />
         </button>
 
-        <p className="ls-marquee min-w-0 truncate">
-          {nav.index} · {nav.label}
+        <p className="flex min-w-0 items-center gap-2.5 text-sm">
+          <span className="font-mono text-[10px] tabular-nums text-fg-muted">{nav.index}</span>
+          <span className="min-w-0 truncate font-medium text-foreground">{nav.label}</span>
         </p>
 
         <div className="ml-auto flex items-center gap-1.5">

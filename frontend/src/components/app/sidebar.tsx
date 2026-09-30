@@ -1,5 +1,5 @@
 import { NavLink } from "react-router-dom";
-import { APP_NAV } from "./nav-config";
+import { APP_NAV_GROUPS } from "./nav-config";
 import { Logo } from "@/components/brand/logo";
 import { useSession } from "@/auth/session";
 import { Avatar } from "./avatar";
@@ -17,51 +17,61 @@ function planTone(planName: string): LampTone {
 
 function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   return (
-    <nav aria-label="Application" className="flex flex-1 flex-col gap-0.5 px-3">
-      {APP_NAV.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.to === "/app"}
-          onClick={onNavigate}
-          className={({ isActive }) =>
-            cn(
-              "group relative flex items-center gap-3 rounded-md py-2 pr-3 pl-4 text-sm transition-colors duration-150",
-              isActive
-                ? "bg-elevated/80 text-foreground"
-                : "text-fg-secondary hover:bg-elevated/40 hover:text-foreground",
-            )
-          }
-        >
-          {({ isActive }) => (
-            <>
-              
-              <span
-                aria-hidden="true"
-                className={cn(
-                  "pointer-events-none absolute top-2 bottom-2 left-0 w-px bg-brand transition-[transform,opacity] duration-300 ease-out",
-                  isActive ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0",
-                )}
-              />
-              <span
-                className={cn(
-                  "font-mono text-[10px] tracking-[0.16em] transition-colors duration-150",
-                  isActive ? "text-brand" : "text-fg-muted",
-                )}
-              >
-                {item.index}
-              </span>
-              <item.icon
-                className={cn(
-                  "size-4 transition-colors duration-150",
-                  isActive ? "text-fg-secondary" : "",
-                )}
-                aria-hidden="true"
-              />
-              <span>{item.label}</span>
-            </>
-          )}
-        </NavLink>
+    <nav aria-label="Application" className="flex flex-1 flex-col gap-6 overflow-y-auto px-3 py-1">
+      {APP_NAV_GROUPS.map(({ group, items }) => (
+        <div key={group}>
+          <p className="px-4 pb-2 font-mono text-[10px] font-medium uppercase tracking-[0.18em] text-fg-muted">
+            {group}
+          </p>
+          <ul className="space-y-0.5">
+            {items.map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  end={item.to === "/app"}
+                  onClick={onNavigate}
+                  className={({ isActive }) =>
+                    cn(
+                      "group relative flex items-center gap-3 rounded-md py-2 pr-3 pl-4 text-sm transition-colors duration-150",
+                      isActive
+                        ? "bg-elevated/80 text-foreground"
+                        : "text-fg-secondary hover:bg-elevated/40 hover:text-foreground",
+                    )
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      {/* Accent spine — the 1px ember rail (DESIGN.md law 2) */}
+                      <span
+                        aria-hidden="true"
+                        className={cn(
+                          "pointer-events-none absolute top-2 bottom-2 left-0 w-px bg-brand transition-[transform,opacity] duration-300 ease-out",
+                          isActive ? "scale-y-100 opacity-100" : "scale-y-0 opacity-0",
+                        )}
+                      />
+                      <span
+                        className={cn(
+                          "font-mono text-[10px] tracking-[0.16em] tabular-nums transition-colors duration-150",
+                          isActive ? "text-brand" : "text-fg-muted",
+                        )}
+                      >
+                        {item.index}
+                      </span>
+                      <item.icon
+                        className={cn(
+                          "size-4 shrink-0 transition-colors duration-150",
+                          isActive ? "text-fg-secondary" : "",
+                        )}
+                        aria-hidden="true"
+                      />
+                      <span className="truncate">{item.label}</span>
+                    </>
+                  )}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </div>
       ))}
     </nav>
   );

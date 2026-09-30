@@ -28,6 +28,7 @@ function RouteStrip({
   return (
     <header
       data-slot="route-strip"
+      data-index={index}
       className={cn("flex flex-col gap-5 border-b border-border-subtle pb-6", className)}
       {...rest}
     >
