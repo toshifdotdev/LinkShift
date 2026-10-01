@@ -413,7 +413,11 @@ export const DOC_CATEGORIES: DocCategory[] = [
           },
           {
             kind: "note",
-            text: "Scan rows are kept for your plan's history window — 30 days on Free up to 3 years on Pro — and are removed after it. Bots and link-preview crawlers are currently counted as clicks; filtered click counts are not available yet.",
+            text: "Older scans fall outside your plan's history window \u2014 30 days on Free up to 3 years on Pro \u2014 and stop appearing in your analytics. They are kept rather than deleted, and go when you delete the link or the account.",
+          },
+          {
+            kind: "note",
+            text: "Not every request is a person. Chat previews, email security scanners, search crawlers and uptime monitors open your links too. Those requests are recorded and shown separately, but they are not counted as clicks and are not charged against your monthly redirects.",
           },
           {
             kind: "p",
