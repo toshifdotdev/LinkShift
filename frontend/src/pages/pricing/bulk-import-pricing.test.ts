@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { FLAG_ROWS } from "./plan-presentation";
+import {
+  IMPORT_TEMPLATE_HREF,
+  parseCsv,
+} from "@/lib/import-csv";
 
 /**
  * Bulk link import is sold as a Creator + Pro feature, so the pricing table has
@@ -79,5 +83,44 @@ describe("pricing: bulk link import", () => {
         `missing plan: ${plan}`
       ).toBe(true);
     }
+  });
+});
+
+describe("pricing: the import template is reachable without the feature", () => {
+  // The feature is Creator + Pro, but the format has to be visible *before*
+  // someone pays for it. The template is otherwise only reachable by opening
+  // the import dialog, which the Import button gates behind the same
+  // entitlement -- so a Free or signed-out visitor could never see it.
+  it("publishes a template link on the bulk import row", () => {
+    const href = row("Bulk link import").templateHref;
+    expect(href, "bulk import row must carry a template link").toBeTruthy();
+    expect(href).toContain("data:text/csv");
+  });
+
+  it("serves the same template the import dialog offers", () => {
+    // One source of truth: if these diverge, a prospect downloads a file the
+    // importer would then reject.
+    expect(row("Bulk link import").templateHref).toBe(IMPORT_TEMPLATE_HREF);
+  });
+
+  it("offers the template as a real CSV download", () => {
+    const csv = decodeURIComponent(
+      (row("Bulk link import").templateHref ?? "").replace(
+        "data:text/csv;charset=utf-8,",
+        ""
+      )
+    );
+
+    expect(csv.split("\n")[0]).toBe("slug,url,name");
+    expect(parseCsv(csv).rows).toHaveLength(2);
+  });
+
+  it("does not attach a template to features that are not gated", () => {
+    // Only the gated feature needs an escape hatch. Attaching one everywhere
+    // would clutter the table and imply the others are hidden too.
+    const gated = FLAG_ROWS.filter((entry) => entry.templateHref).map(
+      (entry) => entry.label
+    );
+    expect(gated).toEqual(["Bulk link import"]);
   });
 });

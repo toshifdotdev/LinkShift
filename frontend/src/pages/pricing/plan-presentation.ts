@@ -1,4 +1,5 @@
 import type { ApiPlan, Currency } from "@/api/billing";
+import { IMPORT_TEMPLATE_HREF } from "@/lib/import-csv";
 
 
 export const FREE_PLAN: ApiPlan = {
@@ -78,6 +79,11 @@ export type FlagValue = boolean;
 export interface FlagRow {
   label: string;
   note?: string;
+  /**
+   * Optional public link shown next to the label. Used to expose the bulk
+   * import CSV template to prospects, since the feature itself is gated.
+   */
+  templateHref?: string;
   values: Record<string, FlagValue>;
 }
 
@@ -95,6 +101,7 @@ export const FLAG_ROWS: FlagRow[] = [
   {
     label: "Bulk link import",
     note: "Create many links at once from a CSV of URLs",
+    templateHref: IMPORT_TEMPLATE_HREF,
     values: { FREE: false, STARTER: false, CREATOR: true, PRO: true },
   },
   {

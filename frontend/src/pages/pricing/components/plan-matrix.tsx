@@ -136,12 +136,21 @@ function PlanMatrix({ plans, cycle, currency, subscription, loadingPlan, onSubsc
                 i > 0 && "border-t border-border",
               )}
             >
-              <div className="py-3 pr-4">
-                <p className="text-[13px] text-fg-secondary">{row.label}</p>
-                {row.note && (
-                  <p className="mt-0.5 text-[11px] leading-snug text-fg-muted">{row.note}</p>
-                )}
-              </div>
+<div className="py-3 pr-4">
+                  <p className="text-[13px] text-fg-secondary">{row.label}</p>
+                  {row.note && (
+                    <p className="mt-0.5 text-[11px] leading-snug text-fg-muted">{row.note}</p>
+                  )}
+                  {row.templateHref && (
+                    <a
+                      href={row.templateHref}
+                      download="linkshift-import-template.csv"
+                      className="mt-1 inline-block font-mono text-[10px] tracking-[0.08em] text-brand uppercase underline underline-offset-2 hover:opacity-80"
+                    >
+                      CSV template
+                    </a>
+                  )}
+                </div>
               {plans.map((plan) => (
                 <div
                   key={plan.name}

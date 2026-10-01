@@ -133,12 +133,28 @@ function PlanBlock({
       <div className="border-t border-border px-5 py-4">
         <p className="ls-marquee">Capabilities</p>
         <ul className="mt-2.5 space-y-1.5">
-          {FLAG_ROWS.map((row) => (
-            <li key={row.label} className="flex items-center justify-between gap-3">
-              <span className="text-[13px] text-fg-secondary">{row.label}</span>
-              <FlagIndicator value={row.values[plan.name] ?? false} />
-            </li>
-          ))}
+{FLAG_ROWS.map((row) => (
+              <li
+                key={row.label}
+                className="flex items-center justify-between gap-3"
+              >
+                <span className="text-[13px] text-fg-secondary">
+                  {row.label}
+                  {row.templateHref && (
+                    <a
+                      href={row.templateHref}
+                      download="linkshift-import-template.csv"
+                      className="ml-2 font-mono text-[10px] tracking-[0.08em] text-brand uppercase underline underline-offset-2 hover:opacity-80"
+                    >
+                      Template
+                    </a>
+                  )}
+                </span>
+                {/* The tick/cross must stay visible on every plan: a Free
+                    visitor still needs to see that import is not included. */}
+                <FlagIndicator value={row.values[plan.name] ?? false} />
+              </li>
+            ))}
         </ul>
       </div>
 

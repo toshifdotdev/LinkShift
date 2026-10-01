@@ -225,3 +225,15 @@ export const IMPORT_TEMPLATE = [
   "launch,https://example.com/launch,Launch page",
   "pricing,https://example.com/pricing,Pricing",
 ].join("\n");
+
+/**
+ * Downloadable form of the template.
+ *
+ * Exposed publicly on the pricing table: bulk import is a Creator + Pro
+ * feature, so the format has to be visible before someone pays for it.
+ * Otherwise a prospect deciding between plans has no way to see what the
+ * feature actually takes, and can only find out after paying.
+ */
+export const IMPORT_TEMPLATE_HREF = `data:text/csv;charset=utf-8,${encodeURIComponent(
+  IMPORT_TEMPLATE
+)}`;
