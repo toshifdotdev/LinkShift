@@ -413,7 +413,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
           },
           {
             kind: "note",
-            text: "Older scans fall outside your plan's history window \u2014 30 days on Free up to 3 years on Pro \u2014 and stop appearing in your analytics. They are kept rather than deleted, and go when you delete the link or the account.",
+            text: "Every plan keeps click records for 3 years from the click, then deletes them automatically. Your plan sets only how far back the dashboard looks \u2014 30 days on Free up to 3 years on Pro \u2014 so history beyond your window is held, not lost, and reappears in full if you upgrade. Deleting a link or your account removes its analytics immediately.",
           },
           {
             kind: "note",

@@ -48,22 +48,32 @@ describe("docs: what we record on a click", () => {
             expect(text()).not.toMatch(/are removed after it/i);
         });
 
-        it("says older scans age out of the analytics window instead", () => {
-            expect(text()).toMatch(/stop appearing in your analytics/i);
-            expect(text()).toMatch(/kept rather than deleted/i);
-        });
-
-        it("still states the plan history window range", () => {
-            expect(text()).toMatch(/30 days on Free/i);
-            expect(text()).toMatch(/3 years on Pro/i);
-        });
-
-        it("explains when data does go away", () => {
-            // Deleting the link or the account cascades to Scan rows, so this
-            // is the accurate statement of the deletion path.
-            expect(text()).toMatch(/delete the link or the account/i);
-        });
+it("states the enforced retention window", () => {
+      // Scans really are deleted now, so this must no longer claim they are
+      // merely kept. The plan governs how far back you can look, not whether
+      // the row survives.
+      expect(text()).toMatch(/3 years from the click/i);
+      expect(text()).toMatch(/deletes them automatically/i);
+      expect(text()).not.toMatch(/kept rather than deleted/i);
     });
+
+    it("still states the plan history window range", () => {
+      expect(text()).toMatch(/30 days on Free/i);
+      expect(text()).toMatch(/3 years on Pro/i);
+    });
+
+    it("distinguishes what the plan controls from what is stored", () => {
+      expect(text()).toMatch(/plan sets only how far back/i);
+      expect(text()).toMatch(/held, not lost/i);
+      expect(text()).toMatch(/reappears in full if you upgrade/i);
+    });
+
+    it("explains when data does go away", () => {
+      // Deleting the link or the account cascades to Scan rows, so this
+      // is the accurate statement of the deletion path.
+      expect(text()).toMatch(/deleting a link or your account removes its analytics immediately/i);
+    });
+  });
 
     describe("bot handling claim", () => {
         it("no longer claims bots are counted as clicks", () => {

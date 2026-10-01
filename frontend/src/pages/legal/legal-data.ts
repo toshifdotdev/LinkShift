@@ -74,7 +74,7 @@ export const LEGAL_DOCS: LegalDoc[] = [
         blocks: [
           {
             kind: "p",
-            text: "Scan analytics are kept for your plan's history window — 30 days on Free up to 3 years on Pro — after which they age out of the dashboard. Account data is kept until you delete your account, which removes your profile, links, QR codes and analytics. Payment records are kept as long as law requires.",
+            text: "Individual click records are kept for 3 years from the moment of the click, then permanently deleted by an automatic job. Your plan does not change this: every plan stores the same 3 years. Your plan only sets how far back you can look in the dashboard, so history outside your window is still held and returns in full if you upgrade. Deleting a link or your account removes its analytics immediately, and that cannot be undone. Payment records are kept for as long as the law requires.",
           },
         ],
       },

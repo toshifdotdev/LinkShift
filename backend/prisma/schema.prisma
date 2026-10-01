@@ -249,16 +249,21 @@ model Scan {
   utmTerm     String?
   utmContent  String?
 
-isBot       Boolean  @default(false)
+  isBot     Boolean @default(false)
   botReason String?
 
   scannedAt DateTime @default(now())
 
   link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
-@@index([linkId])
+
+  @@index([linkId])
   @@index([linkId, scannedAt])
   @@index([linkId, isBot, scannedAt])
   @@index([isBot, scannedAt])
+  // Leads with scannedAt on purpose. Retention purges by click age, and every
+  // other index on this table leads with linkId or isBot, so without this one
+  // an age filter degrades to a sequential scan of the whole table.
+  @@index([scannedAt])
 }
 
 model Plan {
@@ -396,6 +401,23 @@ model ReconciliationRun {
   stats       Json?
   startedAt   DateTime  @default(now()) @db.Timestamptz(3)
   finishedAt  DateTime? @db.Timestamptz(3)
+}
+
+/// Run ledger for the click-retention purge.
+///
+/// Separate from ReconciliationRun on purpose. ReconciliationRun carries a
+/// partial unique index on (1) WHERE status = 'running', allowing one running
+/// job across the whole table. A purge and a billing reconciliation must be
+/// able to overlap and to fail independently, so they get their own ledger.
+model RetentionRun {
+  id          String    @id @default(cuid())
+  status      String
+  triggeredBy String    @default("external")
+  stats       Json?
+  startedAt   DateTime  @default(now()) @db.Timestamptz(3)
+  finishedAt  DateTime? @db.Timestamptz(3)
+
+  @@index([status])
 }
 
 enum LinkChangeType {
