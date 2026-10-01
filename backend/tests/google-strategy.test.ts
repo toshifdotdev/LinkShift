@@ -22,8 +22,14 @@ vi.hoisted(() => {
     process.env.CLOUDINARY_CLOUD_NAME ??= "ci-cloud";
     process.env.CLOUDINARY_API_KEY ??= "0";
     process.env.CLOUDINARY_API_SECRET ??= "ci-secret";
-    process.env.JWT_SECRET ??= "test-jwt-secret";
-    process.env.NODE_ENV ??= "test";
+process.env.JWT_SECRET ??= "test-jwt-secret";
+      process.env.NODE_ENV ??= "test";
+      // Required because env.ts validates the CORS allow-list at module load
+      // whenever NODE_ENV=production, and it throws before control ever reaches
+      // the Google OAuth guard below. Without this, the two production tests
+      // assert on a CORS error instead of the behaviour they are named for, and
+      // they only passed locally because a developer .env supplied the value.
+      process.env.CORS_ORIGINS ??= "https://linkshift.in";
 });
 
 const GOOGLE_VARS = ["GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_CALLBACK_URL"] as const;
