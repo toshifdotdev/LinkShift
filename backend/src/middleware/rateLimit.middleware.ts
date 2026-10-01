@@ -30,6 +30,17 @@ export const createUserRateLimiter = ({ windowMs, limit, message }: UserLimiterO
         message,
     });
 
+/**
+ * Bulk import is one request that can create up to MAX_IMPORT_ROWS links,
+ * so it gets its own budget rather than sharing `linkMutationLimiter`'s
+ * 30-per-minute allowance, which is sized for single creates.
+ */
+export const linkImportLimiter = createUserRateLimiter({
+    windowMs: 60_000,
+    limit: 3,
+    message: { success: false, message: "Too many imports. Please wait a minute before trying again." },
+});
+
 export const linkMutationLimiter = createUserRateLimiter({
     windowMs: 60_000,
     limit: 30,

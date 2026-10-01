@@ -5,9 +5,16 @@ import { nanoid } from 'nanoid';
 
 const MAX_ATTEMPTS=6;  
 
-export const getAvailableShortId = async (slug : string | undefined, domainId : string) => {
+/**
+ * `client` lets a caller run the same allocation inside a transaction.
+ * Defaults to the global client, so existing single-create callers are
+ * unchanged. A bulk import passes its transaction client here, because using
+ * the global client mid-transaction would query outside it and could read
+ * pre-transaction state.
+ */
+export const getAvailableShortId = async (slug : string | undefined, domainId : string, client : Pick<typeof prisma, "link"> = prisma) => {
     if(slug) {
-        const link = await prisma.link.findFirst({
+        const link = await client.link.findFirst({
             where : {
                 shortId : slug,
                 domainId
@@ -24,7 +31,7 @@ export const getAvailableShortId = async (slug : string | undefined, domainId : 
     while (attempts < MAX_ATTEMPTS) {
         const random = nanoid(7); 
 
-        const exists = await prisma.link.findFirst({
+        const exists = await client.link.findFirst({
             where : {
                 shortId : random,
                 domainId

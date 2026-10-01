@@ -89,7 +89,12 @@ export const FLAG_ROWS: FlagRow[] = [
   },
   {
     label: "CSV analytics export",
-    note: "Full click ledger, streamed per link",
+    note: "Download the full click ledger per link",
+    values: { FREE: false, STARTER: false, CREATOR: true, PRO: true },
+  },
+  {
+    label: "Bulk link import",
+    note: "Create many links at once from a CSV of URLs",
     values: { FREE: false, STARTER: false, CREATOR: true, PRO: true },
   },
   {

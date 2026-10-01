@@ -191,7 +191,7 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
   "/url-migration": {
     title: "Move URLs to Your Own Domain — LinkShift",
     description:
-      "Keep the paths you have already published. Connect your domain, give each old URL its own short key, and change or retire the destination from one place.",
+      "Move a site or client site to your own domain. Import the URL list your crawler or CMS already produced, and keep every destination editable.",
     canonicalPath: "/url-migration",
   },
 

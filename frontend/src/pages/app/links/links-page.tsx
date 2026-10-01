@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Upload } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { deleteLink, listLinks, type ListLinksParams } from "@/api/links";
@@ -16,6 +16,8 @@ import { FlashSweep } from "@/components/ui/motion";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import { CreateLinkDialog } from "./create-link-dialog";
+import { ImportLinksDialog } from "./import-links-dialog";
+import { useSession } from "@/auth/session";
 import { EditLinkDialog } from "./edit-link-dialog";
 import { LinksLedger } from "./links-ledger";
 import { LinksToolbar } from "./links-toolbar";
@@ -68,6 +70,12 @@ function LinksPage() {
 
   
   const [createOpen, setCreateOpen] = useState(false);
+  const { user } = useSession();
+  const plan = user?.plan.name ?? "FREE";
+  const [importOpen, setImportOpen] = useState(false);
+  // Bulk link import is a Creator + Pro feature; the API enforces the same
+  // entitlement via checkLinkImportAccess, so this only hides the entry point.
+  const canImport = plan === "CREATOR" || plan === "PRO";
   const [editing, setEditing] = useState<LinkItem | null>(null);
   const [deleting, setDeleting] = useState<LinkItem | null>(null);
 
@@ -112,10 +120,18 @@ function LinksPage() {
   }
 
   const createButton = (
-    <Button size="md" onClick={() => setCreateOpen(true)}>
-      <Plus className="size-4" />
-      New link
-    </Button>
+    <div className="flex items-center gap-2">
+      {canImport ? (
+        <Button size="md" variant="ghost" onClick={() => setImportOpen(true)}>
+          <Upload className="size-4" />
+          Import
+        </Button>
+      ) : null}
+      <Button size="md" onClick={() => setCreateOpen(true)}>
+        <Plus className="size-4" />
+        New link
+      </Button>
+    </div>
   );
 
   return (
@@ -238,7 +254,12 @@ function LinksPage() {
         )}
       </div>
 
-      <CreateLinkDialog
+      <ImportLinksDialog
+      open={importOpen}
+      onOpenChange={setImportOpen}
+    />
+
+    <CreateLinkDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
         onCreated={handleCreated}

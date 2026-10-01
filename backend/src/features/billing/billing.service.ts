@@ -1543,7 +1543,7 @@ export const checkPlanLimit = async (userId: string,type: PlanLimitType) => {
     }
 };
 
-export const checkLinkLimit = async (userId: string) => {
+export const checkLinkLimit = async (userId: string, additional = 1) => {
     const plan = await getUserPlan(userId);
 
     if (!plan) {
@@ -1556,7 +1556,10 @@ export const checkLinkLimit = async (userId: string) => {
         },
     });
 
-    if (plan.maxLinks !== null && linkCount >= plan.maxLinks) {
+    // `additional` lets a bulk import validate a whole batch with one count
+  // instead of one per row. The default of 1 reproduces the single-create rule
+  // exactly, because `used + 1 > limit` is `used >= limit`.
+  if (plan.maxLinks !== null && linkCount + additional > plan.maxLinks) {
         throw new AppError("You have reached the maximum number of links allowed by your plan", 403);
     }
 
@@ -1750,7 +1753,7 @@ export const checkDestinationLimit = async (userId: string) => {
     }
 };
 
-export const checkCustomSlugLimit = async (userId: string) => {
+export const checkCustomSlugLimit = async (userId: string, additional = 1) => {
     const subscription = await getEntitledSubscription(userId);
 
     
@@ -1780,12 +1783,39 @@ export const checkCustomSlugLimit = async (userId: string) => {
         },
     });
 
-    if (used >= limit) {
+    // Same batching contract as checkLinkLimit: the default of 1 keeps the
+    // existing single-create behaviour bit-identical.
+    if (used + additional > limit) {
         throw new AppError(
             `You have reached your monthly custom slug limit of ${limit}.`,
             403
         );
     }
+};
+
+/**
+ * Bulk link import — a Creator and Pro feature.
+ *
+ * Free is capped at 100 links and Starter at 1,000, so at those tiers a file
+ * import is close to pointless while still costing a transaction, one large
+ * request, and CSV parsing on the server. The feature only earns its cost once
+ * a customer is moving a real number of addresses, which is where Creator and
+ * Pro sit.
+ *
+ * Note this is bulk *creating* links from a file, which is a different thing
+ * from CSV analytics export (downloading click data, gated the same way).
+ */
+export const checkLinkImportAccess = async (userId: string) => {
+  const plan = await getUserPlan(userId);
+  if (!plan) {
+    throw new AppError("Active subscription required", 403);
+  }
+  if (plan.name !== "CREATOR" && plan.name !== "PRO") {
+    throw new AppError(
+      "Bulk link import is available on Creator and Pro plans",
+      403
+    );
+  }
 };
 
 export const checkUtmAccess = async (userId: string) => {

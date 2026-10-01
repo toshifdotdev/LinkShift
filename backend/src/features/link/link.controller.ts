@@ -3,6 +3,8 @@ import { createLink  as createLinkService, getLinks as getLinksService, getLink 
 import { AppError } from "../../errors/AppError";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { queryData } from "./link.query.validation";
+import { importLinks as importLinksService } from "./link.import.service";
+import type { LinkImportRequest } from "./link.import.validation";
 import { CreateLinkData, updateData } from "./link.validation";
 import { deleteCache } from "../../utils/cache";
 
@@ -52,6 +54,24 @@ export const createLink = asyncHandler(async(req : Request, res : Response, next
         
     })
 })
+
+export const importLinks = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
+    const auth = req.auth;
+
+    if (!auth) {
+        return next(new AppError("Unauthorized", 401));
+    }
+
+    const body = req.validated!.body as LinkImportRequest;
+
+    const result = await importLinksService(auth.id, {
+        domainId: body.domainId,
+        rows: body.rows,
+        dryRun: body.dryRun,
+    });
+
+    res.status(200).json(result);
+});
 
 export const getLinks = asyncHandler(async(req : Request, res : Response, next : NextFunction) => {
     const auth = req.auth;

@@ -145,16 +145,16 @@ export const USE_CASES: Record<string, UseCaseContent> = {
   "/url-migration": {
     path: "/url-migration",
     kicker: "URL migration",
-    headline: "Keep the URLs you already published",
+    headline: "Repoint an old site without hand-editing every address",
     subhead:
-      "Connect the domain you own, then give each old path its own short key. A redirect here is an exact match on a host and a key, which means the address people bookmarked and the address search engines indexed can both stay the one they were.",
+      "Connect the domain you own, then move a list of old addresses across in one go. Point the old host at LinkShift, upload the export your crawler or CMS already produced, and every destination stays editable afterwards — no server config and no deploy.",
     proof:
-      "To be plain about what this is: LinkShift has no rules engine. There is no regex, no wildcards, no ordered precedence and no bulk importer in the dashboard. Every old URL becomes one link, created in the dashboard or through the REST API. If you are moving hundreds of paths, script the API.",
-    ctaLabel: "Connect a domain",
+      "To be plain about the shape of this: a key is a single path segment and cannot contain a slash, so a nested address like /blog/2024/notes has to be flattened by you into one key, such as blog-2024-notes. There is no regex, no wildcard and no ordered precedence. Use it to move a set of addresses you can name individually.",
+    ctaLabel: "Import your URLs",
     seo: {
       title: "Move URLs to Your Own Domain — LinkShift",
       description:
-        "Keep the paths you have already published. Connect your domain, give each old URL its own short key, and change or retire the destination from one place.",
+        "Move a site or client site to your own domain. Import the URL list your crawler or CMS already produced, and keep every destination editable.",
       canonicalPath: "/url-migration",
       breadcrumbs: [
         { name: "LinkShift", path: "/" },
@@ -167,8 +167,8 @@ export const USE_CASES: Record<string, UseCaseContent> = {
         body: "Add the host and confirm ownership by DNS record. Once verified you can issue short keys on it; the certificate is provisioned for you, so there is no separate certificate step to schedule.",
       },
       {
-        title: "Map each old path to a short key on that domain",
-        body: "A redirect is matched on host plus key, and a key can only exist once per domain. A path like /blog/migration-notes can therefore keep its exact shape, just on a host you control.",
+        title: "Map each old address to a short key on that domain",
+        body: "A redirect is matched on host plus key, and a key can only exist once per domain. Keys are single path segments, so /blog/2024/notes becomes a key like blog-2024-notes. Upload a CSV and every row is checked before a single link is created.",
       },
       {
         title: "Create them in the dashboard, or script the API",
@@ -195,12 +195,12 @@ export const USE_CASES: Record<string, UseCaseContent> = {
         a: "No. Every redirect is an exact match on a host and a short key. If your old structure needs pattern matching, model it in the script that creates the links, or put a pattern-matching layer in front of LinkShift.",
       },
       {
-        q: "How do I migrate thousands of paths?",
-        a: "Through the links API. Create one link per old path from a mapping file. Link count is the limit to plan around: 100 on Free, 1,000 on Starter, 10,000 on Creator and unlimited on Pro.",
+        q: "Can I import thousands of URLs at once?",
+        a: "Yes, on a paid plan. Upload the CSV from the Links page: every row is checked first, so you see what would happen — including any key that already exists — before anything is created. Keys are single path segments, so a nested address becomes a flattened key such as blog-2024-notes. Link count is the limit to plan around: 1,000 on Starter, 10,000 on Creator and unlimited on Pro.",
       },
       {
         q: "Will my old addresses keep working?",
-        a: "Yes, if you keep serving the old host and point it at LinkShift. Each old path is recreated as a key on a domain you own, so the URL a visitor types still resolves. Retire a path by setting an expiry date rather than deleting it silently.",
+        a: "Yes, as single-segment keys on a host you own — keep serving the old host and point it at LinkShift, and recreate each address as its own key. Nested paths become flattened keys rather than exact paths, so check how much of your structure is genuinely single-segment before you commit. Retire a key by setting an expiry date rather than deleting it silently.",
       },
       {
         q: "What is different from editing an nginx config?",
