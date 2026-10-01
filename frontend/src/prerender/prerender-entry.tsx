@@ -17,6 +17,7 @@ import {
 } from "@/lib/seo";
 import { DOC_CATEGORIES } from "@/pages/docs/docs-data";
 import { FAQ_GROUPS } from "@/pages/faq/faq-page";
+import { USE_CASES } from "@/pages/use-cases/use-case-content";
 import { PUBLIC_PATHS, PRERENDER_PATHS, ERROR_ROUTE_PATHS } from "./public-routes";
 
 export { PUBLIC_PATHS, PRERENDER_PATHS, ERROR_ROUTE_PATHS, ROUTE_SEO };
@@ -72,6 +73,16 @@ export function jsonLdForPath(path: string): Record<string, unknown> | undefined
     if (path === "/") return buildLandingJsonLd();
     if (path === "/faq") {
         return buildFaqJsonLd(FAQ_GROUPS.flatMap((group) => group.entries));
+    }
+    const useCase = USE_CASES[path];
+    if (useCase) {
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                buildBreadcrumbJsonLd(useCase.seo.breadcrumbs),
+                buildFaqJsonLd(useCase.faqs),
+            ],
+        };
     }
     const match = DOC_CATEGORIES.flatMap((category) =>
         category.topics.map((topic) => ({ category, topic })),

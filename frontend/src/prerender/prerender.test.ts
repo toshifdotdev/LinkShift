@@ -8,7 +8,9 @@ import {
     ERROR_ROUTE_PATHS,
     ROUTE_SEO,
 } from "./prerender-entry";
+import { STATIC_PUBLIC_PATHS } from "./public-routes";
 import { DOC_CATEGORIES } from "@/pages/docs/docs-data";
+import { USE_CASES } from "@/pages/use-cases/use-case-content";
 
 // ---------------------------------------------------------------------------
 // Static prerender contract: every public route renders real, route-specific
@@ -151,6 +153,47 @@ describe("headForPath", () => {
 
     it("throws for a public path with no registered SEO metadata", () => {
         expect(() => headForPath("/definitely-not-registered")).toThrow(/No SEO metadata/);
+    });
+
+    it("emits FAQ and breadcrumb structured data for the use-case pages", () => {
+        for (const path of ["/campaign-links", "/qr-codes", "/url-migration"]) {
+            const doc = jsonLdForPath(path) as {
+                "@graph": Array<{ "@type": string }>;
+            };
+            const types = doc["@graph"].map((node) => node["@type"]);
+            expect(types, `${path} must ship FAQPage structured data`).toContain(
+                "FAQPage"
+            );
+            expect(types, `${path} must ship breadcrumb structured data`).toContain(
+                "BreadcrumbList"
+            );
+        }
+    });
+
+    it("registers SEO metadata and a canonical for every static public route", () => {
+        for (const path of STATIC_PUBLIC_PATHS) {
+            expect(ROUTE_SEO[path], `no SEO metadata for ${path}`).toBeDefined();
+            expect(headForPath(path).canonical).toContain(path);
+        }
+    });
+
+    it("keeps the use-case SEO registry in step with the rendered page copy", () => {
+        // The use-case pages carry their own title/description so the component
+        // and the prerendered head agree. These are two literals in two files,
+        // which is exactly the shape that drifts silently, so pin them together.
+        for (const [path, content] of Object.entries(USE_CASES)) {
+            expect(ROUTE_SEO[path], `use-case route missing from ROUTE_SEO: ${path}`)
+                .toBeDefined();
+            expect(ROUTE_SEO[path].title).toBe(content.seo.title);
+            expect(ROUTE_SEO[path].description).toBe(content.seo.description);
+            expect(ROUTE_SEO[path].canonicalPath).toBe(content.seo.canonicalPath);
+        }
+    });
+
+    it("lists every use-case page in the prerendered public set", () => {
+        for (const path of Object.keys(USE_CASES)) {
+            expect(PUBLIC_PATHS).toContain(path);
+        }
     });
 });
 

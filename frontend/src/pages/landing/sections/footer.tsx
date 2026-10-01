@@ -10,9 +10,16 @@ const productLinks = [
   { label: "Pricing", href: "/pricing" },
 ];
 
+const useCaseLinks = [
+  { label: "Campaign links", href: "/campaign-links" },
+  { label: "QR codes", href: "/qr-codes" },
+  { label: "URL migration", href: "/url-migration" },
+];
+
 const resourceLinks = [
   { label: "Documentation", href: "/docs" },
   { label: "FAQ", href: "/faq" },
+  { label: "Service status", href: "/status" },
   { label: "Contact", href: "/contact" },
 ];
 
@@ -37,7 +44,7 @@ function Footer() {
           </p>
         </div>
 
-        <nav aria-label="Footer" className="grid grid-cols-2 gap-10 sm:grid-cols-3 md:justify-self-end">
+        <nav aria-label="Footer" className="grid grid-cols-2 gap-10 sm:grid-cols-4 md:justify-self-end">
           <div>
             <p className="ls-marquee">Product</p>
             <ul className="mt-4 flex flex-col gap-2.5">
@@ -57,6 +64,21 @@ function Footer() {
             <p className="ls-marquee">Resources</p>
             <ul className="mt-4 flex flex-col gap-2.5">
               {resourceLinks.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    to={link.href}
+                    className="text-sm text-fg-secondary transition-colors hover:text-foreground"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <p className="ls-marquee">Use cases</p>
+            <ul className="mt-4 flex flex-col gap-2.5">
+              {useCaseLinks.map((link) => (
                 <li key={link.label}>
                   <Link
                     to={link.href}

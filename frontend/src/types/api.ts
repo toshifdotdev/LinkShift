@@ -18,6 +18,12 @@ export interface MeUser {
   verified: boolean;
   createdAt: string;
   hasPassword: boolean;
+  onboarding: {
+    emailVerified: boolean;
+    hasVerifiedDomain: boolean;
+    hasLink: boolean;
+    complete: boolean;
+  };
   plan: { name: string };
   subscription: {
     status: SubscriptionStatus;

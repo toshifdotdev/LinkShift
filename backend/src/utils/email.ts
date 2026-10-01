@@ -79,6 +79,39 @@ export const sendPasswordResetEmail = async(email : string, token : string) : Pr
 }
 
 
+export const sendWelcomeEmail = async (email: string, name: string | null): Promise<EmailDeliveryResult> => {
+    const appUrl = config.APP_URL ?? config.frontendUrl ?? "";
+    const displayName = name ?? "there";
+    const linksUrl = `${appUrl.replace(/\/$/, "")}/app/links`;
+    const domainsUrl = `${appUrl.replace(/\/$/, "")}/app/domains`;
+
+    const html = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2>Welcome to LinkShift</h2>
+            <p>Hi ${displayName},</p>
+            <p>Your account is ready. Two steps and your first short link is live:</p>
+            <div style="margin: 24px 0;">
+                <p style="margin:0 0 8px"><strong>1. Connect a domain</strong></p>
+                <a href="${domainsUrl}" style="display:inline-block;background-color:#2081E2;color:#ffffff;padding:10px 18px;text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;">Connect a domain</a>
+                <p style="color:#666;font-size:14px;margin:8px 0 0">Point a CNAME at us and verify ownership. Custom domains start on Starter.</p>
+            </div>
+            <div style="margin: 24px 0;">
+                <p style="margin:0 0 8px"><strong>2. Create your first link</strong></p>
+                <a href="${linksUrl}" style="display:inline-block;background-color:#2081E2;color:#ffffff;padding:10px 18px;text-decoration:none;border-radius:6px;font-weight:bold;font-size:14px;">Create a link</a>
+            </div>
+            <p>Analytics start counting human clicks as soon as your first link is live. Chat previews and security scanners are stored but never counted as clicks or billed.</p>
+            <p>If you are moving an existing site, connect the domain you already own and give each old path its own short key, so the addresses people have already bookmarked keep working.</p>
+            <p style="color:#666;font-size:14px;">You are receiving this because you created a LinkShift account.</p>
+        </div>
+    `;
+
+    return sendEmailSafely({
+        to: email,
+        subject: "Welcome to LinkShift",
+        html,
+    });
+};
+
 export const sendVerificationEmail = async (userId: string, email: string, name : string | null) : Promise<EmailDeliveryResult> => {
     
     await prisma.emailVerification.deleteMany({

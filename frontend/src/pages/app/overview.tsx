@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getActivity, getStats } from "@/api/dashboard";
+import { getMe } from "@/api/users";
 import { CodeChip } from "@/components/ui/code-chip";
+import { OnboardingChecklist } from "@/components/app/onboarding-checklist";
 import { EmptyState, ErrorState } from "@/components/ui/empty";
 import { KpiCell } from "@/components/ui/kpi-cell";
 import { Lamp } from "@/components/ui/lamp";
@@ -171,6 +173,12 @@ function OverviewPage() {
     select: (d) => d.data,
   });
 
+  const me = useQuery({
+    queryKey: ["me"],
+    queryFn: () => getMe(),
+    select: (d) => d.data,
+  });
+
   return (
     <FadeIn>
       <RouteStrip
@@ -187,6 +195,12 @@ function OverviewPage() {
           />
         }
       />
+
+      {me.data?.onboarding ? (
+        <div className="mt-6">
+          <OnboardingChecklist state={me.data.onboarding} />
+        </div>
+      ) : null}
 
       {stats.isError ? (
         <ErrorState

@@ -181,6 +181,11 @@ export const getMe = async (userId: string) => {
     const plan = await getUserPlan(userId);
     const subscription = await getSubscriptionService(userId);
 
+    const [linkCount, verifiedDomainCount] = await Promise.all([
+        prisma.link.count({ where: { userId } }),
+        prisma.domain.count({ where: { userId, verified: true } }),
+    ]);
+
     return {
         id: user.id,
         name: user.name,
@@ -190,6 +195,13 @@ export const getMe = async (userId: string) => {
         verified: user.verified,
         createdAt: user.createdAt,
         hasPassword: !!user.passwordHash,
+        onboarding: {
+            emailVerified: user.verified,
+            hasVerifiedDomain: verifiedDomainCount > 0,
+            hasLink: linkCount > 0,
+            complete:
+                user.verified && verifiedDomainCount > 0 && linkCount > 0,
+        },
         plan: { name: plan.name },
         subscription: subscription
             ? {

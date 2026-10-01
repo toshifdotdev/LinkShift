@@ -43,6 +43,10 @@ export const STATIC_PUBLIC_PATHS: string[] = [
     "/acceptable-use",
     "/register",
     "/login",
+    "/status",
+    "/campaign-links",
+    "/qr-codes",
+    "/url-migration",
 ];
 
 export const PUBLIC_PATHS: string[] = [

@@ -167,6 +167,34 @@ export const ROUTE_SEO: Record<string, RouteSeo> = {
     canonicalPath: "/contact",
   },
 
+  "/status": {
+    title: "Service Status — LinkShift",
+    description:
+      "Live availability for LinkShift redirects, link storage and analytics. If a short link is not resolving, check this page first.",
+    canonicalPath: "/status",
+  },
+
+  "/campaign-links": {
+    title: "Campaign Short Links with UTM Tracking — LinkShift",
+    description:
+      "Save utm_source, medium and campaign on a short link once. LinkShift builds the destination with them, and reports human clicks per campaign with referrer and country.",
+    canonicalPath: "/campaign-links",
+  },
+
+  "/qr-codes": {
+    title: "QR Code Studio — Styled Codes on Your Own Domain — LinkShift",
+    description:
+      "Design a QR code for any LinkShift link: colour, pattern, corner style, logo and frame. Change the destination later and the printed code still opens the new page.",
+    canonicalPath: "/qr-codes",
+  },
+
+  "/url-migration": {
+    title: "Move URLs to Your Own Domain — LinkShift",
+    description:
+      "Keep the paths you have already published. Connect your domain, give each old URL its own short key, and change or retire the destination from one place.",
+    canonicalPath: "/url-migration",
+  },
+
   "/privacy": {
     title: "Privacy Policy — LinkShift",
     description:

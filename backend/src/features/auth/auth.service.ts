@@ -4,7 +4,7 @@ import { AppError } from '../../errors/AppError';
 import { GoogleProfile, RefreshedTokens } from './auth.types';
 import { buildAuthResponse } from '../../utils/buildAuthResponse';
 import { generateRandomToken, hashToken } from '../../utils/token';
-import { sendPasswordResetEmail, sendVerificationEmail } from '../../utils/email';
+import { sendPasswordResetEmail, sendVerificationEmail, sendWelcomeEmail } from '../../utils/email';
 import { log } from '../../utils/logger';
 import { issueTokens } from '../../utils/issueToken';
 import { uploadImage } from '../../utils/uploadImage';
@@ -77,6 +77,8 @@ export const registerUser = async (name : string, email : string, password : str
         );
         throw new AppError("We couldn't send the verification email. Please try again.", 503);
     }
+
+    await sendWelcomeEmail(createdUser.email, createdUser.name);
 
 
     return {

@@ -7,6 +7,10 @@ import { DocsTopicPage } from "@/pages/docs/docs-topic-page";
 import { FaqPage } from "@/pages/faq/faq-page";
 import { LegalPage } from "@/pages/legal/legal-page";
 import { ContactPage } from "@/pages/contact/contact-page";
+import { StatusPage } from "@/pages/status/status-page";
+import { CampaignLinksPage } from "@/pages/use-cases/campaign-links-page";
+import { QrCodesPage } from "@/pages/use-cases/qr-codes-page";
+import { UrlMigrationPage } from "@/pages/use-cases/url-migration-page";
 import { LoginPage } from "@/pages/auth/login";
 import { RegisterPage } from "@/pages/auth/register";
 import { ForgotPasswordPage } from "@/pages/auth/forgot-password";
@@ -82,6 +86,10 @@ function App() {
       <Route path="/shipping" element={<LegalPage slug="shipping" />} />
       <Route path="/acceptable-use" element={<LegalPage slug="acceptable-use" />} />
       <Route path="/contact" element={<ContactPage />} />
+      <Route path="/status" element={<StatusPage />} />
+      <Route path="/campaign-links" element={<CampaignLinksPage />} />
+      <Route path="/qr-codes" element={<QrCodesPage />} />
+      <Route path="/url-migration" element={<UrlMigrationPage />} />
 
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
