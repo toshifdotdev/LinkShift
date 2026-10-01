@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 /**
  * The CORS guard only protects production if the server actually runs it.
@@ -21,6 +21,25 @@ vi.hoisted(() => {
 const listen = vi.fn();
 const connectRedis = vi.fn();
 const exit = vi.fn();
+
+/**
+ * server.ts ends in `startServer().catch(... process.exit(1))`, so booting a
+ * misconfigured production env really does try to kill the process. Left
+ * unmocked that tears down the vitest worker with "process.exit unexpectedly
+ * called", which fails the run no matter how many tests passed. It also races:
+ * the exit landed after the run finished locally and inside it on CI.
+ */
+beforeEach(() => {
+    vi.spyOn(process, "exit").mockImplementation(((code?: number) => {
+        exit(code);
+        // Swallow it. The assertion is on whether listen() was reached.
+        return undefined as never;
+    }) as never);
+});
+
+afterEach(() => {
+    vi.restoreAllMocks();
+});
 
 vi.mock("express", async (orig) => {
     const actual = await orig<typeof import("express")>();
