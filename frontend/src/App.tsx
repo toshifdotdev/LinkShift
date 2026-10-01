@@ -22,7 +22,8 @@ import { AppLayout } from "@/components/app/app-layout";
 import { OverviewPage } from "@/pages/app/overview";
 import { LinksPage } from "@/pages/app/links/links-page";
 import { QrPage } from "@/pages/app/qr/qr-page";
-import { AnalyticsPage } from "@/pages/app/analytics/analytics-page";
+  import { AnalyticsPage } from "@/pages/app/analytics/analytics-page";
+  import { RedirectTesterPage } from "@/pages/app/redirect-tester/redirect-tester-page";
 import { DomainsPage } from "@/pages/app/domains/domains-page";
 import { BillingPage } from "@/pages/app/billing/billing-page";
 import { SettingsPage } from "@/pages/app/settings/settings-page";
@@ -104,6 +105,7 @@ function App() {
           <Route path="links" element={<LinksPage />} />
           <Route path="qr" element={<QrPage />} />
           <Route path="analytics" element={<AnalyticsPage />} />
+  <Route path="redirect-tester" element={<RedirectTesterPage />} />
           <Route path="domains" element={<DomainsPage />} />
           <Route path="billing" element={<BillingPage />} />
           <Route path="settings" element={<SettingsPage />} />

@@ -1,6 +1,7 @@
 import {
   BarChart3,
   CreditCard,
+  FlaskConical,
   Globe,
   LayoutGrid,
   Link2,
@@ -24,9 +25,10 @@ export const APP_NAV: AppNavItem[] = [
   { label: "Links", to: "/app/links", icon: Link2, index: "02", group: "Workspace" },
   { label: "QR Codes", to: "/app/qr", icon: QrCode, index: "03", group: "Workspace" },
   { label: "Analytics", to: "/app/analytics", icon: BarChart3, index: "04", group: "Workspace" },
-  { label: "Domains", to: "/app/domains", icon: Globe, index: "05", group: "Workspace" },
-  { label: "Billing", to: "/app/billing", icon: CreditCard, index: "06", group: "Account" },
-  { label: "Settings", to: "/app/settings", icon: Settings, index: "07", group: "Account" },
+  { label: "Redirect Tester", to: "/app/redirect-tester", icon: FlaskConical, index: "05", group: "Workspace" },
+  { label: "Domains", to: "/app/domains", icon: Globe, index: "06", group: "Workspace" },
+  { label: "Billing", to: "/app/billing", icon: CreditCard, index: "07", group: "Account" },
+  { label: "Settings", to: "/app/settings", icon: Settings, index: "08", group: "Account" },
 ];
 
 /** Nav rows in rendering order, grouped by their section heading. */

@@ -3,19 +3,14 @@ import { prisma } from "../../config"
 import * as bcrypt from 'bcrypt';
 import { AppError } from "../../errors/AppError"
 import { getCache, setCache, linkCacheKey } from "../../utils/cache";
-import { completeTargetUrl, applyDeepLink } from "../../utils/completeRedirect";
+import { completeTargetUrl } from "../../utils/completeRedirect";
 import { checkRedirectLimit, hasDeepLinkAccess, hasAppDeepLinkAccess } from "../billing/billing.service";
 import {
-    AppDeepLinkConfig,
-    buildAppUrl,
-    buildIntentUrl,
-    detectMobilePlatform,
-    extractQuery,
-    extractRest,
-    isAndroidChromium,
-    renderAppInterstitial,
-} from "../../utils/appDeepLink";
-import { cspNonceForReq } from "../../utils/csp";
+    contextFromRequest,
+    DestinationAccess,
+    resolveFinalDestination,
+    ResolvedRedirect,
+} from "./redirect-resolution";
 
 export type CachedLink = {
     id: string;
@@ -39,16 +34,6 @@ export type CachedLink = {
     utmContent: string | null
 };
 
-type ResolvedRedirect =
-    | {
-        kind: "redirect";
-        targetUrl: string;
-    }
-    | {
-        kind: "interstitial";
-        html: string;
-    };
-
 type RedirectResult =
     | ({
         requiresPassword: false;
@@ -60,57 +45,28 @@ type RedirectResult =
 
 
 const resolveDestination = async (link: CachedLink, req: Request): Promise<ResolvedRedirect> => {
+    // Records the click. Deliberately separate from destination resolution:
+    // resolution below is pure, which is what lets the redirect tester reuse it
+    // without writing a scan or spending quota.
     const result = await completeTargetUrl(link, req);
 
-    let finalUrl = result.targetUrl;
-    if (link.deepLink && (await hasDeepLinkAccess(link.userId))) {
-        finalUrl = applyDeepLink(finalUrl, req);
-    }
-
-    if (
-        link.appDeepLink &&
-        link.appScheme &&
-        (await hasAppDeepLinkAccess(link.userId))
-    ) {
-        const userAgent = req.headers["user-agent"] ?? "";
-        const platform = detectMobilePlatform(userAgent);
-
-        if (platform) {
-            const cfg: AppDeepLinkConfig = {
-                appScheme: link.appScheme,
-                androidPackage: link.androidPackage,
-                appPath: link.appPath,
-                iosStoreUrl: link.iosStoreUrl,
-                androidStoreUrl: link.androidStoreUrl,
-            };
-            const rest = extractRest(req.params as Record<string, unknown>);
-            const query = extractQuery(req.url ?? "");
-
-            
-            if (platform === "android" && isAndroidChromium(userAgent) && cfg.androidPackage) {
-                return {
-                    kind: "redirect",
-                    targetUrl: buildIntentUrl(cfg, rest, query, finalUrl),
-                };
-            }
-
-            return {
-                kind: "interstitial",
-                html: renderAppInterstitial({
-                    platform,
-                    appUrl: buildAppUrl(cfg, rest, query),
-                    fallbackUrl: finalUrl,
-                    storeUrl: platform === "ios" ? cfg.iosStoreUrl : cfg.androidStoreUrl,
-                    nonce: cspNonceForReq(req),
-                }),
-            };
-        }
-    }
-
-    return {
-        kind: "redirect",
-        targetUrl: finalUrl,
+    // Guards keep the original short-circuit. `hasDeepLinkAccess` and
+    // `hasAppDeepLinkAccess` both hit the plan cache, so calling them
+    // unconditionally would add two lookups to every redirect for every user
+    // on every plan, including the majority who never enable these features.
+    const access: DestinationAccess = {
+        deepLink: link.deepLink ? await hasDeepLinkAccess(link.userId) : false,
+        appDeepLink:
+            link.appDeepLink && link.appScheme
+                ? await hasAppDeepLinkAccess(link.userId)
+                : false,
     };
+
+    return resolveFinalDestination(
+        { ...link, targetUrl: result.targetUrl },
+        contextFromRequest(req),
+        access
+    );
 };
 
 

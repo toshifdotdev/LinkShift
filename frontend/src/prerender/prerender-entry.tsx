@@ -16,7 +16,7 @@ import {
     buildBreadcrumbJsonLd,
 } from "@/lib/seo";
 import { DOC_CATEGORIES } from "@/pages/docs/docs-data";
-import { FAQ_GROUPS } from "@/pages/faq/faq-page";
+import { FAQ_GROUPS } from "@/pages/faq/faq-data";
 import { USE_CASES } from "@/pages/use-cases/use-case-content";
 import { PUBLIC_PATHS, PRERENDER_PATHS, ERROR_ROUTE_PATHS } from "./public-routes";
 

@@ -26,7 +26,9 @@ const read = (...segments: string[]): string =>
 
 const seed = read("backend", "prisma", "seed.ts");
 const docsData = read("frontend", "src", "pages", "docs", "docs-data.ts");
-const faqPage = read("frontend", "src", "pages", "faq", "faq-page.tsx");
+// The FAQ answers live in faq-data.ts. They used to sit inside faq-page.tsx,
+// which was moved so the page component could export nothing but the component.
+const faqPage = read("frontend", "src", "pages", "faq", "faq-data.ts");
 
 interface SeedPlan {
     name: string;

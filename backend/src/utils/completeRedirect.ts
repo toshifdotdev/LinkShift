@@ -6,23 +6,25 @@ import { extractVisitorInfo } from "../features/redirect/visitor.service";
 import { getLocation } from "./geoIp";
 import { storageIp } from "./ipPrivacy";
 import { classifyRequest } from "./botDetection";
-
-export const applyDeepLink = (targetUrl: string, req: Request): string => {
+/**
+ * Applies path and query forwarding to a destination URL.
+ *
+ * Split out from `applyDeepLink` so the forwarding rules can be evaluated
+ * without an Express request. The redirect path still goes through
+ * `applyDeepLink`; the redirect tester drives this function directly with
+ * user-supplied input, which guarantees both run identical rules instead of a
+ * preview implementation that can drift from real behaviour.
+ */
+export const applyDeepLinkTo = (targetUrl: string, rest: string, rawQuery: string): string => {
     try {
         const url = new URL(targetUrl);
 
-        
-        
-        const rawRest = (req.params as Record<string, string | string[] | undefined>).rest;
-        const rest = (Array.isArray(rawRest) ? rawRest.join("/") : rawRest ?? "")
-            .replace(/^\/+/, "")
-            .replace(/\/+$/, "");
-        if (rest) {
+        const cleanRest = rest.replace(/^\/+/, "").replace(/\/+$/, "");
+        if (cleanRest) {
             const base = url.pathname.replace(/\/+$/, "");
-            url.pathname = `${base}/${rest}`;
+            url.pathname = `${base}/${cleanRest}`;
         }
 
-        const rawQuery = req.url.includes("?") ? req.url.split("?")[1] : "";
         if (rawQuery) {
             const forwarded = new URLSearchParams(rawQuery);
             for (const [key, value] of forwarded.entries()) {
@@ -34,6 +36,15 @@ export const applyDeepLink = (targetUrl: string, req: Request): string => {
     } catch {
         return targetUrl;
     }
+};
+
+export const applyDeepLink = (targetUrl: string, req: Request): string => {
+    const rawRest = (req.params as Record<string, string | string[] | undefined>).rest;
+    const rest = (Array.isArray(rawRest) ? rawRest.join("/") : rawRest ?? "");
+    const url = req.url ?? "";
+    const rawQuery = url.includes("?") ? url.split("?")[1] : "";
+
+    return applyDeepLinkTo(targetUrl, rest, rawQuery);
 };
 
 export const completeTargetUrl = async(targetUrl : CachedLink, req : Request) => {

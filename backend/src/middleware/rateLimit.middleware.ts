@@ -81,6 +81,18 @@ const REDIRECT_LIMIT_MESSAGE = {
     message: 'Too many requests. Please slow down.',
 };
 
+/**
+ * Redirect previews are pure computation, but each one costs a plan-cache
+ * lookup and a URL parse, and an open preview endpoint is a convenient way to
+ * make the API do work for anonymous callers. Tight enough to stop abuse, loose
+ * enough that someone comparing platforms does not hit a wall mid-investigation.
+ */
+export const redirectTesterLimiter = createUserRateLimiter({
+    windowMs: 60_000,
+    limit: 30,
+    message: { success: false, message: "Too many previews. Wait a minute and try again." },
+});
+
 export const redirectLimiter = rateLimit({
     windowMs: 60 * 1000,
     limit: 120,

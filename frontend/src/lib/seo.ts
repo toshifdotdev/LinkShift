@@ -56,11 +56,15 @@ export interface SeoConfig {
 
 
 export function useSeo(cfg: SeoConfig): void {
+  /* eslint-disable react-hooks/exhaustive-deps --
+     Callers pass a fresh object literal on every render, so depending on
+     `cfg` itself would re-run this effect on every render and re-stamp the
+     document head each time. Depending on the fields is deliberate: managed
+     metadata is applied imperatively, so React cannot diff it, and every
+     value the config can carry must appear below or a route change that only
+     alters that field is never re-applied. */
   useEffect(() => {
     applySeo(cfg);
-    // Managed metadata is applied imperatively, so React cannot diff it. Every
-    // value the config can carry must therefore appear here — omitting one
-    // means a route change that only alters that field is never re-applied.
   }, [
     cfg.title,
     cfg.description,
@@ -73,6 +77,7 @@ export function useSeo(cfg: SeoConfig): void {
     cfg.ogImageAlt,
     cfg.jsonLd,
   ]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 }
 
 
