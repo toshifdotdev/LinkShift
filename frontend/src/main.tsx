@@ -4,11 +4,11 @@ import { BrowserRouter } from "react-router-dom";
 import { MotionConfig } from "framer-motion";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
-import App from "./App";
 import { ToastProvider } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SessionProvider } from "@/auth/session";
 import { ThemeProvider } from "@/theme/theme";
+import { AppWithCrashGuard } from "@/components/app/app-with-crash-guard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,7 +29,7 @@ createRoot(document.getElementById("root")!).render(
             <SessionProvider>
               <ToastProvider>
                 <TooltipProvider>
-                  <App />
+                  <AppWithCrashGuard />
                 </TooltipProvider>
               </ToastProvider>
             </SessionProvider>

@@ -27,7 +27,7 @@ export const FAQ_GROUPS: FaqGroup[] = [
       },
       {
         q: "Is there a free plan?",
-        a: "Yes. Free includes 50 links, 2,500 redirects a month, 10 QR codes a month and 30 days of analytics — no card required to start.",
+        a: "Yes. Free includes 100 links, 10,000 redirects a month, 10 QR codes a month, 10 custom slugs a month and 30 days of analytics — no card required to start.",
       },
       {
         q: "Do my short links expire?",

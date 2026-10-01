@@ -440,7 +440,7 @@ export const DOC_CATEGORIES: DocCategory[] = [
         body: [
           {
             kind: "p",
-            text: "Free: 50 links, 2,500 redirects/month, 10 QR/month, 30-day analytics. Starter: 1,000 links, 50k redirects, 100 QR, 1 custom domain, 180-day analytics. Creator: 10k links, 500k redirects, unlimited QR, 5 domains, referrer/UTM breakdowns and CSV export, 365-day analytics. Pro: no caps, Path Forwarding, 3-year analytics.",
+            text: "Free: 100 links, 10,000 redirects/month, 10 QR/month, 10 custom slugs/month, 30-day analytics. Starter: 1,000 links, 50k redirects, 100 QR, 1 custom domain, 180-day analytics. Creator: 10k links, 500k redirects, unlimited QR, 5 domains, referrer/UTM breakdowns and CSV export, 365-day analytics. Pro: no caps, Path Forwarding, 3-year analytics.",
           },
           {
             kind: "note",

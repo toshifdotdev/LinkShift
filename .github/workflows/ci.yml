@@ -90,6 +90,24 @@ jobs:
           test -f dist/sitemap.xml
           test -f dist/llms.txt
           test -f dist-ssr/prerender-entry.js
+      - name: Verify the launch-readiness routes prerender and are indexed
+        run: |
+          # /status and the three use-case pages are part of the indexable set.
+          # They were added after the checks above were written, so assert them
+          # explicitly: a route missing from public-routes.ts fails the build
+          # rather than silently dropping out of the sitemap at deploy time.
+          for route in status campaign-links qr-codes url-migration; do
+            test -f "dist/$route/index.html"
+            grep -q "<loc>https://linkshift.in/$route</loc>" dist/sitemap.xml
+            grep -q 'rel="canonical"' "dist/$route/index.html"
+          done
+          # The use-case pages carry FAQPage + BreadcrumbList structured data.
+          # It is injected by jsonLdForPath at prerender time, not by useSeo at
+          # runtime, so it only reaches crawlers if this registry stays wired.
+          for route in campaign-links qr-codes url-migration; do
+            grep -q "FAQPage" "dist/$route/index.html"
+            grep -q "BreadcrumbList" "dist/$route/index.html"
+          done
 
       - name: Verify the error document is noindex and absent from the sitemap
         run: |
