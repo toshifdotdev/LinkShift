@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveCorsOrigins } from "../src/config/env";
+import { assertCorsOriginsConfigured, resolveCorsOrigins } from "../src/config/env";
 
 /**
  * Regression coverage for the CORS allow-list.
@@ -76,29 +76,82 @@ describe("resolveCorsOrigins", () => {
         expect(resolveCorsOrigins({})).toEqual(["http://localhost:5173"]);
     });
 
-    it("fails loudly in production when no origin is configured", () => {
-        expect(() =>
+it("returns an empty list in production when no origin is configured", () => {
+        // Moved off the throwing resolver: resolving no longer decides whether
+        // a deployment is safe. `assertCorsOriginsConfigured` still fails the
+        // boot on exactly this input, covered below.
+        expect(
             resolveCorsOrigins({
                 CORS_ORIGINS: "",
                 FRONTEND_URL: "",
                 NODE_ENV: "production",
             }),
-        ).toThrow(/CORS_ORIGINS/);
-    });
-
-    it("rejects a wildcard in production", () => {
-        expect(() =>
-            resolveCorsOrigins({ CORS_ORIGINS: "*", NODE_ENV: "production" }),
-        ).toThrow(/wildcard/i);
+        ).toEqual([]);
     });
 
     it("rejects a wildcard in production even when FRONTEND_URL is set", () => {
         expect(() =>
-            resolveCorsOrigins({
+            assertCorsOriginsConfigured({
                 CORS_ORIGINS: "*,https://linkshift.in",
                 FRONTEND_URL: "https://linkshift.in",
                 NODE_ENV: "production",
             }),
         ).toThrow(/wildcard/i);
+    });
+
+    describe("importing config must not require a valid deployment", () => {
+        // The defect this suite exists for: `resolveCorsOrigins` used to throw
+        // when it was called, and `config` called it at module load. So any
+        // module that merely read a config value inherited the obligation of
+        // being correctly deployed for CORS. A test setting NODE_ENV=production
+        // to check an unrelated guard died on this one first, which is exactly
+        // how the Google OAuth production guards went unasserted for five
+        // consecutive CI runs.
+        it("resolves to an empty list in production instead of throwing", () => {
+            expect(
+                resolveCorsOrigins({ CORS_ORIGINS: "", FRONTEND_URL: "", NODE_ENV: "production" }),
+            ).toEqual([]);
+        });
+
+        it("does not throw on a wildcard at resolve time", () => {
+            expect(resolveCorsOrigins({ CORS_ORIGINS: "*", NODE_ENV: "production" })).toEqual(["*"]);
+        });
+
+        it("is still caught by the boot-time guard, so nothing regresses", () => {
+            expect(() =>
+                assertCorsOriginsConfigured({ CORS_ORIGINS: "", FRONTEND_URL: "", NODE_ENV: "production" }),
+            ).toThrow(/CORS_ORIGINS/);
+            expect(() =>
+                assertCorsOriginsConfigured({ CORS_ORIGINS: "*", NODE_ENV: "production" }),
+            ).toThrow(/wildcard/i);
+        });
+    });
+
+    describe("the boot-time guard", () => {
+        it("is a no-op outside production, so dev and CI start normally", () => {
+            expect(() =>
+                assertCorsOriginsConfigured({ CORS_ORIGINS: "", FRONTEND_URL: "", NODE_ENV: "development" }),
+            ).not.toThrow();
+            expect(() => assertCorsOriginsConfigured({})).not.toThrow();
+        });
+
+        it("accepts a valid production allow-list", () => {
+            expect(() =>
+                assertCorsOriginsConfigured({
+                    CORS_ORIGINS: "https://linkshift.in",
+                    NODE_ENV: "production",
+                }),
+            ).not.toThrow();
+        });
+
+        it("falls back to FRONTEND_URL when CORS_ORIGINS is empty", () => {
+            expect(() =>
+                assertCorsOriginsConfigured({
+                    CORS_ORIGINS: "",
+                    FRONTEND_URL: "https://linkshift.in",
+                    NODE_ENV: "production",
+                }),
+            ).not.toThrow();
+        });
     });
 });

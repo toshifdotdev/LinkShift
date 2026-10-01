@@ -17,23 +17,48 @@ const parseOrigins = (value: string | undefined): string[] =>
  * unset, so it falls through to the next source instead of resolving to an
  * empty list that would silently reject every origin.
  *
- * In production the resolved list must be non-empty and must not be a
- * wildcard: a wildcard (or an empty list) combined with
- * `credentials: true` is unsafe, and an empty list disables the API without
- * any visible error. Both cases fail at boot instead.
+ * This never throws. Resolving a value and deciding whether a deployment is
+ * safe to serve traffic are different questions, and conflating them means
+ * merely importing `config` fails on a setting that has nothing to do with the
+ * caller. It used to throw here, which meant any test that set
+ * NODE_ENV=production to exercise some unrelated guard died on this one
+ * first. The production check now lives in `assertCorsOriginsConfigured`,
+ * which the server runs before it starts listening.
  */
 export const resolveCorsOrigins = (
     env: NodeJS.ProcessEnv = process.env,
 ): string[] => {
     const explicit = parseOrigins(env.CORS_ORIGINS);
-    const origins =
-        explicit.length > 0
-            ? explicit
-            : parseOrigins(env.FRONTEND_URL);
-
-    if (env.NODE_ENV !== 'production') {
-        return origins.length > 0 ? origins : [...DEV_FALLBACK_ORIGINS];
+    if (explicit.length > 0) {
+        return explicit;
     }
+
+    const frontend = parseOrigins(env.FRONTEND_URL);
+    if (frontend.length > 0) {
+        return frontend;
+    }
+
+    // In production this stays empty rather than falling back to a dev origin,
+    // so the misconfiguration is visible to `assertCorsOriginsConfigured`
+    // instead of being silently papered over with localhost.
+    return env.NODE_ENV === 'production' ? [] : [...DEV_FALLBACK_ORIGINS];
+};
+
+/**
+ * Fails the boot when a production deployment cannot serve the browser safely.
+ *
+ * An empty allow-list combined with `credentials: true` makes the API
+ * unreachable from the frontend with no error anywhere, and a wildcard with
+ * credentials enabled is unsafe. Both must stop the process before it accepts
+ * traffic rather than after, which is why this runs in `server.ts` ahead of
+ * `app.listen` and not inside `resolveCorsOrigins`.
+ */
+export const assertCorsOriginsConfigured = (
+    env: NodeJS.ProcessEnv = process.env,
+): void => {
+    if (env.NODE_ENV !== 'production') return;
+
+    const origins = resolveCorsOrigins(env);
 
     if (origins.length === 0) {
         throw new Error(
@@ -49,8 +74,6 @@ export const resolveCorsOrigins = (
                 'List every allowed origin explicitly, e.g. CORS_ORIGINS=https://linkshift.in',
         );
     }
-
-    return origins;
 };
 
 export const config = {

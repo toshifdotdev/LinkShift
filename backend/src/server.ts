@@ -1,5 +1,6 @@
 import { app } from "./app";
 import { config, prisma } from "./config";
+import { assertCorsOriginsConfigured } from "./config/env";
 import { connectRedis, redisClient } from "./config/redis";
 import { log } from "./utils/logger";
 
@@ -8,6 +9,12 @@ const FORCE_EXIT_MS = 10_000;
 async function startServer() {
 
     void connectRedis();
+
+    // Before anything can accept traffic. The CORS allow-list is no longer
+    // validated as a side effect of importing config, so this is the only
+    // thing standing between a misconfigured production deploy and an API
+    // that silently rejects every browser origin.
+    assertCorsOriginsConfigured();
 
 
     const server = app.listen(config.port, () => {
