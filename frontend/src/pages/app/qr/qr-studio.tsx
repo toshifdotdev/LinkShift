@@ -235,8 +235,8 @@ function QrStudio({
           <div className="flex max-h-[calc(100dvh-2rem)] flex-col items-stretch overflow-y-auto">
             <div className="flex flex-col items-center pt-3 text-center">
               <p className="ls-marquee">Saved</p>
-              <DialogTitle className="mt-2.5 text-2xl">QR code saved</DialogTitle>
-              <p className="mt-1.5 max-w-xs text-[13px] leading-snug text-fg-secondary">
+              <DialogTitle className="mt-3 text-2xl">QR code saved</DialogTitle>
+              <p className="mt-2 max-w-xs text-[13px] leading-snug text-fg-secondary">
                 Live at <span className="font-mono text-foreground">{shortUrl(savedQr.shortId, selectedLink?.domainHost)}</span>.
                 The code matches the preview.
               </p>
@@ -324,7 +324,7 @@ function QrStudio({
               </FieldLabel>
               {initialLinkId ? (
                 selectedLink && (
-                  <p className="rounded-md border border-border bg-elevated/60 px-3.5 py-2.5 text-[13px]">
+                  <p className="rounded-md border border-border bg-elevated/60 px-4 py-3 text-[13px]">
                     {selectedLink.name ?? "Untitled link"}
                     <span className="ml-2 font-mono text-[11px] text-brand">
                       /{selectedLink.shortId}
@@ -344,10 +344,10 @@ function QrStudio({
                   </div>
                   <div className="mt-2 max-h-44 divide-y divide-border overflow-y-auto rounded-md border border-border">
                     {linksQuery.isPending && (
-                      <p className="px-3.5 py-3 text-xs text-fg-muted">Loading links…</p>
+                      <p className="px-4 py-3 text-xs text-fg-muted">Loading links…</p>
                     )}
                     {linksQuery.data?.data.length === 0 && (
-                      <p className="px-3.5 py-3 text-xs text-fg-muted">
+                      <p className="px-4 py-3 text-xs text-fg-muted">
                         No links found. Create one in Links first.
                       </p>
                     )}
@@ -357,7 +357,7 @@ function QrStudio({
                         type="button"
                         onClick={() => setLinkId(l.id)}
                         className={cn(
-                          "flex w-full cursor-pointer items-center justify-between gap-3 px-3.5 py-2.5 text-left transition-colors hover:bg-elevated/60",
+                          "flex w-full cursor-pointer items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-elevated/60",
                           linkId === l.id && "bg-elevated",
                         )}
                       >
@@ -419,7 +419,7 @@ function QrStudio({
                         pattern={p.config.pattern}
                         frame={p.frame ?? "none"}
                       />
-                      <span className="mt-1.5 flex items-center justify-center gap-1 text-center text-[10px] text-fg-secondary">
+                      <span className="mt-2 flex items-center justify-center gap-1 text-center text-[10px] text-fg-secondary">
                         {p.name}
                         {locked && <Lock className="size-2.5 text-brand" aria-hidden="true" />}
                       </span>
@@ -433,7 +433,7 @@ function QrStudio({
             <Field>
               <FieldLabel>Colors</FieldLabel>
               <div className="grid grid-cols-2 gap-3">
-                <label className="flex items-center gap-2.5 rounded-md border border-border bg-surface px-3 py-2">
+                <label className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2">
                   <input
                     type="color"
                     value={design.foregroundColor}
@@ -448,7 +448,7 @@ function QrStudio({
                     </span>
                   </span>
                 </label>
-                <label className="flex items-center gap-2.5 rounded-md border border-border bg-surface px-3 py-2">
+                <label className="flex items-center gap-3 rounded-md border border-border bg-surface px-3 py-2">
                   <input
                     type="color"
                     value={design.backgroundColor}
@@ -634,7 +634,7 @@ function QrStudio({
                   type="button"
                   onClick={() => fileRef.current?.click()}
                   disabled={uploadingLogo}
-                  className="flex w-full cursor-pointer items-center gap-3 rounded-md border border-dashed border-border px-3.5 py-3 text-left transition-colors hover:border-border-strong disabled:opacity-50"
+                  className="flex w-full cursor-pointer items-center gap-3 rounded-md border border-dashed border-border px-4 py-3 text-left transition-colors hover:border-border-strong disabled:opacity-50"
                 >
                   {uploadingLogo ? (
                     <RefreshCcw className="size-4 motion-safe:animate-spin motion-reduce:animate-none text-fg-muted" />
@@ -719,7 +719,7 @@ function QrStudio({
         
         <div className="shrink-0 border-t border-border p-4">
           {save.error && !quotaError && (
-            <p role="alert" className="mb-2.5 text-xs text-destructive">
+            <p role="alert" className="mb-3 text-xs text-destructive">
               {save.error instanceof Error ? save.error.message : "Could not generate the QR."}
             </p>
           )}

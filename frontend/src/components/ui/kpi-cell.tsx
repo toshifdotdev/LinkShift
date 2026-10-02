@@ -6,13 +6,15 @@ import { cn } from "@/lib/utils";
 
 function useRolledValue(value: number, active: boolean): number {
   const reduce = useReducedMotion();
-  const previousRef = useRef(0);
-  const [display, setDisplay] = useState(0);
+  const previousRef = useRef(value);
+  const [display, setDisplay] = useState(value);
   const rafRef = useRef(0);
 
   useEffect(() => {
     const from = previousRef.current;
     previousRef.current = value;
+    // First paint shows the real value: a metric must be readable the moment
+    // it lands. Only genuine changes to an already-shown value roll.
     if (from === value || reduce || !active) {
       setDisplay(value);
       return;
@@ -47,7 +49,7 @@ interface KpiCellProps {
 function KpiCell({ label, value, format, roll = true, className, valueClassName }: KpiCellProps) {
   const display = useRolledValue(value, roll);
   return (
-    <div data-slot="kpi-cell" className={cn("flex flex-col gap-1.5", className)}>
+    <div data-slot="kpi-cell" className={cn("flex flex-col gap-2", className)}>
       <p className="font-mono text-[10px] font-medium tracking-[0.14em] text-fg-muted uppercase">
         {label}
       </p>

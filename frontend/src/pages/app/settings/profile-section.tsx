@@ -168,7 +168,7 @@ function ProfileSection() {
         />
 
         
-        <form onSubmit={handleSaveName} className="flex flex-col gap-1.5" noValidate>
+        <form onSubmit={handleSaveName} className="flex flex-col gap-2" noValidate>
           <Field>
             <FieldLabel htmlFor="profile-name">Name</FieldLabel>
             <Input
@@ -194,27 +194,27 @@ function ProfileSection() {
 
       
       <dl className="ls-plate grid h-fit grid-cols-1 overflow-hidden sm:grid-cols-2">
-        <div className="border-b border-border px-4 py-3.5 sm:border-r">
+        <div className="border-b border-border px-4 py-4 sm:border-r">
           <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Email</dt>
           <dd className="mt-1 truncate font-mono text-xs text-foreground" title={user.email}>
             {user.email}
           </dd>
         </div>
-        <div className="border-b border-border px-4 py-3.5">
+        <div className="border-b border-border px-4 py-4">
           <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Member since</dt>
           <dd className="mt-1 text-[13px] text-foreground">{memberSince(user.createdAt)}</dd>
         </div>
-        <div className="px-4 py-3.5 sm:border-r sm:border-border">
+        <div className="px-4 py-4 sm:border-r sm:border-border">
           <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Sign-in method</dt>
-          <dd className="mt-1.5">
+          <dd className="mt-2">
             <Lamp tone={user.provider === "GOOGLE" ? "ember" : "neutral"}>
               {user.provider === "GOOGLE" ? "Google" : "Email & password"}
             </Lamp>
           </dd>
         </div>
-        <div className="px-4 py-3.5">
+        <div className="px-4 py-4">
           <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Email status</dt>
-          <dd className="mt-1.5">
+          <dd className="mt-2">
             {user.verified ? (
               <Lamp tone="success">Verified</Lamp>
             ) : (

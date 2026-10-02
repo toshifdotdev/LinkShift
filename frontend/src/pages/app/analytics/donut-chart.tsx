@@ -104,7 +104,7 @@ function DonutChart({
           
           <ul className="min-w-0 flex-1 space-y-2">
             {visible.map((item, i) => (
-              <li key={item.label} className="flex items-center gap-2.5 text-[13px]">
+              <li key={item.label} className="flex items-center gap-3 text-[13px]">
                 <span
                   className="size-2 shrink-0 rounded-full"
                   style={{ background: SEGMENT_COLORS[i % SEGMENT_COLORS.length] }}

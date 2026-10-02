@@ -51,7 +51,7 @@ function BreakdownPanel({
       ) : (
         <ul key={itemsKey} className="divide-y divide-border-subtle">
           {visible.map((item, i) => (
-            <li key={item.label + i} className="px-5 py-2.5">
+            <li key={item.label + i} className="px-5 py-3">
               <div className="flex items-baseline justify-between gap-3">
                 <p
                   className={cn(
@@ -63,10 +63,10 @@ function BreakdownPanel({
                 </p>
                 <p className="shrink-0 font-mono text-xs text-fg-secondary tabular-nums">
                   {total > 0 ? `${Math.round((item.count / total) * 100)}%` : ""}
-                  <span className="ml-1.5 text-foreground">{item.count.toLocaleString()}</span>
+                  <span className="ml-2 text-foreground">{item.count.toLocaleString()}</span>
                 </p>
               </div>
-              <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-elevated">
+              <div className="mt-2 h-1 overflow-hidden rounded-full bg-elevated">
                 <div
                   className={cn(
                     "ls-bar-grow h-full rounded-full",

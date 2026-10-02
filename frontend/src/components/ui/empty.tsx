@@ -25,7 +25,7 @@ function EmptyState({
     <div
       data-slot="empty-state"
       className={cn(
-        "relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-sunken/40 px-6 py-16 text-center sm:py-20",
+        "ls-reveal relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-border bg-sunken/40 px-6 py-16 text-center sm:py-20",
         className,
       )}
       {...rest}
@@ -71,7 +71,7 @@ function ErrorState({
       role="alert"
       data-slot="error-state"
       className={cn(
-        "relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-destructive/30 bg-sunken/40 px-6 py-16 text-center sm:py-20",
+        "ls-reveal relative flex flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-destructive/30 bg-sunken/40 px-6 py-16 text-center sm:py-20",
         className,
       )}
     >

@@ -110,7 +110,7 @@ function RadioGrid({
           value={option.value}
           disabled={option.disabled}
           className={cn(
-            "flex cursor-pointer flex-col items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-3 text-center transition-colors duration-150",
+            "flex cursor-pointer flex-col items-center gap-2 rounded-lg border border-border bg-surface px-3 py-3 text-center transition-colors duration-150",
             "hover:border-border-strong data-checked:border-brand data-checked:bg-brand-soft",
             "data-disabled:cursor-not-allowed data-disabled:opacity-45",
             "max-lg:min-h-11",

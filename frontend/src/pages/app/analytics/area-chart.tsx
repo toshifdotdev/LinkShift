@@ -106,7 +106,7 @@ function AreaChart({
             style={{ left: `${((hover + 0.5) / data.length) * 100}%` }}
           />
           <div
-            className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-raised px-2.5 py-1.5 text-center shadow-lift transition-[left] duration-150 ease-out"
+            className="pointer-events-none absolute top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-raised px-3 py-2 text-center shadow-lift transition-[left] duration-150 ease-out"
             style={{ left: `${((hover + 0.5) / data.length) * 100}%` }}
           >
             <p className="font-mono text-[10px] text-fg-muted">{fmtDay(data[hover].day)}</p>

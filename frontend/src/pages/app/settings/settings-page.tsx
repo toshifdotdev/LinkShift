@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { FadeIn } from "@/components/ui/motion";
 import { RouteStrip } from "@/components/ui/route-strip";
 import { ProfileSection } from "./profile-section";
 import { SecuritySection } from "./security-section";
@@ -38,8 +37,8 @@ function SettingsRail({
                 onClick={() => onChange(it.key)}
                 aria-current={isActive ? "true" : undefined}
                 className={cn(
-                  "relative flex w-full items-center gap-2.5 whitespace-nowrap rounded-sm px-3 py-2 text-left font-mono text-[11.5px] tracking-[0.04em] transition-colors",
-                  "lg:w-full lg:px-3 lg:py-2.5",
+                  "relative flex w-full items-center gap-3 whitespace-nowrap rounded-sm px-3 py-2 text-left font-mono text-[11.5px] tracking-[0.04em] transition-colors",
+                  "lg:w-full lg:px-3 lg:py-3",
                   isActive
                     ? isDanger
                       ? "bg-destructive/10 text-destructive"
@@ -59,7 +58,7 @@ function SettingsRail({
                     )}
                   />
                 )}
-                <span className="lg:ml-3.5">{it.label}</span>
+                <span className="lg:ml-4">{it.label}</span>
               </button>
             </li>
           );
@@ -113,9 +112,9 @@ function SettingsPage() {
   }, [section]);
 
   return (
-    <FadeIn>
+    <>
       <RouteStrip
-        index="07"
+        index="08"
         label="Settings"
         title="The account, handled with care."
         description="Your identity, sign-in method, and the dangerous edge."
@@ -191,7 +190,7 @@ function SettingsPage() {
           </section>
         </div>
       </div>
-    </FadeIn>
+    </>
   );
 }
 

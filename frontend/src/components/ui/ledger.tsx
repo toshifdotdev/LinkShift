@@ -1,5 +1,7 @@
+import { motion, useReducedMotion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import type { ReactNode } from "react";
+import { rowEntry, staggerDelay } from "./motion";
 import { cn } from "@/lib/utils";
 
 
@@ -46,6 +48,7 @@ function Ledger<T>({
   rowClassName,
   className,
 }: LedgerProps<T>) {
+  const reduce = useReducedMotion();
   const handleSort = (column: LedgerColumn<T>) => {
     if (!column.sortable || !onSortChange) return;
     const direction: LedgerSortDirection =
@@ -112,9 +115,10 @@ function Ledger<T>({
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
-              <tr
+            {rows.map((row, i) => (
+              <motion.tr
                 key={rowKey(row)}
+                {...rowEntry(staggerDelay(i), reduce)}
                 onClick={onRowClick ? () => onRowClick(row) : undefined}
                 className={cn(
                   "border-b border-border-subtle transition-colors duration-100 last:border-0 hover:bg-elevated/60",
@@ -135,7 +139,7 @@ function Ledger<T>({
                     {column.cell(row)}
                   </td>
                 ))}
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
@@ -143,9 +147,10 @@ function Ledger<T>({
 
       
       <div className="flex flex-col gap-2 md:hidden">
-        {rows.map((row) => (
-          <div
+        {rows.map((row, i) => (
+          <motion.div
             key={rowKey(row)}
+            {...rowEntry(staggerDelay(i), reduce)}
             onClick={onRowClick ? () => onRowClick(row) : undefined}
             className={cn(
               "rounded-lg border border-border bg-surface px-4 py-3",
@@ -163,7 +168,7 @@ function Ledger<T>({
                 </span>
               </div>
             ))}
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>

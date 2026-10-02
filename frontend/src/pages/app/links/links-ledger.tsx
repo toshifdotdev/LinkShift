@@ -44,7 +44,7 @@ function LinksLedger({
               {link.tags.slice(0, 3).map((tag) => (
                 <span
                   key={tag.id}
-                  className="rounded border border-border px-1.5 py-px font-mono text-[10px] text-fg-muted"
+                  className="rounded border border-border px-2 py-px font-mono text-[10px] text-fg-muted"
                 >
                   {tag.name}
                 </span>

@@ -16,7 +16,7 @@ function planTone(planName: string): LampTone {
 }
 
 const itemClass =
-  "flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-fg-secondary outline-none transition-colors data-[highlighted]:bg-raised data-[highlighted]:text-foreground";
+  "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-[13px] text-fg-secondary outline-none transition-colors data-[highlighted]:bg-raised data-[highlighted]:text-foreground";
 
 function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: () => void }) {
   const { user } = useSession();
@@ -28,7 +28,7 @@ function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: 
     <MenuPrimitive.Root>
       <MenuPrimitive.Trigger
         aria-label="Account menu"
-        className="flex items-center gap-2.5 rounded-md border border-transparent px-2 py-1.5 transition-colors hover:border-border hover:bg-elevated focus-visible:outline-2 focus-visible:outline-ring/70 data-[popup-open]:border-border data-[popup-open]:bg-elevated"
+        className="flex items-center gap-3 rounded-md border border-transparent px-2 py-2 transition-colors hover:border-border hover:bg-elevated focus-visible:outline-2 focus-visible:outline-ring/70 data-[popup-open]:border-border data-[popup-open]:bg-elevated"
       >
         <Avatar src={user?.avatarUrl} name={user?.name} className="size-7 border border-border-strong" />
         <span className="hidden max-w-32 truncate text-[13px] text-fg-secondary sm:block">
@@ -38,10 +38,10 @@ function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: 
 
       <MenuPrimitive.Portal>
         <MenuPrimitive.Positioner align="end" sideOffset={8} className="z-50">
-          <MenuPrimitive.Popup className="relative w-60 overflow-hidden rounded-lg border border-border bg-elevated p-1.5 shadow-lift animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
+          <MenuPrimitive.Popup className="relative w-60 overflow-hidden rounded-lg border border-border bg-elevated p-2 shadow-lift animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
             
             <span aria-hidden="true" className="absolute inset-x-0 top-0 h-px bg-brand/60" />
-            <div className="border-b border-border px-3 pt-4 pb-2.5">
+            <div className="border-b border-border px-3 pt-4 pb-3">
               <p className="truncate text-[13px] font-medium text-foreground">{user?.name}</p>
               <p className="truncate font-mono text-[10px] tracking-[0.12em] text-fg-muted">
                 {user?.email}
@@ -60,7 +60,7 @@ function UserMenu({ onLogout, onSettings }: { onLogout: () => void; onSettings: 
             </MenuPrimitive.Item>
             <MenuPrimitive.Item
               className={
-                "flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-fg-secondary outline-none transition-colors data-[highlighted]:bg-raised data-[highlighted]:text-destructive"
+                "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-[13px] text-fg-secondary outline-none transition-colors data-[highlighted]:bg-raised data-[highlighted]:text-destructive"
               }
               onClick={onLogout}
             >

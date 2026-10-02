@@ -90,7 +90,7 @@ function LogoCrop({
   }
 
   return (
-    <div className="rounded-md border border-border bg-elevated/60 p-3.5">
+    <div className="rounded-md border border-border bg-elevated/60 p-4">
       <p className="mb-3 flex items-center gap-2 font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
         <Crop className="size-3.5" /> Crop logo
       </p>
@@ -144,7 +144,7 @@ function LogoCrop({
             aria-pressed={shape === s}
             onClick={() => setShape(s)}
             className={cn(
-              "flex h-8 cursor-pointer items-center gap-1.5 rounded-sm px-2.5 text-[12px] font-medium transition-colors",
+              "flex h-8 cursor-pointer items-center gap-2 rounded-sm px-3 text-[12px] font-medium transition-colors",
               shape === s
                 ? "border border-border-strong bg-raised text-foreground"
                 : "border border-transparent text-fg-muted hover:text-fg-secondary",

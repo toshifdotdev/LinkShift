@@ -184,17 +184,18 @@ function QrPage() {
       />
 
       {links.isPending ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" aria-label="Loading QR codes">
+        <div className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5" aria-label="Loading QR codes">
           {Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="ls-plate p-2.5">
+            <div key={i} className="ls-plate p-3">
               <Skeleton className="h-44 w-full rounded-md" />
-              <Skeleton className="mt-2.5 h-3.5 w-3/4" />
-              <Skeleton className="mt-1.5 h-3 w-1/2" />
+              <Skeleton className="mt-3 h-3.5 w-3/4" />
+              <Skeleton className="mt-2 h-3 w-1/2" />
             </div>
           ))}
         </div>
       ) : links.isError && !links.data ? (
         <ErrorState
+          className="mt-8"
           title="Couldn't load your QR library"
           message={links.error instanceof Error ? links.error.message : undefined}
           onRetry={() => void links.refetch()}
@@ -246,11 +247,11 @@ function QrPage() {
               {rows.map((link) => (
                 <article
                   key={link.id}
-                  className="group ls-plate flex flex-col p-2.5 transition-colors hover:border-border-strong"
+                  className="group ls-plate flex flex-col p-3 transition-colors hover:border-border-strong"
                 >
                   <QrThumbnail linkId={link.id} version={galleryVersion} />
 
-                  <div className="mt-2.5 min-w-0">
+                  <div className="mt-3 min-w-0">
                     <p className="truncate text-[12px] font-medium text-foreground">
                       {link.name ?? "Untitled link"}
                     </p>
@@ -259,7 +260,7 @@ function QrPage() {
                     </CodeChip>
                   </div>
 
-                  <div className="mt-2.5 flex items-center justify-between gap-1.5 border-t border-border pt-2.5">
+                  <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
                     <Button variant="secondary" size="sm" className="h-7 flex-1 px-2 text-[11px]" onClick={() => openStudio(link.id)}>
                       Studio
                     </Button>
@@ -302,7 +303,7 @@ function QrPage() {
           ) : null}
 
           {hasLinks && rows.length > 0 && (
-            <p className="mt-4 border-t border-border pt-3.5 font-mono text-[10px] tracking-[0.12em] text-fg-muted uppercase">
+            <p className="mt-4 border-t border-border pt-4 font-mono text-[10px] tracking-[0.12em] text-fg-muted uppercase">
               Thumbnails show each link's latest code · studio saves create a new version
             </p>
           )}

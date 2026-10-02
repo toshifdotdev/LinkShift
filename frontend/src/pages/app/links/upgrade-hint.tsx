@@ -19,7 +19,7 @@ function UpgradeHint({
   return (
     <div
       className={cn(
-        "flex items-start gap-3 rounded-md border border-brand/25 bg-brand/[0.05] px-3.5 py-3",
+        "flex items-start gap-3 rounded-md border border-brand/25 bg-brand/[0.05] px-4 py-3",
         className,
       )}
     >
@@ -33,7 +33,7 @@ function UpgradeHint({
         </p>
         <Link
           to="/pricing"
-          className="mt-1.5 inline-block font-mono text-[10px] tracking-[0.14em] text-brand uppercase transition-colors hover:text-brand-hover"
+          className="mt-2 inline-block font-mono text-[10px] tracking-[0.14em] text-brand uppercase transition-colors hover:text-brand-hover"
         >
           View plans →
         </Link>

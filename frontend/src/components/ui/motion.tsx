@@ -1,9 +1,30 @@
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import { motion, useReducedMotion, type MotionProps, type Variants } from "framer-motion";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 
 
 const EASE = [0.22, 1, 0.36, 1] as const;
+
+const STAGGER_STEP = 0.025;
+const STAGGER_CAP = 8;
+
+/** Delay for row `index` in a staggered list, capped so long lists appear together. */
+function staggerDelay(index: number, step = STAGGER_STEP, cap = STAGGER_CAP): number {
+  return Math.min(index, cap - 1) * step;
+}
+
+/**
+ * Mount props for one staggered row. Returns {} under reduced motion so the
+ * element renders plain and fully visible.
+ */
+function rowEntry(delay: number, reduce: boolean | null | undefined, y = 6): MotionProps {
+  if (reduce) return {};
+  return {
+    initial: { opacity: 0, y },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: 0.22, delay, ease: EASE },
+  };
+}
 
 const riseVariants: Variants = {
   hidden: { opacity: 0, y: 8 },
@@ -160,4 +181,4 @@ function NumberTick({
   return <span className={className}>{display.toLocaleString()}</span>;
 }
 
-export { FadeIn, Stagger, Spine, FlashSweep, NumberTick, EASE };
+export { FadeIn, Stagger, Spine, FlashSweep, NumberTick, rowEntry, staggerDelay, EASE };

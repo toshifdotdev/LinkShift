@@ -37,7 +37,7 @@ function LinkActionsMenu({
   }
 
   const itemClass =
-    "flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-fg-secondary outline-none transition-colors data-[highlighted]:bg-raised data-[highlighted]:text-foreground";
+    "flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-[13px] text-fg-secondary outline-none transition-colors data-[highlighted]:bg-raised data-[highlighted]:text-foreground";
 
   return (
     <div className="flex items-center justify-end gap-1">
@@ -65,7 +65,7 @@ function LinkActionsMenu({
 
         <MenuPrimitive.Portal>
           <MenuPrimitive.Positioner align="end" sideOffset={6} className="z-50">
-            <MenuPrimitive.Popup className="w-52 rounded-lg border border-border bg-elevated p-1.5 shadow-lift animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
+            <MenuPrimitive.Popup className="w-52 rounded-lg border border-border bg-elevated p-2 shadow-lift animate-in fade-in zoom-in-95 duration-150 origin-[var(--transform-origin)]">
               <MenuPrimitive.Item
                 className={itemClass}
                 onClick={() => window.open(shortUrl(link.shortId, link.domainHost), "_blank", "noopener")}
@@ -94,14 +94,14 @@ function LinkActionsMenu({
                 QR code
               </MenuPrimitive.Item>
 
-              <MenuPrimitive.Separator className="my-1.5 h-px bg-border" />
+              <MenuPrimitive.Separator className="my-2 h-px bg-border" />
 
               <MenuPrimitive.Item className={itemClass} onClick={() => onEdit(link)}>
                 <Pencil className="size-3.5" />
                 Edit
               </MenuPrimitive.Item>
               <MenuPrimitive.Item
-                className="flex cursor-pointer items-center gap-2.5 rounded-md px-3 py-2 text-[13px] text-destructive outline-none transition-colors data-[highlighted]:bg-destructive/10"
+                className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 text-[13px] text-destructive outline-none transition-colors data-[highlighted]:bg-destructive/10"
                 onClick={() => onDelete(link)}
               >
                 <Trash2 className="size-3.5" />

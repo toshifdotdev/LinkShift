@@ -54,7 +54,7 @@ function TabsTrigger({ value, disabled, className, children }: TabsTriggerProps)
       value={value}
       disabled={disabled}
       className={cn(
-        "-mb-px inline-flex h-9 shrink-0 cursor-pointer items-center gap-1.5 px-3 text-[12.5px] font-medium text-fg-secondary transition-colors duration-150",
+        "-mb-px inline-flex h-9 shrink-0 cursor-pointer items-center gap-2 px-3 text-[12.5px] font-medium text-fg-secondary transition-colors duration-150",
         "hover:text-foreground data-active:text-foreground",
         "disabled:cursor-not-allowed disabled:opacity-45",
         "max-lg:min-h-11",

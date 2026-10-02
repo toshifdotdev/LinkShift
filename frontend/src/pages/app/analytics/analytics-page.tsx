@@ -14,7 +14,6 @@ import { KpiCell } from "@/components/ui/kpi-cell";
 import { RouteStrip } from "@/components/ui/route-strip";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
-import { FadeIn } from "@/components/ui/motion";
 import { shortUrl, DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import { linkRef, resolveLinkRef } from "@/lib/link-ref";
 import { cn } from "@/lib/utils";
@@ -33,6 +32,7 @@ function LockedRangeBanner({ days, minPlan }: { days: number; minPlan: string })
   const planLabel = minPlan === "STARTER" ? "Starter" : minPlan === "CREATOR" ? "Creator" : "Pro";
   return (
     <EmptyState
+      className="mt-8"
       marquee="Plan gate"
       title={`${label} of history lives on ${planLabel}.`}
       description="Your current plan keeps a shorter window. Upgrade to unlock the full archive across every link."
@@ -118,7 +118,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
     <>
       <section
         aria-label="Headline numbers"
-        className="ls-plate relative overflow-hidden"
+        className="mt-8 ls-plate relative overflow-hidden"
       >
         <span aria-hidden="true" className="ls-stripe" />
         <header className="flex items-center justify-between border-b border-border-subtle px-5 py-3 sm:px-6">
@@ -229,7 +229,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
             ))}
           </div>
         ) : drillLinks.data && drillLinks.data.length > 0 ? (
-          <ul className="grid gap-1.5 p-3 sm:grid-cols-2">
+          <ul className="grid gap-2 p-3 sm:grid-cols-2">
             {drillLinks.data.map((l) => (
               <li key={l.id}>
                 <button
@@ -298,7 +298,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
                   <button
                     type="button"
                     onClick={() => openLink(linkRef(l))}
-                    className="group flex w-full cursor-pointer items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-elevated/50 sm:px-6"
+                    className="group flex w-full cursor-pointer items-center gap-4 px-5 py-4 text-left transition-colors hover:bg-elevated/50 sm:px-6"
                   >
                     <span
                       aria-hidden="true"
@@ -320,7 +320,7 @@ function AccountView({ days }: { days: AnalyticsDays }) {
                     </span>
                     <span className="shrink-0 text-right font-mono text-sm text-foreground tabular-nums">
                       {l.clicks.toLocaleString()}
-                      <span className="ml-1.5 text-[10px] tracking-[0.14em] text-fg-muted uppercase">clicks</span>
+                      <span className="ml-2 text-[10px] tracking-[0.14em] text-fg-muted uppercase">clicks</span>
                     </span>
                   </button>
                 </li>
@@ -345,9 +345,9 @@ function AccountView({ days }: { days: AnalyticsDays }) {
           {activity.isPending ? (
             <div className="space-y-3 p-5 sm:px-6 sm:py-5">
               {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-3 py-2.5">
+                <div key={i} className="flex items-center gap-3 py-3">
                   <Skeleton className="size-1.5 rounded-full" />
-                  <div className="flex-1 space-y-1.5">
+                  <div className="flex-1 space-y-2">
                     <Skeleton className="h-3 w-44" />
                     <Skeleton className="h-2.5 w-28" />
                   </div>
@@ -477,7 +477,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
       <button
         type="button"
         onClick={() => setSearchParams((prev) => { const n = new URLSearchParams(prev); n.delete("link"); return n; })}
-        className="mb-5 flex cursor-pointer items-center gap-1.5 font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase transition-colors hover:text-fg-secondary"
+        className="mb-5 flex cursor-pointer items-center gap-2 font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase transition-colors hover:text-fg-secondary"
       >
         <ArrowLeft className="size-3" /> All analytics
       </button>
@@ -489,7 +489,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
         action={
           csvLocked ? (
             <span
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-surface px-3 font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-3 font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
               title="Available on Creator and Pro"
             >
               <Lock className="size-3 text-brand" /> Export CSV
@@ -511,7 +511,7 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
 
       <section
         aria-label="Headline numbers"
-        className="ls-plate relative overflow-hidden"
+        className="mt-8 ls-plate relative overflow-hidden"
       >
         <span aria-hidden="true" className="ls-stripe" />
         <header className="flex items-center justify-between border-b border-border-subtle px-5 py-3 sm:px-6">
@@ -776,7 +776,7 @@ function AnalyticsPage() {
   }
 
   return (
-    <FadeIn>
+    <>
       <RouteStrip
         index="04"
         label="Analytics"
@@ -808,7 +808,7 @@ function AnalyticsPage() {
           </div>
         </div>
       )}
-    </FadeIn>
+    </>
   );
 }
 

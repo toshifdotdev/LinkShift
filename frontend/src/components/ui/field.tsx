@@ -46,7 +46,7 @@ function Field({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
       <FieldDescribedByContext.Provider value={describedBy}>
         <div
           data-slot="field"
-          className={cn("flex flex-col gap-1.5", className)}
+          className={cn("flex flex-col gap-2", className)}
           {...props}
         />
       </FieldDescribedByContext.Provider>
@@ -93,7 +93,7 @@ function FieldHint({
       id={id}
       data-slot="field-hint"
       className={cn(
-        "flex items-start gap-1.5 text-xs leading-snug text-fg-muted",
+        "flex items-start gap-2 text-xs leading-snug text-fg-muted",
         className,
       )}
     >

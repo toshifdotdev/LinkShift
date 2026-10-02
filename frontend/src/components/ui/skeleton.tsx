@@ -50,7 +50,7 @@ function SkeletonKpis({ count = 4, className }: { count?: number; className?: st
       className={cn("grid grid-cols-2 gap-4 lg:grid-cols-4", className)}
     >
       {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="flex flex-col gap-2.5">
+        <div key={i} className="flex flex-col gap-3">
           <div className="ls-skeleton h-2.5 w-16 rounded" />
           <div className="ls-skeleton ls-skeleton-shimmer h-7 w-24 rounded-md" />
         </div>

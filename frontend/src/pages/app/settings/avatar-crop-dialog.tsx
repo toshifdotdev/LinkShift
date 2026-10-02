@@ -239,7 +239,7 @@ function AvatarCropDialog({
             </div>
 
             <div className="mt-4 flex items-center gap-3 sm:gap-4">
-              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="flex items-center justify-between">
                   <label className="text-[13px] font-medium text-fg-secondary" htmlFor="avatar-crop-zoom">
                     Zoom

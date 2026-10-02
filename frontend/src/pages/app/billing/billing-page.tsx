@@ -12,7 +12,6 @@ import { Waybill, WaybillRow } from "@/components/ui/waybill";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
-import { FadeIn } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
 import { graceLabel } from "@/lib/redirect-grace";
 
@@ -92,9 +91,9 @@ function BillingPage() {
   const status = statusInfo(sub);
 
   return (
-    <FadeIn>
+    <>
       <RouteStrip
-        index="06"
+        index="07"
         label="Billing"
         title="The account, on one manifest."
         description="Your subscription, usage, and plan limits in a single place."
@@ -262,7 +261,7 @@ function BillingPage() {
         loading={cancel.isPending}
         onConfirm={() => { void cancel.mutateAsync(); }}
       />
-    </FadeIn>
+    </>
   );
 }
 
@@ -286,13 +285,13 @@ function UsageRow({
   const nearCap = !unlimited && cap !== 0 && pct >= 80;
 
   return (
-    <div className="flex items-center gap-4 py-3.5 px-5 sm:px-6">
+    <div className="flex items-center gap-4 py-4 px-5 sm:px-6">
       <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-elevated text-fg-muted">
         {icon}
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[13px] text-foreground">{label}</p>
-        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-elevated">
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-elevated">
           {unlimited ? (
             <div className="h-full w-full rounded-full bg-fg-secondary/30" />
           ) : (

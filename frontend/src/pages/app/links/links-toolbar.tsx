@@ -106,7 +106,7 @@ status: ListLinksParams["status"];
           
           <span
             aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 select-none items-center rounded border border-border bg-elevated px-1.5 py-0.5 font-mono text-[10px] tracking-[0.04em] text-fg-muted sm:flex"
+            className="pointer-events-none absolute top-1/2 right-2 hidden -translate-y-1/2 select-none items-center rounded border border-border bg-elevated px-2 py-0.5 font-mono text-[10px] tracking-[0.04em] text-fg-muted sm:flex"
           >
             {mac ? "⌘" : "Ctrl"} K
           </span>

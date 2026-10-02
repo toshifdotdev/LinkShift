@@ -49,7 +49,7 @@ function Segmented({
             value={option.value}
             disabled={option.disabled}
             className={cn(
-              "inline-flex h-8 cursor-pointer items-center justify-center gap-1.5 rounded-[5px] px-3 text-xs font-medium text-fg-secondary transition-colors duration-150",
+              "inline-flex h-8 cursor-pointer items-center justify-center gap-2 rounded-[5px] px-3 text-xs font-medium text-fg-secondary transition-colors duration-150",
               "hover:text-foreground data-active:bg-raised data-active:text-foreground",
               "disabled:cursor-not-allowed disabled:opacity-45",
               "max-lg:min-h-11",

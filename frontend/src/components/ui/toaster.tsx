@@ -44,13 +44,13 @@ function useToaster() {
 
 const icons: Record<ToastVariant, ReactNode> = {
   default: <Info className="size-4 text-fg-secondary" />,
-  success: <CheckCircle2 className="size-4 text-emerald-400" />,
+  success: <CheckCircle2 className="size-4 text-success" />,
   error: <AlertTriangle className="size-4 text-destructive" />,
 };
 
 const variantsToTone: Record<ToastVariant, string> = {
   default: "before:bg-fg-muted/60",
-  success: "before:bg-emerald-400",
+  success: "before:bg-success",
   error: "before:bg-destructive",
 };
 
@@ -90,7 +90,7 @@ function ToastProvider({ children }: { children: ReactNode }) {
               exit={{ opacity: 0, y: 8, scale: 0.98 }}
               transition={{ duration: 0.18, ease: "easeOut" }}
               className={cn(
-                "pointer-events-auto relative flex items-start gap-3 overflow-hidden rounded-lg border border-border bg-raised p-3.5 pr-9 shadow-lift before:absolute before:inset-y-0 before:left-0 before:w-0.5",
+                "pointer-events-auto relative flex items-start gap-3 overflow-hidden rounded-lg border border-border bg-raised p-4 pr-9 shadow-lift before:absolute before:inset-y-0 before:left-0 before:w-0.5",
                 variantsToTone[t.variant],
               )}
             >

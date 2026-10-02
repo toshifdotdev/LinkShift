@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { motion, useReducedMotion } from "framer-motion";
 import { useState } from "react";
 import { getActivity, getStats } from "@/api/dashboard";
 import { getMe } from "@/api/users";
@@ -7,7 +8,7 @@ import { OnboardingChecklist } from "@/components/app/onboarding-checklist";
 import { EmptyState, ErrorState } from "@/components/ui/empty";
 import { KpiCell } from "@/components/ui/kpi-cell";
 import { Lamp } from "@/components/ui/lamp";
-import { FadeIn } from "@/components/ui/motion";
+import { rowEntry, staggerDelay } from "@/components/ui/motion";
 import { RouteStrip } from "@/components/ui/route-strip";
 import { Segmented } from "@/components/ui/segmented";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,6 +43,7 @@ function TopLinks({
   data: { id: string; name: string | null; shortId: string; clicks: number; domainHost?: string }[];
   loading?: boolean;
 }) {
+  const reduce = useReducedMotion();
   if (loading) {
     return (
       <div className="px-5 py-4 sm:px-6 sm:py-5">
@@ -68,7 +70,11 @@ function TopLinks({
   return (
     <ol className="divide-y divide-border-subtle">
       {data.map((l, i) => (
-        <li key={l.id} className="group flex items-center gap-4 px-5 py-3.5 transition-colors hover:bg-elevated/50 sm:px-6">
+        <motion.li
+          key={l.id}
+          {...rowEntry(staggerDelay(i), reduce)}
+          className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-elevated/50 sm:px-6"
+        >
           <span
             aria-hidden="true"
             className={cn(
@@ -89,9 +95,9 @@ function TopLinks({
           </div>
           <p className="shrink-0 text-right font-mono text-sm text-foreground tabular-nums">
             {l.clicks.toLocaleString()}
-            <span className="ml-1.5 text-[10px] tracking-[0.14em] text-fg-muted uppercase">clicks</span>
+            <span className="ml-2 text-[10px] tracking-[0.14em] text-fg-muted uppercase">clicks</span>
           </p>
-        </li>
+        </motion.li>
       ))}
     </ol>
   );
@@ -104,13 +110,14 @@ function RecentActivity({
   data: { linkName: string; shortId: string; device: string; browser: string; country: string; scannedAt: string }[];
   loading?: boolean;
 }) {
+  const reduce = useReducedMotion();
   if (loading) {
     return (
       <div className="px-5 py-4 sm:px-6 sm:py-5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-3 py-2.5">
+          <div key={i} className="flex items-center gap-3 py-3">
             <Skeleton className="size-1.5 rounded-full" />
-            <div className="flex-1 space-y-1.5">
+            <div className="flex-1 space-y-2">
               <Skeleton className="h-3 w-44" />
               <Skeleton className="h-2.5 w-28" />
             </div>
@@ -133,7 +140,11 @@ function RecentActivity({
   return (
     <ol className="divide-y divide-border-subtle">
       {data.map((a, i) => (
-        <li key={`${a.shortId}-${a.scannedAt}-${i}`} className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50 sm:px-6">
+        <motion.li
+          key={`${a.shortId}-${a.scannedAt}-${i}`}
+          {...rowEntry(staggerDelay(i), reduce)}
+          className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-elevated/50 sm:px-6"
+        >
           <span aria-hidden="true" className="relative flex size-1.5 shrink-0">
             <span className="ls-ping absolute inset-0 rounded-full bg-success/60" />
             <span className="relative inline-flex size-1.5 rounded-full bg-success" />
@@ -152,7 +163,7 @@ function RecentActivity({
               minute: "2-digit",
             })}
           </time>
-        </li>
+        </motion.li>
       ))}
     </ol>
   );
@@ -173,14 +184,17 @@ function OverviewPage() {
     select: (d) => d.data,
   });
 
+  // ["me"] is a shared cache key with auth/session.tsx, which stores the
+  // unwrapped MeUser. Caching the raw { success, data } wrapper here meant
+  // whichever fetch ran last decided the cache shape, and the shell's
+  // user?.plan.name then read .name off undefined and crashed the whole app.
   const me = useQuery({
     queryKey: ["me"],
-    queryFn: () => getMe(),
-    select: (d) => d.data,
+    queryFn: async () => (await getMe()).data,
   });
 
   return (
-    <FadeIn>
+    <>
       <RouteStrip
         index="01"
         label="Overview"
@@ -197,19 +211,20 @@ function OverviewPage() {
       />
 
       {me.data?.onboarding ? (
-        <div className="mt-6">
+        <div className="mt-8">
           <OnboardingChecklist state={me.data.onboarding} />
         </div>
       ) : null}
 
       {stats.isError ? (
         <ErrorState
+          className="mt-8"
           title="Couldn't load your stats"
           message={stats.error instanceof Error ? stats.error.message : undefined}
           onRetry={() => void stats.refetch()}
         />
       ) : (
-        <section aria-label="Headline numbers" className="ls-plate relative overflow-hidden">
+        <section aria-label="Headline numbers" className="mt-8 ls-plate relative overflow-hidden">
           <span aria-hidden="true" className="ls-stripe" />
           <header className="flex items-center justify-between border-b border-border-subtle px-5 py-3 sm:px-6">
             <p className="ls-marquee">
@@ -260,7 +275,7 @@ function OverviewPage() {
           <RecentActivity data={activity.data ?? []} loading={activity.isPending} />
         </section>
       </div>
-    </FadeIn>
+    </>
   );
 }
 

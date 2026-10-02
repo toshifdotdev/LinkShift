@@ -125,7 +125,7 @@ function HeatGrid({
           </div>
 
           
-          <footer className="border-t border-border-subtle px-5 py-2.5">
+          <footer className="border-t border-border-subtle px-5 py-3">
             <p className="truncate font-mono text-[10px] tracking-[0.12em] text-fg-muted tabular-nums">
               {hover ? readout(hover) : peak ? `PEAK · ${readout(peak)}` : ""}
             </p>

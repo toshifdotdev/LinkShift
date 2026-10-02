@@ -15,7 +15,6 @@ import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToaster } from "@/components/ui/toaster";
-import { FadeIn } from "@/components/ui/motion";
 import type { DomainRow } from "@/types/api";
 
 
@@ -28,7 +27,7 @@ function DnsInstructions({ host }: { host: string }) {
       <p className="font-mono text-[10px] tracking-[0.18em] text-brand uppercase">
         DNS record to add
       </p>
-      <dl className="mt-2.5 space-y-1.5 font-mono text-xs">
+      <dl className="mt-3 space-y-2 font-mono text-xs">
         <div className="flex gap-2">
           <dt className="w-14 shrink-0 text-fg-muted uppercase">Type</dt>
           <dd className="text-foreground">CNAME</dd>
@@ -42,7 +41,7 @@ function DnsInstructions({ host }: { host: string }) {
           <dd className="break-all text-foreground">go.linkshift.in</dd>
         </div>
       </dl>
-      <p className="mt-2.5 text-[11px] leading-snug text-fg-muted">
+      <p className="mt-3 text-[11px] leading-snug text-fg-muted">
         DNS changes can take a few minutes to a few hours. Come back and press Verify once the record is live.
       </p>
     </div>
@@ -203,7 +202,7 @@ function DomainRowCard({
         </span>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
             <p className="truncate font-mono text-sm text-foreground">{domain.host}</p>
             {domain.verified ? <Lamp tone="success">Verified</Lamp> : <Lamp tone="warning">Pending DNS</Lamp>}
           </div>
@@ -213,7 +212,7 @@ function DomainRowCard({
           </p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-2">
           {!domain.verified && (
             <Button variant="secondary" size="sm" loading={verifying} onClick={onVerify}>
               <RefreshCcw className="size-3.5" />
@@ -237,7 +236,7 @@ function DomainRowCard({
       </div>
 
       {showDns && (
-        <div className="border-t border-border px-4 py-3.5">
+        <div className="border-t border-border px-4 py-4">
           <DnsInstructions host={domain.host} />
         </div>
       )}
@@ -315,9 +314,9 @@ function DomainsPage() {
   );
 
   return (
-    <FadeIn>
+    <>
       <RouteStrip
-        index="05"
+        index="06"
         label="Domains"
         title="Your brand, on every hop."
         description="Connect a domain, verify it in DNS, and put it on any link you own."
@@ -462,7 +461,7 @@ function DomainsPage() {
           if (deleting) void deleteMutation.mutateAsync(deleting.id);
         }}
       />
-    </FadeIn>
+    </>
   );
 }
 

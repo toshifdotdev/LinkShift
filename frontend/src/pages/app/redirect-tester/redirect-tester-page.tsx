@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { AlertTriangle, ArrowRight, FlaskConical, Info } from "lucide-react";
+import { AlertTriangle, ArrowRight, Info } from "lucide-react";
 import { useState } from "react";
 import {
   previewRedirect,
@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Segmented } from "@/components/ui/segmented";
 import { Switch } from "@/components/ui/switch";
 import { Lamp } from "@/components/ui/lamp";
+import { RouteStrip } from "@/components/ui/route-strip";
 import { cn } from "@/lib/utils";
 
 function audienceTone(audience: RedirectPreview["audience"]) {
@@ -62,30 +63,21 @@ export function RedirectTesterPage() {
   const error = preview.error instanceof ApiError ? preview.error.message : null;
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
-      <header className="mb-8">
-        <div className="flex items-center gap-2">
-          <FlaskConical className="size-4 text-fg-muted" aria-hidden="true" />
-          <p className="font-mono text-[10px] tracking-[0.18em] text-fg-muted uppercase">
-            Redirect tester
-          </p>
-        </div>
-        <h1 className="font-display mt-2 text-2xl font-semibold tracking-tight">
-          See where a link actually sends people
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-fg-secondary">
-          Check a destination against every platform before you point a short link at it.
-          Previews record nothing and cost none of your monthly redirects.
-        </p>
-      </header>
+    <>
+      <RouteStrip
+        index="05"
+        label="Redirect Tester"
+        title="See where a link actually sends people"
+        description="Check a destination against every platform before you point a short link at it. Previews record nothing and cost none of your monthly redirects."
+      />
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <section className="rounded-lg border border-border bg-surface p-5">
           <div className="space-y-5">
             <div>
               <label
                 htmlFor="tester-url"
-                className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                className="mb-2 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
               >
                 Destination URL
               </label>
@@ -100,7 +92,7 @@ export function RedirectTesterPage() {
             </div>
 
             <div>
-              <span className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
+              <span className="mb-2 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
                 Visitor
               </span>
               <Segmented
@@ -115,7 +107,7 @@ export function RedirectTesterPage() {
               <div>
                 <label
                   htmlFor="tester-path"
-                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                  className="mb-2 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
                 >
                   Path after slug
                 </label>
@@ -129,7 +121,7 @@ export function RedirectTesterPage() {
               <div>
                 <label
                   htmlFor="tester-query"
-                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                  className="mb-2 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
                 >
                   Query string
                 </label>
@@ -167,7 +159,7 @@ export function RedirectTesterPage() {
                 <div>
                   <label
                     htmlFor="tester-scheme"
-                    className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                    className="mb-2 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
                   >
                     Scheme
                   </label>
@@ -181,7 +173,7 @@ export function RedirectTesterPage() {
                 <div>
                   <label
                     htmlFor="tester-package"
-                    className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                    className="mb-2 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
                   >
                     Android package
                   </label>
@@ -195,7 +187,7 @@ export function RedirectTesterPage() {
                 <div>
                   <label
                     htmlFor="tester-app-path"
-                    className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                    className="mb-2 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
                   >
                     App path
                   </label>
@@ -246,7 +238,7 @@ export function RedirectTesterPage() {
                 <p className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
                   Final destination
                 </p>
-                <p className="mt-1.5 font-mono text-xs leading-relaxed break-all text-foreground">
+                <p className="mt-2 font-mono text-xs leading-relaxed break-all text-foreground">
                   {result.finalUrl}
                 </p>
 
@@ -255,7 +247,7 @@ export function RedirectTesterPage() {
                     <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
                       App URL
                     </p>
-                    <p className="mt-1.5 font-mono text-xs leading-relaxed break-all text-fg-secondary">
+                    <p className="mt-2 font-mono text-xs leading-relaxed break-all text-fg-secondary">
                       {result.appUrl}
                     </p>
                   </>
@@ -266,7 +258,7 @@ export function RedirectTesterPage() {
                     <p className="mt-4 font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
                       Store fallback
                     </p>
-                    <p className="mt-1.5 font-mono text-xs leading-relaxed break-all text-fg-secondary">
+                    <p className="mt-2 font-mono text-xs leading-relaxed break-all text-fg-secondary">
                       {result.storeUrl}
                     </p>
                   </>
@@ -309,6 +301,6 @@ export function RedirectTesterPage() {
           </p>
         </aside>
       </div>
-    </div>
+    </>
   );
 }

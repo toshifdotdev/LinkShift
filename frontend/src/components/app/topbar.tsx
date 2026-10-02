@@ -29,7 +29,7 @@ function Topbar({
 
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-background">
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-2.5 px-5 lg:px-8">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center gap-3 px-5 lg:px-8">
         <button
           type="button"
           aria-label="Open navigation"
@@ -40,12 +40,12 @@ function Topbar({
           <Menu className="size-5" />
         </button>
 
-        <p className="flex min-w-0 items-center gap-2.5 text-sm">
+        <p className="flex min-w-0 items-center gap-3 text-sm">
           <span className="font-mono text-[10px] tabular-nums text-fg-muted">{nav.index}</span>
           <span className="min-w-0 truncate font-medium text-foreground">{nav.label}</span>
         </p>
 
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
           <UserMenu
             onLogout={() => void handleLogout()}

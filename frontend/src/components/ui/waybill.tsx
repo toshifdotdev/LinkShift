@@ -42,7 +42,7 @@ function Waybill({
         {status && <div className="shrink-0 pt-0.5">{status}</div>}
       </header>
       {children && (
-        <dl className="mt-5 flex flex-col gap-2.5 border-t border-border-subtle pt-5">
+        <dl className="mt-5 flex flex-col gap-3 border-t border-border-subtle pt-5">
           {children}
         </dl>
       )}

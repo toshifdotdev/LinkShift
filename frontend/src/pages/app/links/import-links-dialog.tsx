@@ -255,7 +255,7 @@ export function ImportLinksDialog({
             {usableDomains.length === 0 ? (
               <ImportError message="Connect and verify a domain before importing. Links need somewhere to live." />
             ) : (
-              <label className="block space-y-1.5">
+              <label className="block space-y-2">
                 <span className="text-xs text-fg-secondary">
                   Import onto domain
                 </span>
@@ -317,7 +317,7 @@ export function ImportLinksDialog({
                   .map((result) => (
                     <li
                       key={result.row}
-                      className="flex items-start gap-3 px-3 py-2.5"
+                      className="flex items-start gap-3 px-3 py-3"
                     >
                       <span className="font-mono text-[10px] text-fg-muted">
                         row {result.row}
@@ -372,7 +372,7 @@ export function ImportLinksDialog({
                 {committed.results
                   .filter((result) => result.outcome === "rejected")
                   .map((result) => (
-                    <li key={result.row} className="px-3 py-2.5">
+                    <li key={result.row} className="px-3 py-3">
                       <span className="font-mono text-[10px] text-fg-muted">
                         row {result.row}
                       </span>{" "}
@@ -406,7 +406,7 @@ function ImportError({ message }: { message: string }) {
   return (
     <p
       role="alert"
-      className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-xs text-fg-secondary"
+      className="flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-3 text-xs text-fg-secondary"
     >
       <AlertTriangle
         aria-hidden="true"
@@ -431,7 +431,7 @@ function ColumnPicker({
   required?: boolean;
 }) {
   return (
-    <label className="block space-y-1.5">
+    <label className="block space-y-2">
       <span className="text-xs text-fg-secondary">
         {label}
         {required ? " (required)" : " (optional)"}

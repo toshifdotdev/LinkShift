@@ -197,7 +197,7 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
     <Dialog open onOpenChange={(o) => { if (!o) close(); }}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
         <DialogTitle>Edit link</DialogTitle>
-        <div className="mt-2 flex items-center gap-2 rounded-md border border-border bg-sunken/50 px-3 py-1.5 font-mono text-[12.5px]">
+        <div className="mt-2 flex items-center gap-2 rounded-md border border-border bg-sunken/50 px-3 py-2 font-mono text-[12.5px]">
           <span className="shrink-0 text-fg-muted/80">{domainHost}/</span>
           <span className="truncate text-foreground">{slug || link?.shortId}</span>
         </div>
@@ -341,7 +341,7 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
                     autoComplete="new-password"
                     placeholder="New password for visitors"
                   />
-                  <ul className="flex flex-wrap gap-1.5" aria-label="Password requirements">
+                  <ul className="flex flex-wrap gap-2" aria-label="Password requirements">
                     {PASSWORD_RULES.map((r) => (
                       <li
                         key={r.key}
@@ -362,7 +362,7 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
 
             
             <Field>
-              <label htmlFor="edit-switch-domain" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
+              <label htmlFor="edit-switch-domain" className="flex cursor-pointer items-center gap-3 text-[13px] text-fg-secondary">
                 <input
                   id="edit-switch-domain"
                   type="checkbox"
@@ -396,7 +396,7 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
             </Field>
 
             
-            <label className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
+            <label className="flex cursor-pointer items-center gap-3 text-[13px] text-fg-secondary">
               <input
                 type="checkbox"
                 checked={isActive}
@@ -426,7 +426,7 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
               </FieldLabel>
               {canUseDeepLink ? (
                 <>
-                  <label htmlFor="edit-deep-link" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
+                  <label htmlFor="edit-deep-link" className="flex cursor-pointer items-center gap-3 text-[13px] text-fg-secondary">
                     <input
                       id="edit-deep-link"
                       type="checkbox"
@@ -476,7 +476,7 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
               </FieldLabel>
               {canUseDeepLink ? (
                 <div className="flex flex-col gap-3">
-                  <label htmlFor="edit-app-deep-link" className="flex cursor-pointer items-center gap-2.5 text-[13px] text-fg-secondary">
+                  <label htmlFor="edit-app-deep-link" className="flex cursor-pointer items-center gap-3 text-[13px] text-fg-secondary">
                     <input
                       id="edit-app-deep-link"
                       type="checkbox"
@@ -622,7 +622,7 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
             >
               Tags
             </label>
-            <p className="mt-1 mb-2.5 text-[11px] leading-relaxed text-fg-muted">
+            <p className="mt-1 mb-3 text-[11px] leading-relaxed text-fg-muted">
               Group this link so you can filter a list of hundreds, and see which
               campaign a click belongs to.
             </p>
@@ -649,7 +649,7 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
               <div>
                 <label
                   htmlFor="edit-og-title"
-                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                  className="mb-2 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
                 >
                   Title
                 </label>
@@ -664,7 +664,7 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
               <div>
                 <label
                   htmlFor="edit-og-description"
-                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                  className="mb-2 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
                 >
                   Description
                 </label>
@@ -679,7 +679,7 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
               <div>
                 <label
                   htmlFor="edit-og-image"
-                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                  className="mb-2 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
                 >
                   Image URL
                 </label>

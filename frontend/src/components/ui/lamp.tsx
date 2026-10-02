@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 
 const lampVariants = cva(
-  "inline-flex items-center gap-1.5 font-mono text-[10px] font-medium uppercase tracking-[0.14em]",
+  "inline-flex items-center gap-2 font-mono text-[10px] font-medium uppercase tracking-[0.14em]",
   {
     variants: {
       tone: {

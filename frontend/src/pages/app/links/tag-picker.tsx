@@ -57,7 +57,7 @@ export function TagPicker({
   return (
     <div>
       {value.length > 0 && (
-        <ul className="mb-2 flex flex-wrap gap-1.5">
+        <ul className="mb-2 flex flex-wrap gap-2">
           {value.map((name) => (
             <li key={name}>
               <span className="inline-flex items-center gap-1 rounded border border-border bg-elevated px-2 py-0.5 font-mono text-[11px] text-fg-secondary">
@@ -97,7 +97,7 @@ export function TagPicker({
       />
 
       {suggestions.length > 0 && (
-        <div className="mt-1.5 flex flex-wrap gap-1.5">
+        <div className="mt-2 flex flex-wrap gap-2">
           {suggestions.map((t) => (
             <button
               key={t.id}

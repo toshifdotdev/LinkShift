@@ -101,9 +101,9 @@ function SecuritySection() {
       
       <div className="flex flex-col gap-6">
         <dl className="ls-plate grid grid-cols-1 overflow-hidden sm:grid-cols-2">
-          <div className="border-b border-border px-4 py-3.5 sm:border-r">
+          <div className="border-b border-border px-4 py-4 sm:border-r">
             <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Password</dt>
-            <dd className="mt-1.5">
+            <dd className="mt-2">
               {user.hasPassword ? (
                 <Lamp tone="neutral">Set</Lamp>
               ) : (
@@ -111,9 +111,9 @@ function SecuritySection() {
               )}
             </dd>
           </div>
-          <div className="border-b border-border px-4 py-3.5">
+          <div className="border-b border-border px-4 py-4">
             <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">Email status</dt>
-            <dd className="mt-1.5 flex flex-wrap items-center gap-2">
+            <dd className="mt-2 flex flex-wrap items-center gap-2">
               {user.verified ? (
                 <Lamp tone="success">Verified</Lamp>
               ) : (
@@ -133,8 +133,8 @@ function SecuritySection() {
           </div>
         </dl>
 
-        <div className="ls-plate flex flex-col gap-2 px-4 py-3.5">
-          <div className="flex items-start gap-2.5">
+        <div className="ls-plate flex flex-col gap-2 px-4 py-4">
+          <div className="flex items-start gap-3">
             <ShieldCheck className="mt-0.5 size-4 shrink-0 text-brand" />
             <div>
               <p className="text-sm font-medium text-foreground">One active session</p>
@@ -190,7 +190,7 @@ function SecuritySection() {
             onChange={(e) => setNext(e.target.value)}
             placeholder="Create a strong password"
           />
-          <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Password requirements">
+          <ul className="mt-2 flex flex-wrap gap-2" aria-label="Password requirements">
             {ruleState.map((r) => (
               <li
                 key={r.key}

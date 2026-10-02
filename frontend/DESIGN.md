@@ -105,7 +105,7 @@ App scale:
 
 | Role | Setting |
 |---|---|
-| Page thesis | Fraunces `clamp(1.4rem, 2vw, 1.75rem)`, semibold, tracking-tight |
+| Page thesis | Fraunces `clamp(1.55rem, 2.4vw, 2rem)`, semibold, tracking-tight |
 | KPI value | JetBrains Mono tabular 24–28px |
 | Row text | Archivo 13px |
 | Secondary | Archivo 12px |

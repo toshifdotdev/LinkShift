@@ -25,7 +25,7 @@ function UtmFields({
   lockedRequirement?: string;
 }) {
   return (
-    <div className="rounded-md border border-border p-3.5">
+    <div className="rounded-md border border-border p-4">
       <p className="flex items-center gap-2 text-[13px] font-medium text-fg-secondary">
         UTM campaign tagging
         {!canUseUtm && (
@@ -35,7 +35,7 @@ function UtmFields({
         )}
       </p>
       {canUseUtm && subtitle && (
-        <p className="mt-1.5 text-xs leading-relaxed text-fg-muted">{subtitle}</p>
+        <p className="mt-2 text-xs leading-relaxed text-fg-muted">{subtitle}</p>
       )}
       {canUseUtm ? (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
