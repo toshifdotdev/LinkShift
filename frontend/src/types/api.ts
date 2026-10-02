@@ -84,6 +84,12 @@ export interface ActivityItem {
 }
 
 
+/** A campaign tag. Flattened to id + name because the UI renders chips. */
+export interface LinkTag {
+  id: string;
+  name: string;
+}
+
 export interface LinkItem {
   id: string;
   name: string | null;
@@ -103,6 +109,8 @@ androidStoreUrl: string | null;
       ogTitle?: string | null;
       ogDescription?: string | null;
       ogImageUrl?: string | null;
+      /** Absent only for data fetched before tags existed. */
+      tags?: LinkTag[];
       expiresAt: string | null;
   createdAt: string;
   updatedAt: string;

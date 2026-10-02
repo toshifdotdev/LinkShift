@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Segmented } from "@/components/ui/segmented";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import type { ListLinksParams } from "@/api/links";
+import { useTags } from "@/hooks/use-tags";
 
 const SORT_OPTIONS = [
   { label: "Newest first", sort: "createdAt" as const, order: "desc" as const },
@@ -22,22 +23,29 @@ function isMac() {
 function LinksToolbar({
   search,
   onSearch,
-  status,
+status,
   onStatus,
+  tag,
+  onTag,
   sort,
   order,
   onSort,
 }: {
   search: string;
   onSearch: (v: string) => void;
-  status: ListLinksParams["status"];
-  onStatus: (v: ListLinksParams["status"]) => void;
-  sort: NonNullable<ListLinksParams["sort"]>;
+status: ListLinksParams["status"];
+    onStatus: (v: ListLinksParams["status"]) => void;
+    /** Currently applied tag filter, if any. */
+    tag?: string;
+    onTag: (v: string | undefined) => void;
+    sort: NonNullable<ListLinksParams["sort"]>;
   order: NonNullable<ListLinksParams["order"]>;
   onSort: (sort: NonNullable<ListLinksParams["sort"]>, order: NonNullable<ListLinksParams["order"]>) => void;
 }) {
   const current = SORT_OPTIONS.find((o) => o.sort === sort && o.order === order);
   const [mac, setMac] = useState(false);
+  const tagsQuery = useTags();
+  const tags = tagsQuery.data ?? [];
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMac(isMac());
@@ -56,7 +64,33 @@ function LinksToolbar({
         ]}
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+<div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+        {/* Only rendered once the owner actually has tags. An empty dropdown
+            would be a control that cannot do anything. */}
+        {tags.length > 0 && (
+          <Select
+            value={tag ?? "all"}
+            onValueChange={(v) => onTag(v === "all" ? undefined : v)}
+          >
+            <SelectTrigger aria-label="Filter by tag" className="h-9 w-full sm:w-48">
+              {tag ? `Tag: ${tag}` : "All tags"}
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tags</SelectItem>
+              {tags.map((t) => (
+                <SelectItem key={t.id} value={t.name}>
+                  {t.name}
+                  {t.linkCount > 0 && (
+                    <span className="ml-auto pl-2 font-mono text-[10px] text-fg-muted tabular-nums">
+                      {t.linkCount}
+                    </span>
+                  )}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+
         <div className="relative">
           <Search
             className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-fg-muted"

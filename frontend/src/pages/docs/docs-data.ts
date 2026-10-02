@@ -126,6 +126,33 @@ export const DOC_CATEGORIES: DocCategory[] = [
         ],
       },
       {
+        slug: "tags",
+        title: "Tags",
+        summary: "Group links by campaign and filter the ledger down to one.",
+        body: [
+          {
+            kind: "p",
+            text: "A tag is a label you put on links so a large account stays navigable: one tag per campaign, channel, or client. Tags only organise; they never change where a link points or how it behaves. A link can carry several, and an untagged link still works exactly as before.",
+          },
+          {
+            kind: "steps",
+            items: [
+              "Create or edit a link and use the Tags field.",
+              "Type a name and press Enter. A name you have not used before is created for you.",
+              "Pick from your existing tags when you want to reuse one.",
+            ],
+          },
+          {
+            kind: "p",
+            text: "Filter the Links ledger with the tag dropdown. It shows how many links carry each tag, so you can see at a glance which campaigns you actually have. Tag names are matched case-insensitively — Launch and launch are the same tag — and each account's tags are private to it.",
+          },
+          {
+            kind: "note",
+            text: "Removing a tag from a link does not delete the tag. A tag with no links left on it stays in your list with a count of zero, which keeps it available for the next campaign that needs it.",
+          },
+        ],
+      },
+      {
         slug: "custom-slugs",
         title: "Custom slugs",
         summary: "Readable codes like /spring-sale instead of generated ones.",

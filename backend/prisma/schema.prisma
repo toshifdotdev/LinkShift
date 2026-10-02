@@ -131,6 +131,7 @@ model User {
   subscriptions Subscription[]
   payments      Payment[]
   linkChanges   LinkChange[]
+  tags          Tag[]
 }
 
 model EmailVerification {
@@ -203,6 +204,7 @@ model Link {
   qr          Qr[]
   scans       Scan[]
   linkChanges LinkChange[]
+  tags        LinkTag[]
 
   domainId String
 
@@ -449,4 +451,40 @@ model LinkChange {
 
   @@index([userId, type, createdAt])
   @@index([linkId])
+}
+
+/// A label an owner applies to links, used to group and filter them.
+///
+/// Scoped to the owner rather than global: two people using the same account
+/// must not collide on "launch", and tag listings are a per-user sidebar.
+/// Names are unique per user so the picker cannot produce duplicates that
+/// then have to be disambiguated everywhere they are shown.
+model Tag {
+  id     String @id @default(cuid())
+  name   String
+  userId String
+
+  createdAt DateTime @default(now())
+
+  user  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links LinkTag[]
+
+  @@unique([userId, name])
+  @@index([userId])
+}
+
+/// Join between Link and Tag.
+///
+/// Explicit rather than an implicit many-to-many so an analytics query can
+/// filter by tag with a plain indexed lookup, and so the same link can carry
+/// several tags.
+model LinkTag {
+  linkId String
+  tagId  String
+
+  link Link @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([linkId, tagId])
+  @@index([tagId])
 }

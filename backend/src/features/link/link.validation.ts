@@ -80,6 +80,13 @@ export const createLinkSchema  = z.object({
       z.url({ message: "Invalid image URL format", protocol: /^https?$/ })
         .max(2048, { message: "URL must be 2048 characters or less" })
     ).optional(),
+
+  /**
+   * Tag names to attach. Created on demand, so the picker can accept free text
+   * without a separate create round-trip. Capped because the cost is one
+   * upsert per name.
+   */
+  tagNames: z.array(z.string().trim().min(1).max(30)).max(25, "Apply at most 25 tags to a link.").optional(),
   }).superRefine((data, ctx) => {
 
       const hasAnyUtm =
@@ -201,6 +208,15 @@ export const updateLinkSchema = z.object({
       z.url({ message: "Invalid image URL format", protocol: /^https?$/ })
         .max(2048, { message: "URL must be 2048 characters or less" })
     ).nullable().optional(),
+
+  /**
+   * Tag names to attach, replacing whatever is on the link now.
+   *
+   * Optional but not nullable: omitting the key leaves tags untouched, while
+   * an empty array clears them. That distinction matters because a PATCH that
+   * only changes the destination must not silently strip the owner's tags.
+   */
+  tagNames: z.array(z.string().trim().min(1).max(30)).max(25, "Apply at most 25 tags to a link.").optional(),
 
 }).partial().refine((data) => data.name !== undefined || data.targetUrl !== undefined || 
                               data.isActive !== undefined || data.expiresAt !== undefined ||

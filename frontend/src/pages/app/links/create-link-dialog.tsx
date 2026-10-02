@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { TagPicker } from "./tag-picker";
 import { UpgradeHint } from "./upgrade-hint";
 import { UtmFields } from "./utm-fields";
 import {
@@ -67,6 +68,7 @@ function CreateLinkDialog({
   const [appPath, setAppPath] = useState("");
   const [iosStoreUrl, setIosStoreUrl] = useState("");
   const [androidStoreUrl, setAndroidStoreUrl] = useState("");
+  const [tagNames, setTagNames] = useState<string[]>([]);
   const [ogTitle, setOgTitle] = useState("");
   const [ogDescription, setOgDescription] = useState("");
   const [ogImageUrl, setOgImageUrl] = useState("");
@@ -112,6 +114,9 @@ setOgTitle("");
     onSuccess: async (res) => {
       await queryClient.invalidateQueries({ queryKey: ["links"] });
       await queryClient.invalidateQueries({ queryKey: ["stats"] });
+      // A tag typed into a link is created on save, so the filter dropdown
+      // would otherwise not list it until a manual reload.
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
       onCreated(res.data);
       reset();
       onOpenChange(false);
@@ -169,6 +174,7 @@ setOgTitle("");
       appPath: appDeepLink ? appPath.trim() || undefined : undefined,
       iosStoreUrl: appDeepLink ? iosStoreUrl.trim() || undefined : undefined,
 androidStoreUrl: appDeepLink ? androidStoreUrl.trim() || undefined : undefined,
+      tagNames: tagNames.length > 0 ? tagNames : undefined,
       ogTitle: ogTitle.trim() || undefined,
       ogDescription: ogDescription.trim() || undefined,
       ogImageUrl: ogImageUrl.trim() || undefined,
@@ -568,7 +574,25 @@ androidStoreUrl: appDeepLink ? androidStoreUrl.trim() || undefined : undefined,
             <FieldError>{backendMessage}</FieldError>
           )}
 
-          <div className="mt-1 border-t border-border pt-4">
+          <div className="mt-1">
+            <label
+              htmlFor="link-tags"
+              className="text-[13px] font-medium text-fg-secondary"
+            >
+              Tags
+            </label>
+            <p className="mt-1 mb-2.5 text-[11px] leading-relaxed text-fg-muted">
+              Group this link so you can filter a list of hundreds, and see which
+              campaign a click belongs to.
+            </p>
+            <TagPicker
+              id="link-tags"
+              value={tagNames}
+              onChange={setTagNames}
+            />
+          </div>
+
+          <div className="mt-4 border-t border-border pt-4">
             <label
               htmlFor="og-title"
               className="text-[13px] font-medium text-fg-secondary"

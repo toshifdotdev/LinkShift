@@ -449,20 +449,24 @@ export const getActivity = async(id : string, requestedDays ?: number) => {
                 gte: cutoff,
             },
         }),
-        include : {
-            link : {
-                select : {
-                    name  : true,
-                    shortId : true,
+include : {
+                link : {
+                    select : {
+                        name  : true,
+                        shortId : true,
+                        // Carried through so an owner reading the activity feed
+                        // can see which campaign a click belonged to without
+                        // having to open the link.
+                        tags : { include : { tag : { select : { id : true, name : true } } } },
+                    }
                 }
-            }
-        },
-        orderBy : {
-            scannedAt : 'desc'
-        },
-        take : 10
-    })
-    return scans.map(analyticsMapper);
+            },
+            orderBy : {
+                scannedAt : 'desc'
+            },
+            take : 10
+        })
+        return scans.map(analyticsMapper);
 }
 
 export const getChartData = async(id : string, linkId : string, requestedDays ?: number) => {

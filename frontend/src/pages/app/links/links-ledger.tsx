@@ -36,6 +36,26 @@ function LinksLedger({
           <CodeChip truncate prefix={`${link.domainHost || DEFAULT_SHORT_DOMAIN}/`}>
             {link.shortId}
           </CodeChip>
+          {/* Tags shown on the row so an owner can see what a link is filed
+              under without opening it. Hidden entirely when there are none,
+              rather than reserving space for an empty label. */}
+          {link.tags && link.tags.length > 0 && (
+            <span className="flex flex-wrap gap-1">
+              {link.tags.slice(0, 3).map((tag) => (
+                <span
+                  key={tag.id}
+                  className="rounded border border-border px-1.5 py-px font-mono text-[10px] text-fg-muted"
+                >
+                  {tag.name}
+                </span>
+              ))}
+              {link.tags.length > 3 && (
+                <span className="px-1 py-px font-mono text-[10px] text-fg-muted">
+                  +{link.tags.length - 3}
+                </span>
+              )}
+            </span>
+          )}
         </span>
       ),
     },

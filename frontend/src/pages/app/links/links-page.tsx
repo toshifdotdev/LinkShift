@@ -34,6 +34,7 @@ function LinksPage() {
   const page = Math.max(1, Number(searchParams.get("page") ?? 1) || 1);
   const search = searchParams.get("search") ?? "";
   const status = (searchParams.get("status") ?? undefined) as ListLinksParams["status"];
+  const tag = searchParams.get("tag") ?? undefined;
   const sort = (searchParams.get("sort") ?? "createdAt") as NonNullable<ListLinksParams["sort"]>;
   const order = (searchParams.get("order") ?? "desc") as NonNullable<ListLinksParams["order"]>;
 
@@ -59,9 +60,12 @@ function LinksPage() {
   }
 
   const listQuery = useQuery({
-    queryKey: ["links", { page, limit: PAGE_SIZE, search, status, sort, order }],
+    // `tag` belongs in the key as well as the call. Leaving it out would let
+    // the cache serve a filtered list for an unfiltered request, which looks
+    // like the filter randomly ignoring itself.
+    queryKey: ["links", { page, limit: PAGE_SIZE, search, status, tag, sort, order }],
     queryFn: ({ signal }) =>
-      listLinks({ page, limit: PAGE_SIZE, search, status, sort, order }, signal),
+      listLinks({ page, limit: PAGE_SIZE, search, status, tag, sort, order }, signal),
   });
 
   const links = listQuery.data?.data ?? [];
@@ -90,6 +94,9 @@ function LinksPage() {
       toast({ title: "Link deleted", meta: deleting ? `${deleting.domainHost || DEFAULT_SHORT_DOMAIN}/${deleting.shortId}` : undefined, variant: "success" });
       await queryClient.invalidateQueries({ queryKey: ["links"] });
       await queryClient.invalidateQueries({ queryKey: ["stats"] });
+      // A tag typed into a link is created on save, so the filter dropdown
+      // would otherwise not list it until a manual reload.
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
       setDeleting(null);
     },
     onError: (err) => {
@@ -180,6 +187,16 @@ function LinksPage() {
                 onSearch={setSearchInput}
                 status={status}
                 onStatus={(v) => patchParams((n) => (v ? n.set("status", v) : n.delete("status")))}
+                tag={tag}
+                onTag={(v) =>
+                  patchParams((n) => {
+                    if (v) n.set("tag", v);
+                    else n.delete("tag");
+                    // Any filter change invalidates the current page number;
+                    // page 3 of the old filter means nothing in the new one.
+                    n.delete("page");
+                  })
+                }
                 sort={sort}
                 order={order}
                 onSort={(s, o) =>
@@ -196,7 +213,14 @@ function LinksPage() {
               <EmptyState
                 marquee="Filtered"
                 title="No links match"
-                description="Nothing matches the current search and filters."
+                description={
+                  // Names the filter that caused it. "No links match" with an
+                  // active tag filter reads as data loss until you find the
+                  // dropdown.
+                  tag
+                    ? `Nothing is tagged "${tag}" under the other current filters.`
+                    : "Nothing matches the current search and filters."
+                }
                 action={
                   <Button
                     variant="outline"

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldHint, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
+import { TagPicker } from "./tag-picker";
 import { UpgradeHint } from "./upgrade-hint";
 import { UtmFields } from "./utm-fields";
 import {
@@ -70,6 +71,9 @@ function EditLinkDialog({
   const [appPath, setAppPath] = useState(link.appPath ?? "");
   const [iosStoreUrl, setIosStoreUrl] = useState(link.iosStoreUrl ?? "");
   const [androidStoreUrl, setAndroidStoreUrl] = useState(link.androidStoreUrl ?? "");
+  const [tagNames, setTagNames] = useState<string[]>(
+    (link.tags ?? []).map((t) => t.name),
+  );
   const [ogTitle, setOgTitle] = useState(link.ogTitle ?? "");
   const [ogDescription, setOgDescription] = useState(link.ogDescription ?? "");
   const [ogImageUrl, setOgImageUrl] = useState(link.ogImageUrl ?? "");
@@ -102,6 +106,9 @@ function EditLinkDialog({
     onSuccess: async (res) => {
       await queryClient.invalidateQueries({ queryKey: ["links"] });
       await queryClient.invalidateQueries({ queryKey: ["stats"] });
+      // A tag typed into a link is created on save, so the filter dropdown
+      // would otherwise not list it until a manual reload.
+      await queryClient.invalidateQueries({ queryKey: ["tags"] });
       onSaved(res.data);
       close();
     },
@@ -172,6 +179,10 @@ function EditLinkDialog({
 androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null : null) : undefined,
       // Sent as null rather than omitted: an empty string is the owner
       // clearing the preview, which is different from leaving it untouched.
+      // Always sent, including when empty, because this picker owns the tag
+      // set. Omitting it would leave tags untouched and make clearing
+      // impossible from here.
+      tagNames,
       ogTitle: ogTitle.trim() || null,
       ogDescription: ogDescription.trim() || null,
       ogImageUrl: ogImageUrl.trim() || null,
@@ -604,7 +615,25 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
             )}
             {fieldError && <FieldError>{fieldError}</FieldError>}
 
-          <div className="mt-1 border-t border-border pt-4">
+          <div className="mt-1">
+            <label
+              htmlFor="edit-link-tags"
+              className="text-[13px] font-medium text-fg-secondary"
+            >
+              Tags
+            </label>
+            <p className="mt-1 mb-2.5 text-[11px] leading-relaxed text-fg-muted">
+              Group this link so you can filter a list of hundreds, and see which
+              campaign a click belongs to.
+            </p>
+            <TagPicker
+              id="edit-link-tags"
+              value={tagNames}
+              onChange={setTagNames}
+            />
+          </div>
+
+          <div className="mt-4 border-t border-border pt-4">
             <label
               htmlFor="edit-og-title"
               className="text-[13px] font-medium text-fg-secondary"

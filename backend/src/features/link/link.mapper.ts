@@ -1,6 +1,37 @@
 import { Prisma } from "../../generated/prisma/client"
 
+/**
+ * A link as returned to the client.
+ *
+ * `tags` is optional on the *input* side only. Some call sites fetch a single
+ * link with no use for its tags, so requiring them in the include would force
+ * a pointless join everywhere; the mapper normalises the absence to an empty
+ * list so consumers never branch on it.
+ */
 type LinkWithScanCount = Prisma.LinkGetPayload<
+        {
+            include : {
+                _count : {
+                    select : { scans :true }
+                },
+                domain : {
+                    select : { id : true, host : true }
+                },
+                tags ? : {
+                    include : { tag : { select : { id : true, name : true } } }
+                }
+            }
+
+        }>;
+
+/**
+ * The same payload with tags deliberately omitted.
+ *
+ * Prisma cannot express "this include is optional" in a GetPayload type, so
+ * call sites that fetch a single link map through this shape instead of having
+ * to fake an empty join they never asked for.
+ */
+type LinkWithoutTags = Prisma.LinkGetPayload<
         {
             include : {
                 _count : {
@@ -10,8 +41,7 @@ type LinkWithScanCount = Prisma.LinkGetPayload<
                     select : { id : true, host : true }
                 }
             }
-
-        }>
+        }>;
 
 type LinkResponse = {
     id: string;
@@ -39,7 +69,7 @@ type LinkResponse = {
     androidStoreUrl: string | null;
 };
 
-export const getLinkMapper = (link : LinkWithScanCount) : LinkResponse => {
+export const getLinkMapper = (link : LinkWithScanCount | LinkWithoutTags) : LinkResponse => {
     return {
         id: link.id,
         name: link.name,

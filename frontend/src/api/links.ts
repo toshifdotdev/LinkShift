@@ -4,9 +4,11 @@ import type { LinkItem, LinksPagination } from "@/types/api";
 export interface ListLinksParams {
   page?: number;
   limit?: number;
-  search?: string;
-  status?: "active" | "inactive";
-  sort?: "createdAt" | "updatedAt" | "name" | "clicks";
+search?: string;
+      status?: "active" | "inactive";
+      /** Filter to one tag by name. */
+      tag?: string;
+      sort?: "createdAt" | "updatedAt" | "name" | "clicks";
   order?: "asc" | "desc";
 }
 
@@ -33,6 +35,8 @@ export interface CreateLinkPayload {
   ogTitle?: string;
   ogDescription?: string;
   ogImageUrl?: string;
+  /** Tag names to attach, created on demand. Omit to add none. */
+  tagNames?: string[];
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
@@ -67,6 +71,8 @@ export interface UpdateLinkPayload {
   ogTitle?: string | null;
   ogDescription?: string | null;
   ogImageUrl?: string | null;
+  /** Omit to leave tags untouched; send an empty array to clear them. */
+  tagNames?: string[];
 }
 
 export function listLinks(params: ListLinksParams, signal?: AbortSignal) {
@@ -74,9 +80,10 @@ export function listLinks(params: ListLinksParams, signal?: AbortSignal) {
     query: {
       page: params.page,
       limit: params.limit,
-      search: params.search || undefined,
-      status: params.status,
-      sort: params.sort,
+search: params.search || undefined,
+          status: params.status,
+          tag: params.tag || undefined,
+          sort: params.sort,
       order: params.order,
     },
     signal,

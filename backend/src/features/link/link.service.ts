@@ -7,6 +7,7 @@ import { CreateLinkData, updateData } from './link.validation';
 import { queryData } from './link.query.validation';
 import { deleteCache, linkCacheKey } from '../../utils/cache';
 import { getAvailableShortId } from '../../utils/shortId';
+import { applyTagsToLink, syncTagsIfProvided } from '../tag/tag.service';
 import { getValidatedDomain } from '../../utils/validate.domain';
 import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit, checkUtmAccess, checkDeepLinkAccess, checkAppDeepLinkAccess } from '../billing/billing.service';
 import { buildUtmUrl } from '../utm/utm.service';
@@ -49,6 +50,7 @@ export const createLink = async (data : CreateData) => {
             ogTitle,
             ogDescription,
             ogImageUrl,
+            tagNames,
         appPath,
         iosStoreUrl,
         androidStoreUrl
@@ -149,6 +151,10 @@ export const createLink = async (data : CreateData) => {
 
     await deleteCache(`dashboard:${userId}`)
 
+    // Applied after the link exists, and separately, so a bad tag name cannot
+    // roll back a link the owner was trying to create.
+    await applyTagsToLink(userId, createdLink.id, tagNames ?? []);
+
     return getLinkMapper(createdLink);
 }
 
@@ -180,8 +186,16 @@ export const getLinks = async (data : GetLinksData) => {
     }
 
 
-    const orderBy: Prisma.LinkOrderByWithRelationInput =
-        data.sort === "clicks"
+// Tag filter, ANDed with the search OR block above rather than merged
+        // into it. Folding it into `where.OR` would make it match links that
+        // satisfy EITHER the search OR the tag, which silently widens the
+        // result set the owner asked to narrow.
+        if (data.tag) {
+            where.tags = { some: { tag: { userId: data.userId, name: data.tag } } };
+        }
+
+        const orderBy: Prisma.LinkOrderByWithRelationInput =
+            data.sort === "clicks"
             ? {
                 scans: {
                     _count: data.order
@@ -202,11 +216,15 @@ export const getLinks = async (data : GetLinksData) => {
         take,
         include: {
         _count: {
-            select: { scans : true } 
+            select: { scans : true }
         },
         domain: {
             select: { id : true, host : true }
-        }
+        },
+        // Every row needs its tags so the list can show them and the owner can
+        // see at a glance what a link is filed under. Always fetched rather
+        // than only when filtering, because the display needs it either way.
+        tags: { include: { tag: { select: { id: true, name: true } } } },
         },
     }),
     prisma.link.count({
@@ -475,6 +493,11 @@ export const updateLink = async(data : UpdateLinkData) => {
 
     await deleteCache(linkCacheKey(domain.host, link.shortId));
     await deleteCache(`dashboard:${link.userId}`);
+
+    // Only touched when the key was supplied. A PATCH that changes just the
+    // destination must leave tags alone, which is why omitting the key and
+    // sending an empty array mean different things.
+    await syncTagsIfProvided(data.userId, link.id, data.tagNames);
 
     return getLinkMapper(link);
 }

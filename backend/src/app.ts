@@ -11,6 +11,7 @@ import usersRouter from './features/users/users.routes';
 import supportRouter from './features/support/support.routes';
 import statusRouter from './features/status/status.routes';
 import redirectTesterRouter from './features/redirect-tester/redirectTester.routes';
+import tagRouter from './features/tag/tag.routes';
 import { errorMiddleware } from './middleware/error.middleware';
 import { redirectHostRobots, redirectHostNoIndex } from './middleware/crawler.middleware';
 import { AppError } from './errors/AppError';
@@ -100,6 +101,7 @@ app.use("/api/v1/users", usersRouter);
 app.use("/api/v1/support", supportRouter);
 app.use("/api/v1/status", statusRouter);
 app.use("/api/v1/redirect-tester", redirectTesterRouter);
+app.use("/api/v1/tags", tagRouter);
 
 
 app.use("/",redirectRouter);
