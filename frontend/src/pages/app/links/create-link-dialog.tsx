@@ -67,6 +67,9 @@ function CreateLinkDialog({
   const [appPath, setAppPath] = useState("");
   const [iosStoreUrl, setIosStoreUrl] = useState("");
   const [androidStoreUrl, setAndroidStoreUrl] = useState("");
+  const [ogTitle, setOgTitle] = useState("");
+  const [ogDescription, setOgDescription] = useState("");
+  const [ogImageUrl, setOgImageUrl] = useState("");
   const [utm, setUtm] = useState<UtmValues>(emptyUtm);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
@@ -97,6 +100,9 @@ function CreateLinkDialog({
     setAppPath("");
     setIosStoreUrl("");
     setAndroidStoreUrl("");
+setOgTitle("");
+    setOgDescription("");
+    setOgImageUrl("");
     setUtm(emptyUtm());
     setFieldError(null);
   };
@@ -162,7 +168,10 @@ function CreateLinkDialog({
       androidPackage: appDeepLink ? androidPackage.trim() || undefined : undefined,
       appPath: appDeepLink ? appPath.trim() || undefined : undefined,
       iosStoreUrl: appDeepLink ? iosStoreUrl.trim() || undefined : undefined,
-      androidStoreUrl: appDeepLink ? androidStoreUrl.trim() || undefined : undefined,
+androidStoreUrl: appDeepLink ? androidStoreUrl.trim() || undefined : undefined,
+      ogTitle: ogTitle.trim() || undefined,
+      ogDescription: ogDescription.trim() || undefined,
+      ogImageUrl: ogImageUrl.trim() || undefined,
       ...utmCreatePayload(utm),
     });
   }
@@ -554,10 +563,75 @@ function CreateLinkDialog({
             )}
           </div>
 
-          {fieldError && <FieldError>{fieldError}</FieldError>}
+{fieldError && <FieldError>{fieldError}</FieldError>}
           {backendMessage && (
             <FieldError>{backendMessage}</FieldError>
           )}
+
+          <div className="mt-1 border-t border-border pt-4">
+            <label
+              htmlFor="og-title"
+              className="text-[13px] font-medium text-fg-secondary"
+            >
+              Social preview
+            </label>
+            <p className="mt-1 text-[11px] leading-relaxed text-fg-muted">
+              What WhatsApp, Slack, LinkedIn and X show when someone shares this
+              link. Without it the share appears as a bare URL.
+            </p>
+
+            <div className="mt-3 space-y-3">
+              <div>
+                <label
+                  htmlFor="og-title"
+                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                >
+                  Title
+                </label>
+                <Input
+                  id="og-title"
+                  value={ogTitle}
+                  onChange={(e) => setOgTitle(e.target.value)}
+                  placeholder="Launch week is here"
+                  maxLength={120}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="og-description"
+                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                >
+                  Description
+                </label>
+                <Input
+                  id="og-description"
+                  value={ogDescription}
+                  onChange={(e) => setOgDescription(e.target.value)}
+                  placeholder="Everything we built, in one place."
+                  maxLength={300}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="og-image"
+                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                >
+                  Image URL
+                </label>
+                <Input
+                  id="og-image"
+                  value={ogImageUrl}
+                  onChange={(e) => setOgImageUrl(e.target.value)}
+                  placeholder="https://cdn.example.com/card.png"
+                  inputMode="url"
+                />
+                <FieldHint>
+                  Use a public image at least 1200x630. Leave all three blank to
+                  keep the plain URL.
+                </FieldHint>
+              </div>
+            </div>
+          </div>
           {is403 && (
             <UpgradeHint
               feature={backendMessage ?? "This capability"}

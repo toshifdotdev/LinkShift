@@ -190,6 +190,15 @@ model Link {
   iosStoreUrl     String?
   androidStoreUrl String?
 
+  // Social / chat link preview. A short link is a redirect, and a redirect
+  // carries no metadata, so a crawler fetching it has nothing to render and the
+  // share shows as a bare URL. When these are set, a crawler is served a small
+  // HTML document carrying Open Graph tags instead of being redirected. A human
+  // click is always redirected and never shown a card.
+  ogTitle       String?
+  ogDescription String?
+  ogImageUrl    String?
+
   user        User         @relation(fields: [userId], references: [id])
   qr          Qr[]
   scans       Scan[]

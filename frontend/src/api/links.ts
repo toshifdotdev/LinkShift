@@ -30,6 +30,9 @@ export interface CreateLinkPayload {
   appPath?: string;
   iosStoreUrl?: string;
   androidStoreUrl?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  ogImageUrl?: string;
   utmSource?: string;
   utmMedium?: string;
   utmCampaign?: string;
@@ -61,6 +64,9 @@ export interface UpdateLinkPayload {
   appPath?: string | null;
   iosStoreUrl?: string | null;
   androidStoreUrl?: string | null;
+  ogTitle?: string | null;
+  ogDescription?: string | null;
+  ogImageUrl?: string | null;
 }
 
 export function listLinks(params: ListLinksParams, signal?: AbortSignal) {

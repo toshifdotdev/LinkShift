@@ -45,6 +45,15 @@ export type ResolvedRedirect =
     | {
         kind: "interstitial";
         html: string;
+    }
+    | {
+        /**
+         * A chat/social crawler asking what this link is about. It gets Open
+         * Graph metadata to render a card, never the destination and never a
+         * click.
+         */
+        kind: "preview";
+        html: string;
     };
 
 /**

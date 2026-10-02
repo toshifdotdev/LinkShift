@@ -98,8 +98,12 @@ export interface LinkItem {
   androidPackage: string | null;
   appPath: string | null;
   iosStoreUrl: string | null;
-  androidStoreUrl: string | null;
-  expiresAt: string | null;
+androidStoreUrl: string | null;
+      /** Open Graph card text. All three null means the link previews as a bare URL. */
+      ogTitle?: string | null;
+      ogDescription?: string | null;
+      ogImageUrl?: string | null;
+      expiresAt: string | null;
   createdAt: string;
   updatedAt: string;
   clicks: number;

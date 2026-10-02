@@ -112,6 +112,9 @@ export const previewRedirect = async (
         utmCampaign: null,
         utmTerm: null,
         utmContent: null,
+        ogTitle: null,
+        ogDescription: null,
+        ogImageUrl: null,
     };
 
     const access = {
@@ -239,11 +242,18 @@ export const previewRedirect = async (
     // `resolveFinalDestination` is the authority on the outcome. The narration
     // above only explains it, so the two cannot disagree about where a visitor
     // ends up.
+    //
+    // Narrowed to the two kinds this service can actually produce. The
+    // "preview" kind is not reachable here: it is gated on a crawler user agent,
+    // and the tester deliberately drives the resolver with a real platform
+    // agent so it can describe a human visitor.
     const finalUrl = resolved.kind === "redirect" ? resolved.targetUrl : webFallback;
+    const kind: "redirect" | "interstitial" =
+        resolved.kind === "interstitial" ? "interstitial" : "redirect";
 
     return {
         finalUrl,
-        kind: resolved.kind,
+        kind,
         preset: data.preset,
         audience,
         showsInterstitial: resolved.kind === "interstitial",

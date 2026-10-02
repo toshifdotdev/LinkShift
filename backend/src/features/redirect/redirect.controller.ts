@@ -53,6 +53,14 @@ export const redirect = asyncHandler(async(req : Request, res : Response) => {
         return;
     }
 
+    // A chat/social crawler. Served the Open Graph card instead of a redirect,
+    // because a redirect has no body for it to read. Reached only when the link
+    // owner set preview text, so every other link keeps its exact behaviour.
+    if (result.kind === "preview") {
+        sendInterstitial(res, result.html);
+        return;
+    }
+
     res.redirect(result.targetUrl);
 })
 
@@ -69,6 +77,14 @@ export const unlockController = asyncHandler(async(req : Request, res : Response
     const resolved = await unlockService(shortId, password, host, req);
 
     if (resolved.kind === "interstitial") {
+        sendInterstitial(res, resolved.html);
+        return;
+    }
+
+    // An unlocked link can still carry preview metadata. A crawler that
+    // previously hit the unlock page gets the card once the link is unlocked,
+    // which is strictly more useful than another password prompt.
+    if (resolved.kind === "preview") {
         sendInterstitial(res, resolved.html);
         return;
     }

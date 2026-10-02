@@ -70,6 +70,9 @@ function EditLinkDialog({
   const [appPath, setAppPath] = useState(link.appPath ?? "");
   const [iosStoreUrl, setIosStoreUrl] = useState(link.iosStoreUrl ?? "");
   const [androidStoreUrl, setAndroidStoreUrl] = useState(link.androidStoreUrl ?? "");
+  const [ogTitle, setOgTitle] = useState(link.ogTitle ?? "");
+  const [ogDescription, setOgDescription] = useState(link.ogDescription ?? "");
+  const [ogImageUrl, setOgImageUrl] = useState(link.ogImageUrl ?? "");
   /** Tags stored on the link when the dialog opened; the save-time diff baseline. The
       page mounts this dialog with key={link.id}, so seeding from props is enough. */
   const [storedUtm] = useState<UtmValues>(() => utmFromLink(link));
@@ -166,7 +169,12 @@ function EditLinkDialog({
       androidPackage: canUseDeepLink ? (appDeepLink ? androidPackage.trim() || null : null) : undefined,
       appPath: canUseDeepLink ? (appDeepLink ? appPath.trim() || null : null) : undefined,
       iosStoreUrl: canUseDeepLink ? (appDeepLink ? iosStoreUrl.trim() || null : null) : undefined,
-      androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null : null) : undefined,
+androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null : null) : undefined,
+      // Sent as null rather than omitted: an empty string is the owner
+      // clearing the preview, which is different from leaving it untouched.
+      ogTitle: ogTitle.trim() || null,
+      ogDescription: ogDescription.trim() || null,
+      ogImageUrl: ogImageUrl.trim() || null,
       ...utmPatch,
     });
   }
@@ -595,6 +603,67 @@ function EditLinkDialog({
               </>
             )}
             {fieldError && <FieldError>{fieldError}</FieldError>}
+
+          <div className="mt-1 border-t border-border pt-4">
+            <label
+              htmlFor="edit-og-title"
+              className="text-[13px] font-medium text-fg-secondary"
+            >
+              Social preview
+            </label>
+            <p className="mt-1 text-[11px] leading-relaxed text-fg-muted">
+              What WhatsApp, Slack, LinkedIn and X show when someone shares this
+              link. Clear these to go back to a plain URL.
+            </p>
+
+            <div className="mt-3 space-y-3">
+              <div>
+                <label
+                  htmlFor="edit-og-title"
+                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                >
+                  Title
+                </label>
+                <Input
+                  id="edit-og-title"
+                  value={ogTitle}
+                  onChange={(e) => setOgTitle(e.target.value)}
+                  placeholder="Launch week is here"
+                  maxLength={120}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-og-description"
+                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                >
+                  Description
+                </label>
+                <Input
+                  id="edit-og-description"
+                  value={ogDescription}
+                  onChange={(e) => setOgDescription(e.target.value)}
+                  placeholder="Everything we built, in one place."
+                  maxLength={300}
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="edit-og-image"
+                  className="mb-1.5 block font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase"
+                >
+                  Image URL
+                </label>
+                <Input
+                  id="edit-og-image"
+                  value={ogImageUrl}
+                  onChange={(e) => setOgImageUrl(e.target.value)}
+                  placeholder="https://cdn.example.com/card.png"
+                  inputMode="url"
+                />
+              </div>
+            </div>
+          </div>
 
             <div className="mt-1 flex items-center justify-end gap-2">
               <Button type="button" variant="ghost" onClick={close}>

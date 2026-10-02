@@ -130,3 +130,21 @@ export const classifyRequest = ({ userAgent, ip }: ClassifyInput): BotClassifica
     
     return { isBot: false, reason: null, category: null };
 };
+
+/**
+ * True when this request comes from a chat or social crawler that renders a
+ * rich card for a shared link.
+ *
+ * Uses the same `social-preview` rule the bot classifier already applies, so
+ * there is exactly one list of preview crawlers in the codebase. A second,
+ * separately maintained list would drift, and the two disagreeing is how a
+ * link ends up rendering as a bare URL on the platform that matters most.
+ */
+export const isSocialPreviewRequest = (userAgent: string | undefined): boolean => {
+    const ua = (userAgent ?? "").trim();
+    if (!ua) return false;
+
+    return UA_RULES.some(
+        (rule) => rule.reason === "social-preview" && rule.pattern.test(ua)
+    );
+};

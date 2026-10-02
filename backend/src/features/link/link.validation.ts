@@ -63,6 +63,23 @@ export const createLinkSchema  = z.object({
       z.url({ message: "Invalid Play Store URL format", protocol: /^https?$/ })
         .max(2048, { message: "URL must be 2048 characters or less" })
     ).optional(),
+
+  // Social / chat link preview.
+  ogTitle: z.string().trim().max(120, "Preview title cannot exceed 120 characters").optional(),
+  ogDescription: z
+    .string()
+    .trim()
+    .max(300, "Preview description cannot exceed 300 characters")
+    .optional(),
+  // http(s) only. This is rendered into an og:image tag on the short-link
+  // domain, so a data: or javascript: value would be attacker-controlled
+  // markup in a document served from the domain customers are told to trust.
+  ogImageUrl: z.string()
+    .trim()
+    .pipe(
+      z.url({ message: "Invalid image URL format", protocol: /^https?$/ })
+        .max(2048, { message: "URL must be 2048 characters or less" })
+    ).optional(),
   }).superRefine((data, ctx) => {
 
       const hasAnyUtm =
@@ -166,6 +183,22 @@ export const updateLinkSchema = z.object({
     .trim()
     .pipe(
       z.url({ message: "Invalid Play Store URL format", protocol: /^https?$/ })
+        .max(2048, { message: "URL must be 2048 characters or less" })
+    ).nullable().optional(),
+
+  // Mirrors the create schema. Nullable so a preview can be cleared by sending
+  // null, which is different from omitting the key (leave unchanged).
+  ogTitle: z.string().trim().max(120, "Preview title cannot exceed 120 characters").nullable().optional(),
+  ogDescription: z
+    .string()
+    .trim()
+    .max(300, "Preview description cannot exceed 300 characters")
+    .nullable()
+    .optional(),
+  ogImageUrl: z.string()
+    .trim()
+    .pipe(
+      z.url({ message: "Invalid image URL format", protocol: /^https?$/ })
         .max(2048, { message: "URL must be 2048 characters or less" })
     ).nullable().optional(),
 

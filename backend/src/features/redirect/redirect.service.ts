@@ -4,6 +4,9 @@ import * as bcrypt from 'bcrypt';
 import { AppError } from "../../errors/AppError"
 import { getCache, setCache, linkCacheKey } from "../../utils/cache";
 import { completeTargetUrl } from "../../utils/completeRedirect";
+import { isSocialPreviewRequest } from "../../utils/botDetection";
+import { extractRest } from "../../utils/appDeepLink";
+import { hasLinkPreview, renderLinkPreview } from "../link/linkPreview";
 import { checkRedirectLimit, hasDeepLinkAccess, hasAppDeepLinkAccess } from "../billing/billing.service";
 import {
     contextFromRequest,
@@ -11,6 +14,26 @@ import {
     resolveFinalDestination,
     ResolvedRedirect,
 } from "./redirect-resolution";
+
+/**
+ * Rebuilds the absolute URL the crawler requested, for `og:url`.
+ *
+ * Built from the request's own Host rather than a configured base, so it stays
+ * correct on a customer custom domain and survives the primary short domain
+ * changing. `shortId` is passed in because `CachedLink` is keyed on it in the
+ * cache rather than carrying it as a field.
+ */
+const previewUrlFor = (
+    req: Request,
+    shortId: string
+): { shortUrl: string; siteName: string } => {
+    const host = req.headers.host ?? "";
+    const proto = req.protocol ?? "https";
+    const rest = extractRest(req.params as Record<string, unknown>);
+    const suffix = rest ? `/${rest}` : "";
+
+    return { shortUrl: `${proto}://${host}/${shortId}${suffix}`, siteName: host };
+};
 
 export type CachedLink = {
     id: string;
@@ -31,7 +54,10 @@ export type CachedLink = {
     utmMedium: string | null,
     utmCampaign: string | null,
     utmTerm: string | null,
-    utmContent: string | null
+    utmContent: string | null,
+    ogTitle: string | null,
+    ogDescription: string | null,
+    ogImageUrl: string | null
 };
 
 type RedirectResult =
@@ -44,11 +70,40 @@ type RedirectResult =
     };
 
 
-const resolveDestination = async (link: CachedLink, req: Request): Promise<ResolvedRedirect> => {
+const resolveDestination = async (
+    link: CachedLink,
+    shortId: string,
+    req: Request
+): Promise<ResolvedRedirect> => {
     // Records the click. Deliberately separate from destination resolution:
     // resolution below is pure, which is what lets the redirect tester reuse it
     // without writing a scan or spending quota.
     const result = await completeTargetUrl(link, req);
+
+    // Chat and social crawlers are answered before destination resolution.
+    //
+    // This still records the scan above, and must keep doing so: the Privacy
+    // Policy states that every request to a short link is recorded, with
+    // machine requests excluded from clicks rather than from storage. Skipping
+    // the write here would silently contradict a published promise and quietly
+    // change what the CSV export contains.
+    if (
+        hasLinkPreview(link) &&
+        isSocialPreviewRequest(req.headers["user-agent"])
+    ) {
+        const { shortUrl, siteName } = previewUrlFor(req, shortId);
+
+        return {
+            kind: "preview",
+            html: renderLinkPreview({
+                shortUrl,
+                title: (link.ogTitle ?? link.ogDescription ?? "").trim(),
+                description: link.ogDescription,
+                imageUrl: link.ogImageUrl,
+                siteName,
+            }),
+        };
+    }
 
     // Guards keep the original short-circuit. `hasDeepLinkAccess` and
     // `hasAppDeepLinkAccess` both hit the plan cache, so calling them
@@ -89,6 +144,11 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
         appPath: cached.appPath ?? null,
         iosStoreUrl: cached.iosStoreUrl ?? null,
         androidStoreUrl: cached.androidStoreUrl ?? null,
+        // A link cached before this feature existed has no og fields at all, so
+        // default them rather than letting undefined through the type.
+        ogTitle: cached.ogTitle ?? null,
+        ogDescription: cached.ogDescription ?? null,
+        ogImageUrl: cached.ogImageUrl ?? null,
         expiresAt: cached.expiresAt
             ? new Date(cached.expiresAt)
             : null,
@@ -138,6 +198,9 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
             utmCampaign: linkWithDomain.utmCampaign,
             utmTerm: linkWithDomain.utmTerm,
             utmContent: linkWithDomain.utmContent,
+            ogTitle: linkWithDomain.ogTitle,
+            ogDescription: linkWithDomain.ogDescription,
+            ogImageUrl: linkWithDomain.ogImageUrl,
         };
 
         await setCache(cacheKey, targetUrl, 86400);
@@ -163,7 +226,7 @@ export const redirect = async(shortId : string, host : string, req : Request) : 
         }
     }
 
-    const resolved = await resolveDestination(targetUrl, req);
+    const resolved = await resolveDestination(targetUrl, shortId, req);
 
     return {
         requiresPassword : false,
@@ -224,5 +287,5 @@ export const unlockService = async(shortId : string, password : string, host : s
     }
 
     
-    return resolveDestination(targetUrl, req);
+    return resolveDestination(targetUrl, shortId, req);
 }

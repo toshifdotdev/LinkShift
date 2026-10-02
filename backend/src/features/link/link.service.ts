@@ -46,6 +46,9 @@ export const createLink = async (data : CreateData) => {
         appDeepLink,
         appScheme,
         androidPackage,
+            ogTitle,
+            ogDescription,
+            ogImageUrl,
         appPath,
         iosStoreUrl,
         androidStoreUrl
@@ -113,7 +116,10 @@ export const createLink = async (data : CreateData) => {
                 androidPackage: appDeepLink ? androidPackage ?? null : null,
                 appPath: appDeepLink ? appPath ?? null : null,
                 iosStoreUrl: appDeepLink ? iosStoreUrl ?? null : null,
-                androidStoreUrl: appDeepLink ? androidStoreUrl ?? null : null
+                androidStoreUrl: appDeepLink ? androidStoreUrl ?? null : null,
+                ogTitle: ogTitle ?? null,
+                ogDescription: ogDescription ?? null,
+                ogImageUrl: ogImageUrl ?? null
             },
             include: {
                 _count: {
@@ -311,6 +317,9 @@ export const updateLink = async(data : UpdateLinkData) => {
     const finalAppPath = data.appPath !== undefined ? data.appPath : existingLink.appPath;
     const finalIosStoreUrl = data.iosStoreUrl !== undefined ? data.iosStoreUrl : existingLink.iosStoreUrl;
     const finalAndroidStoreUrl = data.androidStoreUrl !== undefined ? data.androidStoreUrl : existingLink.androidStoreUrl;
+    const finalOgTitle = data.ogTitle !== undefined ? data.ogTitle : existingLink.ogTitle;
+    const finalOgDescription = data.ogDescription !== undefined ? data.ogDescription : existingLink.ogDescription;
+    const finalOgImageUrl = data.ogImageUrl !== undefined ? data.ogImageUrl : existingLink.ogImageUrl;
 
     if (finalAppDeepLink && !finalAppScheme) {
         throw new AppError("A URI scheme is required to enable mobile app deep linking", 400);
@@ -412,6 +421,9 @@ export const updateLink = async(data : UpdateLinkData) => {
             appPath: finalAppPath ?? null,
             iosStoreUrl: finalIosStoreUrl ?? null,
             androidStoreUrl: finalAndroidStoreUrl ?? null,
+    ogTitle: finalOgTitle ?? null,
+    ogDescription: finalOgDescription ?? null,
+    ogImageUrl: finalOgImageUrl ?? null,
         },
         include : {
             _count : {
