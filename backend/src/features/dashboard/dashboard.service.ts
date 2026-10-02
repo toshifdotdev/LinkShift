@@ -33,6 +33,7 @@ type cacheBoard = {
     activeLinks : number, 
     inactiveLinks : number, 
     totalScans : number, 
+    botRequests : number,
     topLinks : TopLinks[],
     dailyStats : { day: Date; clicks: number }[],
     hourlyStats : { hour: number; count: number }[],
@@ -50,7 +51,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
         return JSON.parse(cachedDashboard);
     }
 
-    const [ totalLinks , activeLinks, inactiveLinks, totalScans, topScanGroups ] = await Promise.all([
+    const [ totalLinks , activeLinks, inactiveLinks, totalScans, botRequests, topScanGroups ] = await Promise.all([
         prisma.link.count({
             where : {
                 userId : id
@@ -75,6 +76,21 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
                     userId: id
                 },
                 isBot: false,
+                scannedAt : {
+                    gte : cutoff
+                }
+            },
+        }),
+
+        // Machine requests are stored but never counted as clicks (the product
+        // promise), yet the owner still needs to see that they happened —
+        // this is the number the account view discloses next to the KPIs.
+        prisma.scan.count({
+            where: {
+                link: {
+                    userId: id
+                },
+                isBot: true,
                 scannedAt : {
                     gte : cutoff
                 }
@@ -181,6 +197,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
         activeLinks , 
         inactiveLinks, 
         totalScans, 
+        botRequests,
         topLinks,
         dailyStats: dailyRows.map(item => ({
             day: item.day,

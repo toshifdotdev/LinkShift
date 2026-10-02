@@ -125,7 +125,7 @@ export const createLink = async (data : CreateData) => {
             },
             include: {
                 _count: {
-                    select: { scans : true }
+                    select: { scans: { where: { isBot: false } } }
                 },
                 domain: {
                     select: { id : true, host : true }
@@ -216,7 +216,7 @@ export const getLinks = async (data : GetLinksData) => {
         take,
         include: {
         _count: {
-            select: { scans : true }
+            select: { scans: { where: { isBot: false } } }
         },
         domain: {
             select: { id : true, host : true }
@@ -257,7 +257,7 @@ export const getLink = async(id : string, linkId : string) => {
         },
         include : {
             _count : { 
-              select : { scans : true }
+              select: { scans: { where: { isBot: false } } }
             },
             domain : {
               select : { id : true, host : true }
@@ -445,7 +445,7 @@ export const updateLink = async(data : UpdateLinkData) => {
         },
         include : {
             _count : {
-                select : {scans : true}
+                select: { scans: { where: { isBot: false } } }
             },
             domain : {
                 select : { id : true, host : true }

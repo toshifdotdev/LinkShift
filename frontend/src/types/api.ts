@@ -66,6 +66,8 @@ export interface DashboardStats {
   activeLinks: number;
   inactiveLinks: number;
   totalScans: number;
+  /** Machine requests recorded in the window: stored, never counted as clicks. */
+  botRequests?: number;
   topLinks: TopLink[];
   
   dailyStats?: DailyPoint[];

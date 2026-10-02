@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 const SEGMENT_COLORS = [
   "var(--chart-1)",
@@ -28,6 +30,7 @@ function DonutChart({
   emptyText?: string;
   size?: number;
 }) {
+  const [hover, setHover] = useState<string | null>(null);
   const visible = items.filter((i) => i.count > 0).slice(0, SEGMENT_COLORS.length);
   const total = visible.reduce((s, i) => s + i.count, 0);
   const itemsKey = items.map((i) => `${i.label}:${i.count}`).join("|");
@@ -72,7 +75,7 @@ function DonutChart({
               return (
                 <circle
                   key={item.label}
-                  className="ls-donut-sweep"
+                  className="ls-donut-sweep transition-opacity duration-150"
                   cx="60"
                   cy="60"
                   r="48"
@@ -80,7 +83,12 @@ function DonutChart({
                   strokeWidth="16"
                   strokeDasharray={dash}
                   strokeDashoffset={offset}
-                  style={{ stroke: SEGMENT_COLORS[i % SEGMENT_COLORS.length] }}
+                  onMouseEnter={() => setHover(item.label)}
+                  onMouseLeave={() => setHover(null)}
+                  style={{
+                    stroke: SEGMENT_COLORS[i % SEGMENT_COLORS.length],
+                    opacity: hover === null || hover === item.label ? 1 : 0.35,
+                  }}
                 />
               );
             })}
@@ -104,13 +112,26 @@ function DonutChart({
           
           <ul className="min-w-0 flex-1 space-y-2">
             {visible.map((item, i) => (
-              <li key={item.label} className="flex items-center gap-3 text-[13px]">
+              <li
+                key={item.label}
+                onMouseEnter={() => setHover(item.label)}
+                onMouseLeave={() => setHover(null)}
+                className={cn(
+                  "flex items-center gap-3 rounded px-1 text-[13px] transition-colors duration-150",
+                  hover === item.label ? "bg-elevated/60" : "",
+                )}
+              >
                 <span
-                  className="size-2 shrink-0 rounded-full"
-                  style={{ background: SEGMENT_COLORS[i % SEGMENT_COLORS.length] }}
+                  className="size-2 shrink-0 rounded-full transition-opacity duration-150"
+                  style={{
+                    background: SEGMENT_COLORS[i % SEGMENT_COLORS.length],
+                    opacity: hover === null || hover === item.label ? 1 : 0.35,
+                  }}
                   aria-hidden="true"
                 />
-                <span className="min-w-0 flex-1 truncate text-fg-secondary">{item.label}</span>
+                <span className={cn("min-w-0 flex-1 truncate", hover === item.label ? "text-foreground" : "text-fg-secondary")}>
+                  {item.label}
+                </span>
                 <span className="shrink-0 font-mono text-xs text-foreground tabular-nums">
                   {Math.round((item.count / total) * 100)}%
                 </span>

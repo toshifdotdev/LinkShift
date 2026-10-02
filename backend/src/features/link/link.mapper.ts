@@ -12,7 +12,7 @@ type LinkWithScanCount = Prisma.LinkGetPayload<
         {
             include : {
                 _count : {
-                    select : { scans :true }
+                    select : { scans : { where : { isBot : false } } }
                 },
                 domain : {
                     select : { id : true, host : true }
@@ -35,7 +35,7 @@ type LinkWithoutTags = Prisma.LinkGetPayload<
         {
             include : {
                 _count : {
-                    select : { scans :true }
+                    select : { scans : { where : { isBot : false } } }
                 },
                 domain : {
                     select : { id : true, host : true }

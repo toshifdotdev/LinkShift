@@ -39,9 +39,11 @@ function KpiRowSkeleton() {
 function TopLinks({
   data,
   loading,
+  hasLinks,
 }: {
   data: { id: string; name: string | null; shortId: string; clicks: number; domainHost?: string }[];
   loading?: boolean;
+  hasLinks?: boolean;
 }) {
   const reduce = useReducedMotion();
   if (loading) {
@@ -58,11 +60,19 @@ function TopLinks({
     );
   }
   if (data.length === 0) {
+    // Two different realities share this slot: a brand-new account, and an
+    // account whose links simply scored nothing in the selected window. The
+    // second used to say "your first link will live here" to someone with
+    // links on file, which read as data loss.
     return (
       <EmptyState
-        marquee="Empty ledger"
-        title="Your first link will live here."
-        description="Top performers rank by clicks in the active window."
+        marquee={hasLinks ? "Quiet window" : "Empty ledger"}
+        title={hasLinks ? "No clicks in this window." : "Your first link will live here."}
+        description={
+          hasLinks
+            ? "Top performers rank by clicks in the active window. Widen the range or share a link to fill this ledger."
+            : "Top performers rank by clicks in the active window."
+        }
         className="border-none bg-transparent py-12"
       />
     );
@@ -238,17 +248,28 @@ function OverviewPage() {
           {stats.isPending ? (
             <KpiRowSkeleton />
           ) : (
-            <div className="grid grid-cols-2 divide-x divide-border-subtle sm:grid-cols-4">
-              <KpiCell label="Total links" value={stats.data?.totalLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
-              <KpiCell label="Active" value={stats.data?.activeLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
-              <KpiCell label="Inactive" value={stats.data?.inactiveLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
-              <KpiCell
-                label="Clicks"
-                value={stats.data?.totalScans ?? 0}
-                valueClassName="text-brand"
-                className="px-4 py-5 sm:px-5 sm:py-6"
-              />
-            </div>
+            <>
+              <div className="grid grid-cols-2 divide-x divide-border-subtle sm:grid-cols-4">
+                <KpiCell label="Total links" value={stats.data?.totalLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
+                <KpiCell label="Active" value={stats.data?.activeLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
+                <KpiCell label="Inactive" value={stats.data?.inactiveLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
+                <KpiCell
+                  label="Clicks"
+                  value={stats.data?.totalScans ?? 0}
+                  valueClassName="text-brand"
+                  className="px-4 py-5 sm:px-5 sm:py-6"
+                />
+              </div>
+              {(stats.data?.botRequests ?? 0) > 0 && (
+                <p className="border-t border-border-subtle px-5 py-3 text-[11px] leading-relaxed text-fg-muted sm:px-6">
+                  {(stats.data?.botRequests ?? 0).toLocaleString()} bot request
+                  {(stats.data?.botRequests ?? 0) === 1 ? "" : "s"} recorded and excluded
+                  — chat link previews, email scanners, crawlers and monitors.
+                  They are stored, not counted, and never charged against your
+                  plan.
+                </p>
+              )}
+            </>
           )}
         </section>
       )}
@@ -261,7 +282,11 @@ function OverviewPage() {
               {days}D window
             </span>
           </header>
-          <TopLinks data={stats.data?.topLinks ?? []} loading={stats.isPending} />
+          <TopLinks
+            data={stats.data?.topLinks ?? []}
+            loading={stats.isPending}
+            hasLinks={(stats.data?.totalLinks ?? 0) > 0}
+          />
         </section>
 
         <section aria-label="Recent activity" className="ls-plate relative overflow-hidden">
