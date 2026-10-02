@@ -117,6 +117,52 @@ jobs:
           grep -q 'name="robots" content="noindex,nofollow"' dist/404/index.html
           ! grep -q '<loc>https://linkshift.in/404</loc>' dist/sitemap.xml
 
+      - name: Verify llms.txt and sitemap cover every registered route
+        run: |
+          # The manifest is generated from src/prerender/public-routes.ts by
+          # scripts/generate-llms-txt.mjs (run automatically by `npm run
+          # build`), and the sitemap is built from the same registry. This
+          # assertion is the backstop: a route added to the registry must never
+          # ship without being listed in both artifacts. It checks dist/, so it
+          # catches a build step that stops regenerating the manifest, not just
+          # a stale source file.
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const xml = readFileSync("dist/sitemap.xml", "utf8");
+            const manifest = readFileSync("dist/llms.txt", "utf8");
+            const sitemapLocs = new Set(
+              [...xml.matchAll(/<loc>https:\/\/linkshift\.in([^<]*)<\/loc>/g)].map((m) => m[1] || "/"),
+            );
+            // Import the built SSR bundle rather than the TS registry so this
+            // assertion needs nothing beyond the build that just ran. It
+            // re-exports PUBLIC_PATHS and ERROR_ROUTE_PATHS verbatim.
+            const { PUBLIC_PATHS, ERROR_ROUTE_PATHS } = await import("./dist-ssr/prerender-entry.js");
+            const routes = [...new Set(PUBLIC_PATHS)].filter((p) => !ERROR_ROUTE_PATHS.includes(p));
+            let failed = false;
+            for (const route of routes) {
+              const loc = route === "/" ? "/" : route;
+              if (!sitemapLocs.has(loc)) {
+                console.error(`sitemap.xml is missing ${route}`);
+                failed = true;
+              }
+              // Boundary match, not literal `(...)`: the docs index line is
+              // `Index: …/docs` with no closing paren, and `/docs` must not be
+              // satisfied by a `/docs/<topic>` listing.
+              const escaped = route.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+              const listed = new RegExp(`https://linkshift\\.in${escaped}(?![A-Za-z0-9/-])`);
+              if (!listed.test(manifest)) {
+                console.error(`llms.txt is missing ${route}`);
+                failed = true;
+              }
+            }
+            if (failed) {
+              console.error("Regenerate: cd frontend && npm run generate:llms (the build does it automatically).");
+              process.exit(1);
+            }
+            console.log(`manifest + sitemap OK: ${routes.length} routes covered`);
+          '
+
+
       - name: Verify sitemap lists the prerendered routes with honest lastmod
         run: |
           # Every prerendered route must appear in the sitemap, and no lastmod

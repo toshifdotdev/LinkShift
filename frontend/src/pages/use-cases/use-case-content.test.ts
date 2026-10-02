@@ -96,6 +96,32 @@ describe("use-case page integrity", () => {
             expect(content.seo.canonicalPath).toBe(path);
             expect(content.seo.breadcrumbs.at(-1)?.path).toBe(path);
         });
+
+        it(`${path} carries a fact block that survives being quoted alone`, () => {
+            // Answer engines lift passages out of context, so each page must
+            // state its limits, what a click records, and how long it is kept
+            // in self-contained lines — numbers, not adjectives.
+            const factByLabel = (pattern: RegExp) => {
+                const fact = content.facts.find((f) => pattern.test(f.label));
+                expect(fact, `fact matching ${pattern} is missing`).toBeDefined();
+                return fact!;
+            };
+
+            const limits = factByLabel(/plan limit/i);
+            const recorded = factByLabel(/record/i);
+            const retention = factByLabel(/retention/i);
+
+            // The three claims that must be numeric are the three a quote can
+            // get wrong: limits, what a click records, and the retention window.
+            for (const fact of [limits, recorded, retention]) {
+                expect(fact.value, `${fact.label} must state a number`).toMatch(/\d/);
+            }
+
+            for (const fact of content.facts) {
+                expect(fact.label.length).toBeGreaterThan(0);
+                expect(fact.value.length).toBeGreaterThan(0);
+            }
+        });
     }
 
     it("keeps metadata lengths inside search-result limits", () => {

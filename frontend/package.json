@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && vite build --ssr src/prerender/prerender-entry.tsx --outDir dist-ssr && node scripts/prerender.mjs",
+    "generate:llms": "node scripts/generate-llms-txt.mjs",
+    "build": "tsc -b && node scripts/generate-llms-txt.mjs && vite build && vite build --ssr src/prerender/prerender-entry.tsx --outDir dist-ssr && node scripts/prerender.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run"

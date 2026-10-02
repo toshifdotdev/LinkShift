@@ -15,6 +15,28 @@ export const USE_CASES: Record<string, UseCaseContent> = {
     proof:
       "LinkShift counts people, not requests. Chat previews, email scanners and crawlers open your link too. They are stored and shown separately, so they never inflate a campaign number or count against your monthly redirects.",
     ctaLabel: "Create a campaign link",
+    facts: [
+      {
+        label: "Plan limits",
+        value:
+          "Custom slugs: 10 a month on Free, 5 on Starter, 25 on Creator, unlimited on Pro. Destination edits: 3 a month on Free, 25 on Starter, 150 on Creator, unlimited on Pro. UTM campaign tagging is included on Creator and above.",
+      },
+      {
+        label: "Recorded on a click",
+        value:
+          "One row per completed redirect: timestamp, device, browser and operating system the visitor's browser reports, country and city resolved from the request, the referring page, and any UTM parameters saved on the link. The IP address is stored truncated — the first three octets of IPv4, the first 48 bits of IPv6 — and no device identifier or cross-site profile exists.",
+      },
+      {
+        label: "Retention",
+        value:
+          "Every plan keeps click records for 3 years from the click, then deletes them automatically. Your plan sets only how far back the dashboard looks — 30 days on Free, 180 on Starter, 365 on Creator, 3 years on Pro — so history beyond your window is held, not lost, and returns in full if you upgrade.",
+      },
+      {
+        label: "Bot traffic",
+        value:
+          "Chat previews, email scanners, crawlers and monitors are recorded and shown separately. They are not counted as clicks and are not charged against your monthly redirects.",
+      },
+    ],
     seo: {
       title: "Campaign Short Links with UTM Tracking — LinkShift",
       description:
@@ -89,6 +111,28 @@ export const USE_CASES: Record<string, UseCaseContent> = {
     proof:
       "Because the code resolves a link rather than embedding an address, moving the destination updates every printed copy at once. Regeneration is not required, and your scan counts arrive in the same analytics as every other click.",
     ctaLabel: "Open QR Studio",
+    facts: [
+      {
+        label: "Plan limits",
+        value:
+          "QR codes generated: 10 a month on Free, 100 on Starter, unlimited on Creator and Pro. The allowance covers how many codes you can generate — generated codes keep resolving and scanning indefinitely. The full QR studio (colours, patterns, eye styles, logos) is on every plan.",
+      },
+      {
+        label: "Recorded on a scan",
+        value:
+          "A scan is a redirect through the link, so it records the same row as any click: timestamp, device, browser and operating system, country and city, referrer, and the link's UTM parameters. The IP address is stored truncated — the first three octets of IPv4, the first 48 bits of IPv6.",
+      },
+      {
+        label: "Retention",
+        value:
+          "Scan records are kept 3 years from the scan on every plan, then deleted automatically. The dashboard window is 30 days on Free, 180 on Starter, 365 on Creator and 3 years on Pro; history outside the window is held, not lost, and returns if you upgrade.",
+      },
+      {
+        label: "Changing the destination",
+        value:
+          "The code resolves a link rather than embedding an address, so an edited destination updates every printed copy at once. Destination edits are 3 a month on Free, 25 on Starter, 150 on Creator, unlimited on Pro.",
+      },
+    ],
     seo: {
       title: "QR Code Studio — Styled Codes on Your Own Domain — LinkShift",
       description:
@@ -151,6 +195,28 @@ export const USE_CASES: Record<string, UseCaseContent> = {
     proof:
       "To be plain about the shape of this: a key is a single path segment and cannot contain a slash, so a nested address like /blog/2024/notes has to be flattened by you into one key, such as blog-2024-notes. There is no regex, no wildcard and no ordered precedence. Use it to move a set of addresses you can name individually.",
     ctaLabel: "Import your URLs",
+    facts: [
+      {
+        label: "Plan limits",
+        value:
+          "Bulk link import is included on Creator and Pro. Short links: 100 on Free, 1,000 on Starter, 10,000 on Creator, unlimited on Pro. Custom domains: none on Free, 1 on Starter, 5 on Creator, unlimited on Pro. Destination edits: 3 a month on Free, 25 on Starter, 150 on Creator, unlimited on Pro.",
+      },
+      {
+        label: "Recorded on a click",
+        value:
+          "Each completed redirect writes one row: timestamp, device, browser and operating system, country and city resolved from the request, the referring page, and any UTM parameters on the link. No fingerprinting, no device identifier, no cross-site profile. The IP address is stored truncated — the first three octets of IPv4, the first 48 bits of IPv6.",
+      },
+      {
+        label: "Retention",
+        value:
+          "Click records are kept 3 years from the click on every plan, then deleted automatically. The dashboard window is 30 days on Free, 180 on Starter, 365 on Creator and 3 years on Pro. Deleting a link or your account removes its analytics immediately.",
+      },
+      {
+        label: "Bot traffic",
+        value:
+          "Automated requests — chat previews, email scanners, crawlers, monitors — are recorded and shown separately. They are not counted as clicks and never count against your monthly redirects.",
+      },
+    ],
     seo: {
       title: "Move URLs to Your Own Domain — LinkShift",
       description:

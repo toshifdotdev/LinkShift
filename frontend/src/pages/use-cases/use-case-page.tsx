@@ -15,6 +15,11 @@ export interface UseCaseFaq {
   a: string;
 }
 
+export interface UseCaseFact {
+  label: string;
+  value: string;
+}
+
 export interface UseCaseProps {
   seo: {
     title: string;
@@ -29,6 +34,7 @@ export interface UseCaseProps {
   steps: UseCaseStep[];
   capabilities: string[];
   faqs: UseCaseFaq[];
+  facts: UseCaseFact[];
   ctaLabel: string;
 }
 
@@ -53,6 +59,7 @@ export function UseCasePage({
   steps,
   capabilities,
   faqs,
+  facts,
   ctaLabel,
 }: UseCaseProps) {
   useSeo({
@@ -117,6 +124,33 @@ export function UseCasePage({
                 ))}
               </ul>
             </section>
+
+            {facts.length > 0 && (
+              <section>
+                <h2 className="font-display text-lg font-semibold tracking-[-0.01em]">
+                  Facts, in full
+                </h2>
+                <dl className="mt-4 overflow-hidden rounded-lg border border-border">
+                  {facts.map((fact, index) => (
+                    <div
+                      key={fact.label}
+                      className={
+                        index % 2 === 0
+                          ? "grid gap-1 bg-surface px-4 py-3 sm:grid-cols-[14rem_1fr] sm:gap-4"
+                          : "grid gap-1 bg-elevated px-4 py-3 sm:grid-cols-[14rem_1fr] sm:gap-4"
+                      }
+                    >
+                      <dt className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
+                        {fact.label}
+                      </dt>
+                      <dd className="text-sm leading-relaxed text-fg-secondary">
+                        {fact.value}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            )}
           </div>
         </div>
 

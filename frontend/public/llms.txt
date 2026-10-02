@@ -2,66 +2,78 @@
 
 > LinkShift is a URL shortener for people who care about every click: precise
 > short links on your own domain, matching QR codes, and per-link click
-> analytics. Free plan available; paid plans add custom domains, longer
-> analytics history, custom slugs and exports.
+> analytics. The Free plan includes 100 links, 10 QR codes and
+> 10 custom slugs a month; paid plans add custom domains, a longer
+> analytics window, CSV export and bulk import.
 
 Public site: https://linkshift.in
 
 ## Product
 
-- [Home](https://linkshift.in/): what LinkShift does — shortening, QR codes, analytics, custom domains.
-- [Pricing](https://linkshift.in/pricing): Free, Starter, Creator and Pro plans with per-plan limits; INR and USD regional pricing.
-- [FAQ](https://linkshift.in/faq): short answers about links, QR codes, domains, analytics, billing and account security.
+- [LinkShift — URL Shortener with QR Codes & Link Analytics](https://linkshift.in/): LinkShift turns long URLs into precise short links. Every code ships with QR, custom domains, and analytics that show where every click comes from.
+- [Pricing](https://linkshift.in/pricing): Start free, move up when your links earn it. Every limit is written down — nothing hidden behind a sales call. Plans from Free to Pro.
+- [FAQ](https://linkshift.in/faq): The short version of everything. Answers to common questions about LinkShift links, QR codes, domains, analytics, billing, and account security.
+- [Service Status](https://linkshift.in/status): Live availability for LinkShift redirects, link storage and analytics. If a short link is not resolving, check this page first.
+- [Campaign Short Links with UTM Tracking](https://linkshift.in/campaign-links): Save utm_source, medium and campaign on a short link once. LinkShift builds the destination with them, and reports human clicks per campaign with referrer and country.
+- [QR Code Studio — Styled Codes on Your Own Domain](https://linkshift.in/qr-codes): Design a QR code for any LinkShift link: colour, pattern, corner style, logo and frame. Change the destination later and the printed code still opens the new page.
+- [Move URLs to Your Own Domain](https://linkshift.in/url-migration): Move a site or client site to your own domain. Import the URL list your crawler or CMS already produced, and keep every destination editable.
 
 ## Documentation
 
 Index: https://linkshift.in/docs
 
 Getting started:
-- [Create your account](https://linkshift.in/docs/create-your-account)
-- [Shorten your first link](https://linkshift.in/docs/shorten-your-first-link)
-- [Read your dashboard](https://linkshift.in/docs/reading-your-dashboard)
+- [Create your account](https://linkshift.in/docs/create-your-account): Sign up with email or Google, verify your address, land on your desk.
+- [Shorten your first link](https://linkshift.in/docs/shorten-your-first-link): Paste a destination, get a short code, share it anywhere.
+- [Read your dashboard](https://linkshift.in/docs/reading-your-dashboard): What the Overview and Analytics instruments actually mean.
 
 Links & routing:
-- [Manage and protect links](https://linkshift.in/docs/managing-links)
-- [Custom slugs](https://linkshift.in/docs/custom-slugs)
-- [Path & query forwarding](https://linkshift.in/docs/path-forwarding)
-- [Mobile app deep linking](https://linkshift.in/docs/mobile-app-deep-linking)
+- [Manage and protect links](https://linkshift.in/docs/managing-links): Edit destinations, set expiry, and password-protect a route.
+- [Tags](https://linkshift.in/docs/tags): Group links by campaign and filter the ledger down to one.
+- [Custom slugs](https://linkshift.in/docs/custom-slugs): Readable codes like /spring-sale instead of generated ones.
+- [Path & query forwarding](https://linkshift.in/docs/path-forwarding): One short link that carries whatever path and query a visitor appends through to your destination. URL forwarding — not app opening.
+- [Mobile app deep linking](https://linkshift.in/docs/mobile-app-deep-linking): Try to open your mobile app when a visitor arrives on a phone — with a website or store fallback when it isn't installed.
 
 Custom domains:
-- [Add and verify a domain](https://linkshift.in/docs/add-a-domain)
-- [Choose your default domain](https://linkshift.in/docs/default-domain)
+- [Add and verify a domain](https://linkshift.in/docs/add-a-domain): Point a CNAME at LinkShift and verify ownership.
+- [Choose your default domain](https://linkshift.in/docs/default-domain): Which hostname new links are created on.
 
 QR codes:
-- [Design a QR in the studio](https://linkshift.in/docs/qr-studio)
-- [QR allowances](https://linkshift.in/docs/qr-limits)
+- [Design a QR in the studio](https://linkshift.in/docs/qr-studio): Colors, corners, embedded logo, and live preview.
+- [QR allowances](https://linkshift.in/docs/qr-limits): How many codes you can generate per month on each plan.
 
 Analytics & data:
-- [Metrics, defined](https://linkshift.in/docs/metrics-defined)
-- [Analytics history & ranges](https://linkshift.in/docs/history-and-ranges)
-- [Export CSV](https://linkshift.in/docs/csv-export)
+- [Metrics, defined](https://linkshift.in/docs/metrics-defined): Exactly what each instrument measures.
+- [Analytics history & ranges](https://linkshift.in/docs/history-and-ranges): 30 days to 3 years, enforced per plan.
+- [Export CSV](https://linkshift.in/docs/csv-export): Take a link's analytics out of LinkShift — Creator and above.
+- [What we record on a click](https://linkshift.in/docs/what-we-record): The exact signals behind your analytics, and the IP address we don't keep.
 
 Billing & plans:
-- [Plans & limits](https://linkshift.in/docs/plans-and-limits)
-- [Upgrades, downgrades & payments](https://linkshift.in/docs/upgrades-and-payments)
+- [Plans & limits](https://linkshift.in/docs/plans-and-limits): The full limit table, in plain words.
+- [Upgrades, downgrades & payments](https://linkshift.in/docs/upgrades-and-payments): Payments run through Razorpay; changes prorate at the next cycle.
 
 Account & security:
-- [Profile & sign-in](https://linkshift.in/docs/profile-and-sign-in)
-- [Delete your account](https://linkshift.in/docs/delete-your-account)
+- [Profile & sign-in](https://linkshift.in/docs/profile-and-sign-in): Name, avatar, password and Google sign-in.
+- [Delete your account](https://linkshift.in/docs/delete-your-account): What deletion removes, and what keeps working until then.
 
 Troubleshooting:
-- [App won't open from a link](https://linkshift.in/docs/app-wont-open)
-- [Paths or queries not arriving](https://linkshift.in/docs/paths-not-arriving)
-- [Domain verification failing](https://linkshift.in/docs/domain-verification-failing)
+- [App won't open from a link](https://linkshift.in/docs/app-wont-open): A checklist for deep links that show the interstitial or the website instead of your app.
+- [Paths or queries not arriving](https://linkshift.in/docs/paths-not-arriving): The appended tail disappears between your short link and the destination.
+- [Domain verification failing](https://linkshift.in/docs/domain-verification-failing): The CNAME is set but LinkShift still says unverified.
+
+## Account
+
+- [Log in](https://linkshift.in/login): Sign in to your LinkShift account and pick up where your links left off.
+- [Create your account](https://linkshift.in/register): Sign up for LinkShift and get your first short link in thirty seconds. Free plan, no card required.
 
 ## Company & policies
 
-- [Contact](https://linkshift.in/contact): support, billing, privacy and abuse reports (linkshift.admin@gmail.com).
-- [Privacy Policy](https://linkshift.in/privacy)
-- [Terms of Service](https://linkshift.in/terms)
-- [Refund & Cancellation Policy](https://linkshift.in/refunds)
-- [Shipping & Delivery Policy](https://linkshift.in/shipping)
-- [Acceptable Use Policy](https://linkshift.in/acceptable-use)
+- [Contact](https://linkshift.in/contact): How to reach the humans behind LinkShift — support, billing, privacy and abuse reports.
+- [Privacy Policy](https://linkshift.in/privacy): What LinkShift collects, why, and how long we keep it. Written for the product as it actually works.
+- [Terms of Service](https://linkshift.in/terms): The agreement between you and LinkShift for using the service. Short, readable, and enforceable.
+- [Refund & Cancellation Policy](https://linkshift.in/refunds): How cancellation, refunds and failed international payments work for LinkShift subscriptions.
+- [Shipping & Delivery Policy](https://linkshift.in/shipping): LinkShift is a fully digital service — there is nothing to ship. This policy states what is delivered, how, and when delivery is complete.
+- [Acceptable Use Policy](https://linkshift.in/acceptable-use): The line between a short-link tool and an abuse tool. Links that cross it are removed.
 
 LinkShift is operated as a sole proprietorship from Dehradun, Uttarakhand,
 India. The default shared short-link domain is go.linkshift.in; short links on

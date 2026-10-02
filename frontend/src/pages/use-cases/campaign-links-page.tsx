@@ -18,6 +18,7 @@ export function CampaignLinksPage() {
       steps={content.steps}
       capabilities={content.capabilities}
       faqs={content.faqs}
+      facts={content.facts}
       ctaLabel={content.ctaLabel}
     />
   );
