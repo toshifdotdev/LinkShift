@@ -177,6 +177,40 @@ sudo docker compose run --rm app npx prisma db seed
 
 First production bring-up order: `migrate deploy` → `db seed` → `up -d`.
 
+### Lock risk on the migrations in this release
+
+Two pending migrations create indexes on `"Scan"`:
+
+- `20260930150000_scan_bot_classification`
+- `20260930160000_scan_owner_scope_click_indexes`
+- `20261002120000_scan_retention_index`
+
+`CREATE INDEX` takes a lock that **blocks writes for the duration of the
+build**. On a fresh or small `"Scan"` table this is instant. On a large one it
+stalls live redirects, so check the size first and pick a quiet moment:
+
+```bash
+sudo docker compose run --rm app npx prisma migrate status   # read-only pre-flight
+```
+
+Or check the row count straight from the Neon console:
+
+```sql
+SELECT count(*) FROM "Scan";
+```
+
+If that is a large number, run `migrate deploy` outside peak hours. Do **not**
+reach for `CREATE INDEX CONCURRENTLY`: Prisma wraps each migration in a
+transaction and Postgres forbids `CONCURRENTLY` inside one.
+
+Snapshot first — branch the Neon database, which is a full copy you can
+promote back if a migration goes wrong.
+
+`20260930150000` adds `"isBot"` as `NOT NULL DEFAULT false`, so pre-existing
+scans default to human clicks. Postgres 11+ does not rewrite the table for a
+constant default, so that `ALTER TABLE` is instant at any size. The index
+builds are the only part that scales with row count.
+
 ## 9. Deploying a new version / rolling back
 
 **Deploy**: push the new tag to Docker Hub → on EC2 update `APP_IMAGE` in `.env`
@@ -335,6 +369,48 @@ be triggered hourly by **EventBridge Scheduler → API Destination** after
 launch; the connection secret lives in Secrets Manager. Until then it can be
 curl'd manually from the EC2 box. Missed runs self-heal via the
 reconciliation job's own single-run guarantee; the endpoint is fail-closed.
+
+## 13a. Retention purge (weekly)
+
+`POST /api/v1/internal/retention/run` (same `x-recon-secret` header) deletes
+click records older than **1,095 days** — three years, matching Pro's
+`analyticsDays` exactly, so no plan ever sells a history window longer than the
+rows that are kept.
+
+**Separate from reconciliation on purpose.** `ReconciliationRun` and
+`RetentionRun` are different tables, each with a partial unique index allowing
+one running job. Sharing one would mean a slow multi-batch purge and billing
+repair could never overlap, and a failure in either would block the other.
+
+**Schedule it weekly, not hourly.** The job is a no-op once the backlog is
+clear, so an extra invocation costs nothing — but there is no reason to run it
+more often than the data changes.
+
+**Do not wire this up before you need it.** Nothing expires until three years
+after your first real traffic, so until roughly 2029 the endpoint correctly
+does nothing. Call it manually the first time, then add it to the scheduler:
+
+```bash
+# dry run first: reports what would be removed, deletes nothing
+curl -X POST https://go.linkshift.in/api/v1/internal/retention/run \
+  -H "x-recon-secret: $RECON_SECRET" \
+  -H "Content-Type: application/json" -d '{"dryRun":true}'
+
+# real run
+curl -X POST https://go.linkshift.in/api/v1/internal/retention/run \
+  -H "x-recon-secret: $RECON_SECRET"
+```
+
+Returns `{ success, runId, retentionDays, stats: { rowsDeleted, batchesRun,
+cutoff } }`. A `409` means a run is already in flight and the caller should
+treat that as success, not failure. Deletes run in 5,000-row batches rather
+than one transaction, specifically so a purge cannot stall live redirects.
+
+Retention is **by row age only, never by plan**. A plan governs how far back a
+dashboard query may reach; retention governs whether the row exists. A
+downgraded customer stops *seeing* history past their window and gets all of it
+back on upgrade. Deleting analytics because someone downgraded is the failure
+mode this design exists to prevent.
 
 ## 14. Remaining manual AWS configuration (checklist)
 
