@@ -151,46 +151,73 @@ anything but the image reference.
 **Image platform**: build with `--platform linux/amd64` for an x86_64 EC2
 instance (see §14). The Dockerfile itself is arch-neutral.
 
-## 8. Prisma migrations (documented, never automatic)
+## 8. Prisma migrations (automatic) and the seed (manual)
 
-Migrations are **not** run at container startup — deploy order is:
-**migrate first, then start the new image.**
+**Migrations run automatically on every container start.** The image's own
+`CMD` is still `node dist/server.js` — it deliberately does not migrate — but
+`deploy/docker-compose.yml` overrides the command with `npm run start:prod`,
+which is:
+
+```json
+"start:prod": "prisma migrate deploy && node dist/server.js"
+```
+
+So `docker compose up -d` applies any pending migration before the server
+accepts traffic. `migrate deploy` is idempotent: with nothing pending it
+prints `No pending migrations to apply.` and exits 0, costing one round trip.
+**Do not run a separate manual `migrate deploy`** — it is redundant, and the
+override means the manual command and the boot path cannot drift apart.
+
+This is what replaced the older documented order ("migrate first, then start").
+Relying on a human to remember a step is how a deploy ships code that reads a
+column that does not exist yet.
 
 The `prisma` CLI ships inside the image (runtime dependency), as does `tsx`
-and the generated client under `src/generated/`, both of which the seed needs.
-The image also contains `prisma/` + `prisma.config.ts`, whose datasource uses
-`DIRECT_URL` (falling back to `DATABASE_URL`) — the direct (non-pooled)
-Neon endpoint required by migrations. Run from the EC2 host:
+and the generated client under `src/generated/`, all of which the migration and
+seed commands need. The image also contains `prisma/` + `prisma.config.ts`,
+whose datasource uses `DIRECT_URL` (falling back to `DATABASE_URL`) — the
+direct (non-pooled) Neon endpoint migrations require.
+
+### The seed is still manual
+
+Nothing runs it, and it is not optional. `prisma/seed.ts` upserts the four
+plans with an `update` branch, so re-running **overwrites** existing rows with
+the current values. Skipping it means production keeps serving whatever plan
+limits were in the database last, regardless of what the code and the pricing
+page say:
 
 ```bash
 cd deploy
-sudo docker compose run --rm app npx prisma migrate deploy
-```
-
-The seed (`npx prisma db seed`, defined in `prisma.config.ts`) is **idempotent**
-(upserts only: 4 plans + the shared `go.linkshift.in` domain) and is run once
-against a fresh environment, then only when plan data changes:
-
-```bash
 sudo docker compose run --rm app npx prisma db seed
 ```
 
-First production bring-up order: `migrate deploy` → `db seed` → `up -d`.
+Run it on first deploy, and again any time plan data changes in `seed.ts`.
+It is idempotent, so re-running is harmless.
 
-### Lock risk on the migrations in this release
+First production bring-up order: `up -d` (migrates + boots) → `db seed`.
 
-Two pending migrations create indexes on `"Scan"`:
+### Lock risk on a first deploy
+
+This matters most on the **first** deploy, because that is when all five apply
+at once. Later deploys usually apply nothing and cost one round trip.
+
+Three pending migrations create indexes on `"Scan"`:
 
 - `20260930150000_scan_bot_classification`
 - `20260930160000_scan_owner_scope_click_indexes`
 - `20261002120000_scan_retention_index`
 
 `CREATE INDEX` takes a lock that **blocks writes for the duration of the
-build**. On a fresh or small `"Scan"` table this is instant. On a large one it
-stalls live redirects, so check the size first and pick a quiet moment:
+build**. Because migrations now run inside the container start, that lock is
+held while the server is not yet listening — so a slow build delays boot and
+Caddy answers 502 until it finishes, rather than dropping redirects mid-flight.
+
+On a fresh or small `"Scan"` table all five build in seconds. On a large one
+the start can take minutes, so check the size first and pick a quiet moment:
 
 ```bash
-sudo docker compose run --rm app npx prisma migrate status   # read-only pre-flight
+# Read-only. Confirms how many migrations are pending before you deploy.
+sudo docker compose run --rm app npx prisma migrate status
 ```
 
 Or check the row count straight from the Neon console:
@@ -199,9 +226,10 @@ Or check the row count straight from the Neon console:
 SELECT count(*) FROM "Scan";
 ```
 
-If that is a large number, run `migrate deploy` outside peak hours. Do **not**
-reach for `CREATE INDEX CONCURRENTLY`: Prisma wraps each migration in a
-transaction and Postgres forbids `CONCURRENTLY` inside one.
+If that is a large number, deploy outside peak hours — `docker compose up -d`
+is what triggers the index builds. Do **not** reach for
+`CREATE INDEX CONCURRENTLY`: Prisma wraps each migration in a transaction and
+Postgres forbids `CONCURRENTLY` inside one.
 
 Snapshot first — branch the Neon database, which is a full copy you can
 promote back if a migration goes wrong.
@@ -214,16 +242,22 @@ builds are the only part that scales with row count.
 ## 9. Deploying a new version / rolling back
 
 **Deploy**: push the new tag to Docker Hub → on EC2 update `APP_IMAGE` in `.env`
-(or pass it inline) → `docker compose pull && docker compose up -d`.
+→ `docker compose pull && docker compose up -d`. Migrations apply as part of
+the `up` (§8); the seed does not, so re-run it if plan data changed.
+
 The app swap is a container replace; Caddy keeps serving and the health
 check gates `docker compose ps` visibility. Downtime is limited to the
 container handoff (seconds); run migrations that are backward-compatible
 so the old image tolerates the new schema during the swap.
 
 **Rollback**: point `APP_IMAGE` back to the previous tag (every pushed tag
-stays in Docker Hub) → `docker compose up -d`. If a migration must be reversed,
-restore from Neon's point-in-time backup / apply a down script manually —
-`prisma migrate deploy` never rolls back automatically.
+stays in Docker Hub) → `docker compose up -d`. Rolling the image back does
+**not** roll the schema back: `migrate deploy` only ever applies pending
+migrations and never reverses one. That is why every migration here is written
+to be additive (new nullable column, new table, new index) — the previous image
+keeps working against the newer schema, so an image rollback is always safe.
+Reversing a schema change means restoring from Neon's point-in-time recovery or
+writing a down script by hand.
 
 ## 10. Data that must never live on the host
 
