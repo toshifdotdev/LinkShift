@@ -12,7 +12,7 @@ export const FREE_PLAN: ApiPlan = {
   maxDomains: 0,
   maxRedirectsPerMonth: 10000,
   analyticsDays: 30,
-  maxCustomSlugsPerMonth: 10,
+  maxCustomSlugsPerMonth: 5,
   maxDestinationChangesPerMonth: 3,
 };
 
@@ -114,14 +114,21 @@ export const FLAG_ROWS: FlagRow[] = [
     note: "Open your app on mobile, with a web fallback when it isn't installed",
     values: { FREE: false, STARTER: false, CREATOR: false, PRO: true },
   },
+  {
+    label: "Social link preview",
+    note: "Control how a shared link looks in Slack, WhatsApp and LinkedIn",
+    values: { FREE: false, STARTER: false, CREATOR: true, PRO: true },
+  },
 ];
 
 
 export const UNIVERSAL_INCLUDES: Array<{ title: string; note: string }> = [
-  { title: "Password-protected links", note: "bcrypt-guarded unlock endpoint" },
-  { title: "Link expiration", note: "Hard 410 after the set datetime" },
+  { title: "Password-protected links", note: "Share a link only the people with the password can open." },
+  { title: "Link expiration", note: "Set a date and the link stops resolving after it." },
   { title: "Full QR studio", note: "Colors, patterns, eye styles & logos" },
-  { title: "Redirect grace band", note: "Soft overage before a plan cuts off" },
+  { title: "Redirect grace band", note: "A soft buffer before a limit cuts you off." },
+  { title: "Campaign tags", note: "Group links by campaign and filter the ledger." },
+  { title: "Redirect tester", note: "See where a link would actually send each visitor. Costs nothing." },
 ];
 
 

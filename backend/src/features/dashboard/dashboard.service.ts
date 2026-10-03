@@ -62,14 +62,14 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
     }
 
     const windowMs = cutoff.getTime();
-        const prevCutoff = new Date(windowMs - (Date.now() - windowMs));
-        const humanWhere = {
-            link: { userId: id },
-            isBot: false,
-            scannedAt : { gte : cutoff }
-        };
-    
-        const [ totalLinks , activeLinks, inactiveLinks, totalScans, uniqueScans, botRequests, prevTotalScans, prevUniqueScans, allTimeAgg, topScanGroups ] = await Promise.all([
+    const prevCutoff = new Date(windowMs - (Date.now() - windowMs));
+    const humanWhere = {
+        link: { userId: id },
+        isBot: false,
+        scannedAt : { gte : cutoff }
+    };
+
+    const [ totalLinks , activeLinks, inactiveLinks, totalScans, uniqueScans, botRequests, prevTotalScans, prevUniqueScans, allTimeAgg, topScanGroups ] = await Promise.all([
         prisma.link.count({
             where : {
                 userId : id
@@ -131,7 +131,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
               AND s."scannedAt" < ${cutoff}
         `,
 
-// Lifetime human clicks and the account's first-ever scan. The ledger counts
+        // Lifetime human clicks and the account's first-ever scan. The ledger counts
         // lifetime; the dashboard counts the window. Without this pair the two
         // surfaces disagree silently (175 in the ledger, 0 on the dashboard) and
         // the owner reads it as data loss.
@@ -142,7 +142,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
             _max: { scannedAt: true },
         }),
 
-                await prisma.scan.groupBy({
+        await prisma.scan.groupBy({
             by: ['linkId'],
             where: {
                 link: {

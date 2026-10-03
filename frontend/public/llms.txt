@@ -3,7 +3,7 @@
 > LinkShift is a URL shortener for people who care about every click: precise
 > short links on your own domain, matching QR codes, and per-link click
 > analytics. The Free plan includes 100 links, 10 QR codes and
-> 10 custom slugs a month; paid plans add custom domains, a longer
+> 5 custom slugs a month; paid plans add custom domains, a longer
 > analytics window, CSV export and bulk import.
 
 Public site: https://linkshift.in

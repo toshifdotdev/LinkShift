@@ -35,10 +35,8 @@ const num = (block: string, key: string): number | null => {
 describe("FREE plan limits (Phase B1)", () => {
     const free = freeBlock();
 
-    it("grants at least some custom slugs — the reason a free user shares a link", () => {
-        
-        
-        expect(num(free, "maxCustomSlugsPerMonth")).toBeGreaterThan(0);
+    it("grants a small custom-slug allowance — the reason a free user shares a link", () => {
+        expect(num(free, "maxCustomSlugsPerMonth")).toBe(5);
     });
 
     it("grants a meaningful but bounded redirect allowance", () => {
@@ -80,7 +78,7 @@ describe("paid plans are untouched by the Phase B1 change", () => {
         expect(num(b, "maxQrPerMonth")).toBe(100);
         expect(num(b, "maxDomains")).toBe(1);
         expect(num(b, "maxRedirectsPerMonth")).toBe(50_000);
-        expect(num(b, "maxCustomSlugsPerMonth")).toBe(5);
+        expect(num(b, "maxCustomSlugsPerMonth")).toBe(25);
         expect(num(b, "maxDestinationChangesPerMonth")).toBe(25);
         expect(num(b, "analyticsDays")).toBe(180);
     });
@@ -92,7 +90,7 @@ describe("paid plans are untouched by the Phase B1 change", () => {
         expect(num(b, "maxQrPerMonth")).toBeNull();
         expect(num(b, "maxDomains")).toBe(5);
         expect(num(b, "maxRedirectsPerMonth")).toBe(500_000);
-        expect(num(b, "maxCustomSlugsPerMonth")).toBe(25);
+        expect(num(b, "maxCustomSlugsPerMonth")).toBe(100);
         expect(num(b, "maxDestinationChangesPerMonth")).toBe(150);
         expect(num(b, "analyticsDays")).toBe(365);
     });
@@ -134,8 +132,43 @@ describe("the pricing page mirrors the seeded Free plan", () => {
     });
 
     it("no longer hides the Free custom-slug and destination-edit limits behind a dash", () => {
-        
-        
         expect(PRESENTATION).not.toMatch(/OVERRIDES/);
     });
+});
+
+describe("every numeric limit ascends with the plan ladder", () => {
+    // The custom-slug ladder shipped inverted — Starter paid 10x more than
+    // Free and got half the slugs — and survived because every test pinned a
+    // number individually and nothing ever asserted the ladder ASCENDS. This
+    // is that assertion: the next inversion fails here regardless of which
+    // individual numbers the pins above expect.
+    const PLANS = ["FREE", "STARTER", "CREATOR", "PRO"] as const;
+
+    // Prices are deliberately excluded: Free is legitimately 0.
+    const ASCENDING_LIMITS = [
+        "maxCustomSlugsPerMonth",
+        "maxDestinationChangesPerMonth",
+        "maxLinks",
+        "maxRedirectsPerMonth",
+        "maxQrPerMonth",
+        "maxDomains",
+        "analyticsDays",
+    ];
+
+    // `null` means unlimited, which outranks any number.
+    const value = (plan: (typeof PLANS)[number], key: string): number =>
+        num(blockFor(plan), key) ?? Number.POSITIVE_INFINITY;
+
+    for (const key of ASCENDING_LIMITS) {
+        it(`${key} is non-decreasing from Free to Pro`, () => {
+            for (let i = 1; i < PLANS.length; i++) {
+                const lower = value(PLANS[i - 1], key);
+                const higher = value(PLANS[i], key);
+                expect(
+                    higher,
+                    `${key}: ${PLANS[i]} (${higher}) must be >= ${PLANS[i - 1]} (${lower})`,
+                ).toBeGreaterThanOrEqual(lower);
+            }
+        });
+    }
 });

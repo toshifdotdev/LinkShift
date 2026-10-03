@@ -14,7 +14,7 @@ const plans = [
         name: PlanName.FREE,
         monthlyPrice: 0,
         yearlyPrice: 0,
-        maxCustomSlugsPerMonth : 10,
+        maxCustomSlugsPerMonth : 5,
         maxDestinationChangesPerMonth : 3,
 
         usdMonthlyPrice: 0,
@@ -37,7 +37,7 @@ const plans = [
         usdMonthlyPrice: 12,
         usdYearlyPrice: 120,
 
-        maxCustomSlugsPerMonth: 5,
+        maxCustomSlugsPerMonth: 25,
         maxDestinationChangesPerMonth: 25,
 
         maxLinks: 1000,
@@ -56,7 +56,7 @@ const plans = [
         usdMonthlyPrice: 29,
         usdYearlyPrice: 290,
 
-        maxCustomSlugsPerMonth: 25,
+        maxCustomSlugsPerMonth: 100,
         maxDestinationChangesPerMonth: 150,
 
         maxLinks: 10000,

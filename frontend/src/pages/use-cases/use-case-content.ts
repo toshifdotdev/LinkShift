@@ -19,7 +19,7 @@ export const USE_CASES: Record<string, UseCaseContent> = {
       {
         label: "Plan limits",
         value:
-          "Custom slugs: 10 a month on Free, 5 on Starter, 25 on Creator, unlimited on Pro. Destination edits: 3 a month on Free, 25 on Starter, 150 on Creator, unlimited on Pro. UTM campaign tagging is included on Creator and above.",
+          "Custom slugs: 5 a month on Free, 25 on Starter, 100 on Creator, unlimited on Pro. Destination edits: 3 a month on Free, 25 on Starter, 150 on Creator, unlimited on Pro. UTM campaign tagging is included on Creator and above.",
       },
       {
         label: "Recorded on a click",
@@ -54,7 +54,7 @@ export const USE_CASES: Record<string, UseCaseContent> = {
       },
       {
         title: "Give it a key people will recognise",
-        body: "Custom slugs are limited per month — 10 on Free, 25 on Creator, unlimited on Pro — so the short link reads as part of the campaign rather than a row of characters.",
+        body: "Custom slugs are limited per month — 5 on Free, 25 on Starter, 100 on Creator, unlimited on Pro — so the short link reads as part of the campaign rather than a row of characters.",
       },
       {
         title: "Read the campaign, not just the total",

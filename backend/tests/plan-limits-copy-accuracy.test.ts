@@ -93,7 +93,7 @@ describe("seed.ts parses as the plan source of truth", () => {
         expect(free.limits.maxLinks).toBe(100);
         expect(free.limits.maxRedirectsPerMonth).toBe(10_000);
         expect(free.limits.maxQrPerMonth).toBe(10);
-        expect(free.limits.maxCustomSlugsPerMonth).toBe(10);
+        expect(free.limits.maxCustomSlugsPerMonth).toBe(5);
         expect(free.limits.maxDomains).toBe(0);
         expect(free.limits.analyticsDays).toBe(30);
     });
