@@ -73,6 +73,12 @@ jobs:
       - name: Typecheck
         run: npx tsc -b
 
+      # A missing gate, not a stylistic choice: eslint had no CI step at all,
+      # which is how two errors shipped on an otherwise green build. Both are
+      # in the dashboard, and neither breaks the build or the tests.
+      - name: Lint
+        run: npm run lint
+
       - name: Tests
         run: npx vitest run
 

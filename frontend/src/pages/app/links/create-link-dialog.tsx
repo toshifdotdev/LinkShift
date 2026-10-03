@@ -52,6 +52,9 @@ function CreateLinkDialog({
   const canUseSlug = plan !== "FREE";
   const canUseUtm = plan === "CREATOR" || plan === "PRO";
   const canUseDeepLink = plan === "PRO";
+  // Social link previews are gated in the backend too (checkOgPreviewAccess),
+  // so this mirrors the server rather than deciding access on its own.
+  const canUseOgPreview = plan === "CREATOR" || plan === "PRO";
 
   const [destination, setDestination] = useState("");
   const [name, setName] = useState("");
@@ -604,7 +607,19 @@ androidStoreUrl: appDeepLink ? androidStoreUrl.trim() || undefined : undefined,
               link. Without it the share appears as a bare URL.
             </p>
 
-            <div className="mt-3 space-y-3">
+            {/* Mirrors checkOgPreviewAccess in the backend. Showing the fields
+                to an unsubscribed account would let it type into a form that
+                only fails on save, which reads as a bug rather than a plan. */}
+            {!canUseOgPreview ? (
+              <div className="mt-3">
+                <UpgradeHint
+                  feature="Control how this link looks when shared in Slack, WhatsApp, LinkedIn and X."
+                  requirement="Creator or Pro"
+                />
+              </div>
+            ) : (
+              <>
+                <div className="mt-3 space-y-3">
               <div>
                 <label
                   htmlFor="og-title"
@@ -654,7 +669,9 @@ androidStoreUrl: appDeepLink ? androidStoreUrl.trim() || undefined : undefined,
                   keep the plain URL.
                 </FieldHint>
               </div>
-            </div>
+                </div>
+              </>
+            )}
           </div>
           {is403 && (
             <UpgradeHint

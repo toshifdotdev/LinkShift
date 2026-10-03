@@ -9,7 +9,7 @@ import { deleteCache, linkCacheKey } from '../../utils/cache';
 import { getAvailableShortId } from '../../utils/shortId';
 import { applyTagsToLink, syncTagsIfProvided } from '../tag/tag.service';
 import { getValidatedDomain } from '../../utils/validate.domain';
-import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit, checkUtmAccess, checkDeepLinkAccess, checkAppDeepLinkAccess } from '../billing/billing.service';
+import { checkCustomSlugLimit, checkDestinationLimit, checkLinkLimit, checkRedirectLimit, checkUtmAccess, checkOgPreviewAccess, checkDeepLinkAccess, checkAppDeepLinkAccess } from '../billing/billing.service';
 import { buildUtmUrl } from '../utm/utm.service';
 
 type CreateData = CreateLinkData&{
@@ -79,6 +79,18 @@ export const createLink = async (data : CreateData) => {
 
     if (hasAnyUtm) {
         await checkUtmAccess(userId);
+    }
+
+    // Only charged for the feature when the caller is actually sending preview
+    // data, mirroring the UTM guard above. A Free user creating a plain link
+    // passes no og fields and must not be blocked.
+    const hasAnyOg =
+        ogTitle !== undefined ||
+        ogDescription !== undefined ||
+        ogImageUrl !== undefined;
+
+    if (hasAnyOg) {
+        await checkOgPreviewAccess(userId);
     }
 
     const expiryDate  = data.expiresAt ? new Date(data.expiresAt): null
@@ -327,6 +339,21 @@ export const updateLink = async(data : UpdateLinkData) => {
 
     if (data.appDeepLink === true) {
         await checkAppDeepLinkAccess(data.userId);
+    }
+
+    // Fires on any *change* to the preview fields, including clearing one to
+    // null. Re-sending an unchanged value is not gated, so editing an
+    // unrelated field on a link that already has a preview keeps working.
+    const ogChanged =
+        (data.ogTitle !== undefined &&
+            data.ogTitle !== existingLink.ogTitle) ||
+        (data.ogDescription !== undefined &&
+            data.ogDescription !== existingLink.ogDescription) ||
+        (data.ogImageUrl !== undefined &&
+            data.ogImageUrl !== existingLink.ogImageUrl);
+
+    if (ogChanged) {
+        await checkOgPreviewAccess(data.userId);
     }
 
     const finalAppDeepLink = data.appDeepLink ?? existingLink.appDeepLink;

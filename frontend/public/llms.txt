@@ -30,6 +30,8 @@ Getting started:
 Links & routing:
 - [Manage and protect links](https://linkshift.in/docs/managing-links): Edit destinations, set expiry, and password-protect a route.
 - [Tags](https://linkshift.in/docs/tags): Group links by campaign and filter the ledger down to one.
+- [Social link preview](https://linkshift.in/docs/social-link-preview): Control how a shared link looks in Slack, WhatsApp, LinkedIn and X.
+- [Redirect tester](https://linkshift.in/docs/redirect-tester): See where a link would actually send someone, per platform.
 - [Custom slugs](https://linkshift.in/docs/custom-slugs): Readable codes like /spring-sale instead of generated ones.
 - [Path & query forwarding](https://linkshift.in/docs/path-forwarding): One short link that carries whatever path and query a visitor appends through to your destination. URL forwarding — not app opening.
 - [Mobile app deep linking](https://linkshift.in/docs/mobile-app-deep-linking): Try to open your mobile app when a visitor arrives on a phone — with a website or store fallback when it isn't installed.

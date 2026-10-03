@@ -153,6 +153,65 @@ export const DOC_CATEGORIES: DocCategory[] = [
         ],
       },
       {
+        slug: "social-link-preview",
+        title: "Social link preview",
+        summary: "Control how a shared link looks in Slack, WhatsApp, LinkedIn and X.",
+        body: [
+          {
+            kind: "p",
+            text: "A short link answers with a redirect, and a redirect carries no page content. That is why an unconfigured link shared into a chat app usually appears as bare text: the app fetched your URL and had nothing to describe it with. A social preview gives it something to render.",
+          },
+          {
+            kind: "p",
+            text: "Set a title, a short description and a link to an image. When someone shares the link, the chat app fetches it and shows a card with your text and image instead of a plain URL. The wording is yours, so the card describes the campaign rather than whatever the destination page happens to say.",
+          },
+          {
+            kind: "steps",
+            items: [
+              "Create or edit a link and use the Social preview section.",
+              "Add a title, a description and a public image URL.",
+              "Share the link in Slack, WhatsApp, LinkedIn, X or Discord and it renders as a card.",
+            ],
+          },
+          {
+            kind: "note",
+            text: "Only people who follow the link are redirected. The preview is served to chat and social crawlers; everyone else goes straight to the destination, and a search crawler is redirected too rather than being served a page.",
+          },
+          {
+            kind: "note",
+            text: "Use a public image at least 1200x630 for reliable rendering. Leave all three fields blank to keep the plain URL. Available on Creator and Pro.",
+          },
+        ],
+      },
+      {
+        slug: "redirect-tester",
+        title: "Redirect tester",
+        summary: "See where a link would actually send someone, per platform.",
+        body: [
+          {
+            kind: "p",
+            text: "App deep links behave differently depending on who opens them, which makes them hard to verify by clicking. The tester answers the question without the guesswork: paste a destination and pick a visitor, and it shows the exact URL that visitor would receive.",
+          },
+          {
+            kind: "steps",
+            items: [
+              "Open the Redirect Tester from the sidebar.",
+              "Enter a destination URL, and optionally a path and query to forward.",
+              "Pick a visitor: desktop, iPhone, Android, or a bot crawler.",
+              "Add your app scheme and Android package to preview the app branch.",
+            ],
+          },
+          {
+            kind: "p",
+            text: "The result is explained step by step, so an unexpected outcome shows which rule produced it. On Android Chrome you can see whether the link would go straight to your app, and on iPhone whether the visitor would be offered the store first.",
+          },
+          {
+            kind: "note",
+            text: "A preview is always free. It records nothing, spends none of your monthly redirects, and never opens a connection to the destination you typed. Test as many platforms as you like.",
+          },
+        ],
+      },
+      {
         slug: "custom-slugs",
         title: "Custom slugs",
         summary: "Readable codes like /spring-sale instead of generated ones.",

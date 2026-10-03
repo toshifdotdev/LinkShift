@@ -1833,6 +1833,43 @@ export const checkUtmAccess = async (userId: string) => {
     }
 };
 
+/**
+ * Plans that get social link previews — the Open Graph card a shared link
+ * renders in Slack, WhatsApp, LinkedIn, X and Discord.
+ *
+ * Creator and Pro, matching UTM and bulk import. Gated because it is the
+ * clearest paid differentiator in the catalogue: Dub sells exactly this
+ * feature as its Creator-tier upsell.
+ *
+ * Note the asymmetry with the deep link gates below: this is checked only
+ * when the fields are *written*. Nothing in the redirect path reads it, so
+ * there is deliberately no `hasOgPreviewAccess` used at request time — a
+ * downgraded customer keeps serving the card they already configured rather
+ * than having their shared links silently lose their preview.
+ */
+const OG_PREVIEW_PLANS = ["CREATOR", "PRO", "ENTERPRISE"];
+
+export const hasOgPreviewAccess = async (userId: string): Promise<boolean> => {
+    const plan = await getUserPlan(userId);
+    return !!plan && OG_PREVIEW_PLANS.includes(plan.name);
+};
+
+/**
+ * Refuses to set social preview fields on an unsubscribed plan.
+ *
+ * Only throws when the caller is actually sending preview data. A Free user
+ * creating a plain link sends no og fields and must not be blocked by a
+ * feature they never touched.
+ */
+export const checkOgPreviewAccess = async (userId: string) => {
+    if (!(await hasOgPreviewAccess(userId))) {
+        throw new AppError(
+            "Social link previews are available on Creator and Pro plans",
+            403
+        );
+    }
+};
+
 const ANALYTICS_PERIODS = [
     7,
     30,

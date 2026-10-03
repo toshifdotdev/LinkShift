@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
 import { Lock } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { getActivity, getStats } from "@/api/dashboard";
 import { getMe } from "@/api/users";
 import { CodeChip } from "@/components/ui/code-chip";
@@ -27,6 +27,25 @@ const RANGES: Array<{ label: string; days: AnalyticsDays; minPlan: PlanName }> =
   { label: "1Y", days: 365, minPlan: "CREATOR" },
   { label: "3Y", days: 1095, minPlan: "PRO" },
 ];
+
+/**
+ * Formats the first-scan date for the lifetime-clicks footnote.
+ *
+ * Kept out of the render body because `toLocaleDateString` is impure: calling
+ * it inline during render both trips the purity lint rule and re-does the
+ * formatting on every render. Falls back to an em dash before any click has
+ * been recorded, rather than printing today's date as if it were the first one.
+ */
+function formatFirstScan(firstScanAt: string | null | undefined): string {
+  if (!firstScanAt) return "—";
+  const parsed = new Date(firstScanAt);
+  if (Number.isNaN(parsed.getTime())) return "—";
+  return parsed.toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 function KpiRowSkeleton() {
   return (
@@ -186,10 +205,14 @@ function RecentActivity({
 
 function OverviewPage() {
   // Opens on the plan's widest window (not a hardcoded 30D) so the ledger and
-  // the dashboard agree on first paint; see defaultRangeFor. userPicked keeps
-  // the auto-widen from fighting a range the owner chose themselves.
-  const [days, setDays] = useState<AnalyticsDays>(30);
-  const userPicked = useRef(false);
+  // the dashboard agree on first paint; see defaultRangeFor.
+  //
+  // `days` is derived, not stored. It previously lived in state and was widened
+  // by an effect once `me` resolved, which is a setState inside an effect: a
+  // cascading render, and a window that was briefly wrong on first paint. Here
+  // the plan default applies until the owner picks a range, after which their
+  // choice wins — no effect, no ref, no intermediate state.
+  const [pickedRange, setPickedRange] = useState<AnalyticsDays | null>(null);
 
   // ["me"] is a shared cache key with auth/session.tsx, which stores the
   // unwrapped MeUser. Caching the raw { success, data } wrapper here meant
@@ -201,14 +224,10 @@ function OverviewPage() {
   });
   const plan = me.data?.plan.name ?? "FREE";
 
-  // Widen to the plan's default window once the session resolves, unless the
-  // owner already picked a range themselves.
-  useEffect(() => {
-    if (!me.data || userPicked.current) return;
-    const widened = defaultRangeFor(plan, RANGES.map((r) => ({ ...r, days: r.days }))) as AnalyticsDays;
-    if (widened !== days) setDays(widened);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [me.data, plan]);
+  // The plan default until the owner chooses; their choice wins from then on.
+  const days =
+    pickedRange ??
+    (defaultRangeFor(plan, RANGES.map((r) => ({ ...r, days: r.days }))) as AnalyticsDays);
 
   const stats = useQuery({
     queryKey: ["stats", days],
@@ -241,8 +260,7 @@ function OverviewPage() {
               // instead, the way the analytics page already does.
               const range = RANGES.find((r) => r.days === value);
               if (range && planRank(range.minPlan) > planRank(plan)) return;
-              userPicked.current = true;
-              setDays(value);
+              setPickedRange(value);
             }}
             options={RANGES.map((r) => ({
               value: String(r.days),
@@ -308,9 +326,10 @@ function OverviewPage() {
               </div>
               {(stats.data?.allTimeTotalScans ?? 0) > (stats.data?.totalScans ?? 0) && (
                 <p className="border-t border-border-subtle px-5 py-3 text-[11px] leading-relaxed text-fg-muted sm:px-6">
-                  {(stats.data?.allTimeTotalScans ?? 0).toLocaleString()} human clicks on file
-                  since {new Date(stats.data?.firstScanAt ?? Date.now()).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}.
-                  {" "}This window shows {days}D; the links ledger counts every click ever recorded.
+                  {(stats.data?.allTimeTotalScans ?? 0).toLocaleString()} human
+                  clicks on file since {formatFirstScan(stats.data?.firstScanAt)}
+                  .{" "}This window shows {days}D; the links ledger counts every
+                  click ever recorded.
                 </p>
               )}
               {(stats.data?.botRequests ?? 0) > 0 && (

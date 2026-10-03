@@ -53,6 +53,10 @@ function EditLinkDialog({
   const canUseSlug = plan !== "FREE";
   const canUseUtm = plan === "CREATOR" || plan === "PRO";
   const canUseDeepLink = plan === "PRO";
+  // Mirrors checkOgPreviewAccess in the backend. An unsubscribed account must
+  // not send og fields at all: sending them is what the gate rejects, and
+  // omitting them keeps an unrelated edit (destination, slug) working.
+  const canUseOgPreview = plan === "CREATOR" || plan === "PRO";
 
   
   const [name, setName] = useState(link.name ?? "");
@@ -183,9 +187,9 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
       // set. Omitting it would leave tags untouched and make clearing
       // impossible from here.
       tagNames,
-      ogTitle: ogTitle.trim() || null,
-      ogDescription: ogDescription.trim() || null,
-      ogImageUrl: ogImageUrl.trim() || null,
+      ogTitle: canUseOgPreview ? ogTitle.trim() || null : undefined,
+      ogDescription: canUseOgPreview ? ogDescription.trim() || null : undefined,
+      ogImageUrl: canUseOgPreview ? ogImageUrl.trim() || null : undefined,
       ...utmPatch,
     });
   }
@@ -645,7 +649,16 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
               link. Clear these to go back to a plain URL.
             </p>
 
-            <div className="mt-3 space-y-3">
+            {!canUseOgPreview ? (
+              <div className="mt-3">
+                <UpgradeHint
+                  feature="Control how this link looks when shared in Slack, WhatsApp, LinkedIn and X."
+                  requirement="Creator or Pro"
+                />
+              </div>
+            ) : (
+              <>
+                <div className="mt-3 space-y-3">
               <div>
                 <label
                   htmlFor="edit-og-title"
@@ -687,11 +700,13 @@ androidStoreUrl: canUseDeepLink ? (appDeepLink ? androidStoreUrl.trim() || null 
                   id="edit-og-image"
                   value={ogImageUrl}
                   onChange={(e) => setOgImageUrl(e.target.value)}
-                  placeholder="https://cdn.example.com/card.png"
+placeholder="https://cdn.example.com/card.png"
                   inputMode="url"
                 />
               </div>
-            </div>
+                </div>
+              </>
+            )}
           </div>
 
             <div className="mt-1 flex items-center justify-end gap-2">
