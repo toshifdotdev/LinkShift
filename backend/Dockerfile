@@ -20,9 +20,12 @@ ENV NODE_ENV=production \
 
 COPY package.json package-lock.json ./
 # tsx ships as a production dependency because prisma/seed.ts is TypeScript and
-# prisma.config.ts runs the seed through it. Migrations and seeding remain
-# explicit deployment steps (`docker compose run --rm app npx prisma migrate
-# deploy`); the container start command never runs them.
+# prisma.config.ts runs the seed through it. Migrations and seeding reach the image
+# through those files; the container's own CMD stays migration-free, and
+# docker-compose.yml overrides the start command with `npm run start:prod`
+# (`prisma migrate deploy && node dist/server.js`). The seed is still an explicit
+# manual step (`docker compose run --rm app npx prisma db seed`) because it is
+# data, not schema, and must not run on every boot.
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
