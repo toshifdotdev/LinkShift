@@ -23,7 +23,7 @@ import { DonutChart } from "./donut-chart";
 import { AreaChart } from "./area-chart";
 import { HourBars } from "./hour-bars";
 import { HeatGrid } from "./heat-grid";
-import { RANGE_OPTIONS, RangeSelect, planRank, rangeLocked } from "./range-select";
+import { RANGE_OPTIONS, RangeSelect, defaultRangeFor, planRank, rangeLocked } from "./range-select";
 
 
 
@@ -127,11 +127,18 @@ function AccountView({ days }: { days: AnalyticsDays }) {
             {days}D window
           </span>
         </header>
-        <div className="grid grid-cols-2 divide-x divide-border-subtle sm:grid-cols-4">
+        <div className="grid grid-cols-2 divide-x divide-border-subtle sm:grid-cols-3 lg:grid-cols-5">
           <KpiCell
             label="Clicks"
             value={statsData?.totalScans ?? 0}
+            previous={statsData?.prevTotalScans}
             valueClassName="text-brand"
+            className="px-4 py-5 sm:px-5 sm:py-6"
+          />
+          <KpiCell
+            label="Unique clicks"
+            value={statsData?.uniqueScans ?? 0}
+            previous={statsData?.prevUniqueScans}
             className="px-4 py-5 sm:px-5 sm:py-6"
           />
           <KpiCell label="Total links" value={statsData?.totalLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
@@ -520,9 +527,9 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
             {days}D window
           </span>
         </header>
-        <div className="grid grid-cols-2 divide-x divide-border-subtle sm:grid-cols-4">
+        <div className="grid grid-cols-2 divide-x divide-border-subtle sm:grid-cols-3 lg:grid-cols-5">
           {analytics.isPending || charts.isPending ? (
-            <div className="col-span-2 px-4 py-5 sm:col-span-4 sm:px-5 sm:py-6">
+            <div className="col-span-full px-4 py-5 sm:px-5 sm:py-6">
               <div className="flex flex-col gap-2">
                 <Skeleton className="h-3 w-24" />
                 <Skeleton className="mt-1 h-7 w-20" />
@@ -533,16 +540,33 @@ function LinkWorkspace({ linkId, days }: { linkId: string; days: AnalyticsDays }
               <KpiCell
                 label="Human clicks"
                 value={a?.totalClicks ?? 0}
+                previous={a?.prevTotalClicks}
                 valueClassName="text-brand"
                 className="px-4 py-5 sm:px-5 sm:py-6"
               />
+              <KpiCell
+                label="Unique clicks"
+                value={a?.uniqueClicks ?? 0}
+                previous={a?.prevUniqueClicks}
+                className="px-4 py-5 sm:px-5 sm:py-6"
+              />
               {(a?.botRequests ?? 0) > 0 ? (
-                <p className="px-4 pb-4 -mt-1 text-[11px] leading-relaxed text-fg-muted sm:px-5">
+                <p className="col-span-full px-4 pb-4 -mt-1 text-[11px] leading-relaxed text-fg-muted sm:px-5">
                   {(a?.botRequests ?? 0).toLocaleString()} bot request
                   {(a?.botRequests ?? 0) === 1 ? "" : "s"} recorded and excluded
                   — chat link previews, email scanners, crawlers and monitors.
                   They are stored, not counted, and never charged against your
                   plan.
+                </p>
+              ) : null}
+              {(a?.allTimeTotalClicks ?? 0) > (a?.totalClicks ?? 0) ? (
+                <p className="col-span-full px-4 pb-4 -mt-1 text-[11px] leading-relaxed text-fg-muted sm:px-5">
+                  {(a?.allTimeTotalClicks ?? 0).toLocaleString()} human clicks on file
+                  {a?.lastScanAt
+                    ? ` (last ${new Date(a.lastScanAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })})`
+                    : ""}
+                  . This window shows {days}D; the links ledger counts every click
+                  ever recorded.
                 </p>
               ) : null}
               <KpiCell label="Avg / day" value={avgPerDay} className="px-4 py-5 sm:px-5 sm:py-6" />
@@ -726,7 +750,10 @@ function AnalyticsPage() {
   const plan = user?.plan.name ?? "FREE";
 
   const linkRefParam = searchParams.get("link");
-  const rangeParam = Number(searchParams.get("range") ?? 30);
+  // No ?range param opens on the widest window the plan allows, not a
+  // hardcoded 30D: a Pro account whose data is older than 30 days otherwise
+  // opens on an empty window while the ledger shows its lifetime clicks.
+  const rangeParam = Number(searchParams.get("range") ?? defaultRangeFor(plan));
   const rangeOption = RANGE_OPTIONS.find((r) => r.days === rangeParam) ?? RANGE_OPTIONS[1];
   const validRange = rangeOption.days;
   const [pendingLock, setPendingLock] = useState<{ days: number; minPlan: string } | null>(null);

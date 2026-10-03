@@ -12,6 +12,9 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 vi.hoisted(() => {
     process.env.JWT_SECRET ??= "test-jwt-secret";
+    // The production boot guard requires DATABASE_URL too (a server pointed at
+    // no database must not accept traffic), so every boot fixture needs one.
+    process.env.DATABASE_URL ??= "postgresql://test:test@localhost:5432/testdb";
     process.env.RESEND_API_KEY ??= "re_placeholder";
     process.env.CLOUDINARY_CLOUD_NAME ??= "ci-cloud";
     process.env.CLOUDINARY_API_KEY ??= "0";

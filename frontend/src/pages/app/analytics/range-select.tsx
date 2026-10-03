@@ -29,6 +29,24 @@ export function rangeLocked(option: RangeOption, plan: string): boolean {
   return planRank(option.minPlan) > planRank(plan);
 }
 
+/**
+ * The window a page should open on: the widest range the plan allows.
+ *
+ * Every dashboard page used to default to 30D regardless of plan, so an
+ * account whose clicks were older than 30 days opened on an empty window while
+ * the links ledger (lifetime counts) showed them — "175 clicks there, nothing
+ * here". The plan's own history promise is the honest default: Free opens 30D,
+ * Pro opens 3Y, and the ledger/dashboard agreement holds at open.
+ */
+export function defaultRangeFor(plan: string, options: RangeOption[] = RANGE_OPTIONS): number {
+  const unlocked = options.filter((option) => !rangeLocked(option, plan));
+  const widest = unlocked.reduce<number | null>(
+    (best, option) => (best === null || option.days > best ? option.days : best),
+    null,
+  );
+  return widest ?? options[0].days;
+}
+
 
 function RangeSelect({
   value,

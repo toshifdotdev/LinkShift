@@ -28,12 +28,22 @@ type HeatRow = {
     clicks: bigint;
 };
 
+type UniqueRow = {
+    unique: bigint;
+};
+
 type cacheBoard = {
     totalLinks : number , 
     activeLinks : number, 
     inactiveLinks : number, 
     totalScans : number, 
+    uniqueScans : number,
     botRequests : number,
+    allTimeTotalScans : number,
+    firstScanAt : Date | null,
+    lastScanAt : Date | null,
+    prevTotalScans : number,
+    prevUniqueScans : number,
     topLinks : TopLinks[],
     dailyStats : { day: Date; clicks: number }[],
     hourlyStats : { hour: number; count: number }[],
@@ -43,7 +53,7 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
     const cutoff = await getAnalyticsCutoff(id, requestedDays);
     const rank = planRankOf((await getUserPlan(id)).name);
 
-    const cachedKey = `dashboard:v2:${id}:${requestedDays ?? "default"}`;
+    const cachedKey = `dashboard:v4:${id}:${requestedDays ?? "default"}`;
 
     let cachedDashboard = await getCache(cachedKey);
 
@@ -51,7 +61,15 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
         return JSON.parse(cachedDashboard);
     }
 
-    const [ totalLinks , activeLinks, inactiveLinks, totalScans, botRequests, topScanGroups ] = await Promise.all([
+    const windowMs = cutoff.getTime();
+        const prevCutoff = new Date(windowMs - (Date.now() - windowMs));
+        const humanWhere = {
+            link: { userId: id },
+            isBot: false,
+            scannedAt : { gte : cutoff }
+        };
+    
+        const [ totalLinks , activeLinks, inactiveLinks, totalScans, uniqueScans, botRequests, prevTotalScans, prevUniqueScans, allTimeAgg, topScanGroups ] = await Promise.all([
         prisma.link.count({
             where : {
                 userId : id
@@ -70,17 +88,20 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
             }
         }),
 
-        prisma.scan.count({
-            where: {
-                link: {
-                    userId: id
-                },
-                isBot: false,
-                scannedAt : {
-                    gte : cutoff
-                }
-            },
-        }),
+        prisma.scan.count({ where: humanWhere }),
+
+        // Unique clicks: distinct truncated addresses per the product privacy
+        // model (IPv4 first three octets / IPv6 first 48 bits, truncated at write
+        // time). A scan with no address - a privacy relay - falls back to its own
+        // row so it is counted once, never dropped.
+        prisma.$queryRaw<UniqueRow[]>`
+            SELECT COUNT(DISTINCT COALESCE(s."ipAddress", s.id))::int AS unique
+            FROM "Scan" s
+            JOIN "Link" l ON s."linkId" = l.id
+            WHERE l."userId" = ${id}
+              AND s."isBot" = false
+              AND s."scannedAt" >= ${cutoff}
+        `,
 
         // Machine requests are stored but never counted as clicks (the product
         // promise), yet the owner still needs to see that they happened —
@@ -97,7 +118,31 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
             },
         }),
 
-        await prisma.scan.groupBy({
+        // Previous window of equal length for the period-over-period delta.
+        // Same human-only rule, so the two totals are comparable.
+        prisma.scan.count({ where: { ...humanWhere, scannedAt: { gte: prevCutoff, lt: cutoff } } }),
+        prisma.$queryRaw<UniqueRow[]>`
+            SELECT COUNT(DISTINCT COALESCE(s."ipAddress", s.id))::int AS unique
+            FROM "Scan" s
+            JOIN "Link" l ON s."linkId" = l.id
+            WHERE l."userId" = ${id}
+              AND s."isBot" = false
+              AND s."scannedAt" >= ${prevCutoff}
+              AND s."scannedAt" < ${cutoff}
+        `,
+
+// Lifetime human clicks and the account's first-ever scan. The ledger counts
+        // lifetime; the dashboard counts the window. Without this pair the two
+        // surfaces disagree silently (175 in the ledger, 0 on the dashboard) and
+        // the owner reads it as data loss.
+        prisma.scan.aggregate({
+            where: { link: { userId: id }, isBot: false },
+            _count: { _all: true },
+            _min: { scannedAt: true },
+            _max: { scannedAt: true },
+        }),
+
+                await prisma.scan.groupBy({
             by: ['linkId'],
             where: {
                 link: {
@@ -197,7 +242,13 @@ export const dashboardService = async(id : string, requestedDays ?: number) => {
         activeLinks , 
         inactiveLinks, 
         totalScans, 
+        uniqueScans : Number(uniqueScans[0]?.unique ?? 0),
         botRequests,
+        allTimeTotalScans : allTimeAgg._count._all,
+        firstScanAt : allTimeAgg._min.scannedAt,
+        lastScanAt : allTimeAgg._max.scannedAt,
+        prevTotalScans,
+        prevUniqueScans : Number(prevUniqueScans[0]?.unique ?? 0),
         topLinks,
         dailyStats: dailyRows.map(item => ({
             day: item.day,
@@ -229,8 +280,9 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
         }
     });
     const botWhere = { ...where, isBot: true };
+    const prevCutoff = new Date(cutoff.getTime() - (Date.now() - cutoff.getTime()));
 
-    const [ browserStats, deviceStats, countryStats, osStats, totalClicks, referrerStats, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, cityStats, botRequests, hourlyRows, heatRows ] = await Promise.all([
+    const [ browserStats, deviceStats, countryStats, osStats, totalClicks, allTimeAgg, uniqueClicks, prevTotalClicks, prevUniqueClicks, referrerStats, utmSource, utmMedium, utmCampaign, utmTerm, utmContent, cityStats, botRequests, hourlyRows, heatRows ] = await Promise.all([
         prisma.scan.groupBy({
             by : ['browser'],
             where,
@@ -278,6 +330,50 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
         prisma.scan.count({
             where
         }),
+
+        // Lifetime human clicks for this link plus its first and last scan.
+        // The ledger shows lifetime; this view shows the window. Both numbers
+        // on screen is what turns '175 there, 0 here' from a bug report into a
+        // readable answer.
+        prisma.scan.aggregate({
+            where: { linkId, link: { userId: id }, isBot: false },
+            _count: { _all: true },
+            _min: { scannedAt: true },
+            _max: { scannedAt: true },
+        }),
+
+        // Unique clicks for this link: distinct truncated addresses (privacy
+        // model: IPv4 first three octets / IPv6 first 48 bits). A scan with no
+        // address falls back to its own row so it is counted once, never lost.
+        prisma.$queryRaw<UniqueRow[]>`
+            SELECT COUNT(DISTINCT COALESCE(s."ipAddress", s.id))::int AS unique
+            FROM "Scan" s
+            JOIN "Link" l ON s."linkId" = l.id
+            WHERE s."linkId" = ${linkId}
+              AND l."userId" = ${id}
+              AND s."isBot" = false
+              AND s."scannedAt" >= ${cutoff}
+        `,
+
+        // Previous window of equal length for the period-over-period delta.
+        prisma.scan.count({
+            where: {
+                linkId,
+                link: { userId: id },
+                isBot: false,
+                scannedAt: { gte: prevCutoff, lt: cutoff },
+            },
+        }),
+        prisma.$queryRaw<UniqueRow[]>`
+            SELECT COUNT(DISTINCT COALESCE(s."ipAddress", s.id))::int AS unique
+            FROM "Scan" s
+            JOIN "Link" l ON s."linkId" = l.id
+            WHERE s."linkId" = ${linkId}
+              AND l."userId" = ${id}
+              AND s."isBot" = false
+              AND s."scannedAt" >= ${prevCutoff}
+              AND s."scannedAt" < ${cutoff}
+        `,
 
         prisma.scan.groupBy({
             by : ["referrer"],
@@ -408,6 +504,12 @@ export const getAnalytics = async(id : string, linkId : string, requestedDays ?:
 
     return {
         totalClicks,
+        allTimeTotalClicks : allTimeAgg._count._all,
+        firstScanAt : allTimeAgg._min.scannedAt,
+        lastScanAt : allTimeAgg._max.scannedAt,
+        uniqueClicks: Number(uniqueClicks[0]?.unique ?? 0),
+        prevTotalClicks,
+        prevUniqueClicks: Number(prevUniqueClicks[0]?.unique ?? 0),
         botRequests,
         deviceStats: deviceStats.map(item => ({
             device: item.device ?? "Unknown",

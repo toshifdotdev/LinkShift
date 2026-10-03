@@ -390,6 +390,9 @@ describe("AnalyticsPage link reference in the URL", () => {
   }
 
   beforeEach(() => {
+    // Pin the plan: the default window is plan-derived, so this block must not
+    // inherit whatever plan an earlier test left behind.
+    planState.plan = "PRO";
     vi.mocked(getLink).mockResolvedValue({ success: true, data: linkRow() });
     getStats.mockResolvedValue({
       success: true,
@@ -425,8 +428,11 @@ describe("AnalyticsPage link reference in the URL", () => {
 
     await waitFor(() => expect(getLink).toHaveBeenCalledWith(DATABASE_ID));
     await expectWorkspaceLoaded();
-    expect(getLinkAnalytics).toHaveBeenCalledWith(DATABASE_ID, 30);
-    expect(getLinkCharts).toHaveBeenCalledWith(DATABASE_ID, 30);
+    // PRO is entitled to the full 3-year window, and the page now opens on the
+    // widest window the plan allows rather than a hardcoded 30D — the old
+    // default left plans with older data staring at an empty window.
+    expect(getLinkAnalytics).toHaveBeenCalledWith(DATABASE_ID, 1095);
+    expect(getLinkCharts).toHaveBeenCalledWith(DATABASE_ID, 1095);
     expect(urlRef()).toBe("igpromo");
   });
 

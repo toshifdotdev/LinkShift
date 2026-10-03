@@ -2,6 +2,12 @@
 services:
   app:
     image: ${APP_IMAGE:?set APP_IMAGE in .env to your Docker Hub image URI}
+    # Apply pending migrations before boot. The image CMD deliberately does not
+    # run them (see backend/Dockerfile), but a deploy must never leave a schema
+    # change unapplied — this is the step the deployment was relying on people
+    # to remember. `migrate deploy` is idempotent and additive-only: a boot
+    # with no pending migration costs one round trip.
+    command: ["npm", "run", "start:prod"]
     env_file:
       - .env
     expose:

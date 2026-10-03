@@ -66,8 +66,17 @@ export interface DashboardStats {
   activeLinks: number;
   inactiveLinks: number;
   totalScans: number;
+  /** Distinct truncated addresses in the window; matches the privacy model. */
+  uniqueScans?: number;
   /** Machine requests recorded in the window: stored, never counted as clicks. */
   botRequests?: number;
+  /** Lifetime human clicks and scan span, so windowed numbers can be reconciled with the ledger's lifetime counts. */
+  allTimeTotalScans?: number;
+  firstScanAt?: string | null;
+  lastScanAt?: string | null;
+  /** Same window length immediately before this one, for period-over-period. */
+  prevTotalScans?: number;
+  prevUniqueScans?: number;
   topLinks: TopLink[];
   
   dailyStats?: DailyPoint[];
@@ -193,6 +202,15 @@ export interface HeatPoint {
 
 export interface LinkAnalytics {
   totalClicks: number;
+  /** Distinct truncated addresses in the window; matches the privacy model. */
+  uniqueClicks?: number;
+  /** Lifetime human clicks and scan span, so windowed numbers can be reconciled with the ledger's lifetime counts. */
+  allTimeTotalClicks?: number;
+  firstScanAt?: string | null;
+  lastScanAt?: string | null;
+  /** Same window length immediately before this one, for period-over-period. */
+  prevTotalClicks?: number;
+  prevUniqueClicks?: number;
   botRequests?: number;
   browserStats: Array<{ browser: string; count: number }>;
   deviceStats: Array<{ device: string; count: number }>;

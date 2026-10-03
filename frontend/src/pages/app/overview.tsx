@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion, useReducedMotion } from "framer-motion";
-import { useState } from "react";
+import { Lock } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { getActivity, getStats } from "@/api/dashboard";
 import { getMe } from "@/api/users";
 import { CodeChip } from "@/components/ui/code-chip";
@@ -15,12 +16,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { DEFAULT_SHORT_DOMAIN } from "@/lib/short-url";
 import type { AnalyticsDays } from "@/types/api";
+import { defaultRangeFor, planRank, type PlanName } from "@/pages/app/analytics/range-select";
 
-const RANGES: Array<{ label: string; value: AnalyticsDays }> = [
-  { label: "7D", value: 7 },
-  { label: "30D", value: 30 },
-  { label: "90D", value: 90 },
-  { label: "1Y", value: 365 },
+// Each range names the plan that unlocks it, the same rule the analytics
+// picker applies: the API rejects windows beyond the plan with 403.
+const RANGES: Array<{ label: string; days: AnalyticsDays; minPlan: PlanName }> = [
+  { label: "7D", days: 7, minPlan: "FREE" },
+  { label: "30D", days: 30, minPlan: "FREE" },
+  { label: "90D", days: 90, minPlan: "STARTER" },
+  { label: "1Y", days: 365, minPlan: "CREATOR" },
+  { label: "3Y", days: 1095, minPlan: "PRO" },
 ];
 
 function KpiRowSkeleton() {
@@ -180,7 +185,30 @@ function RecentActivity({
 }
 
 function OverviewPage() {
+  // Opens on the plan's widest window (not a hardcoded 30D) so the ledger and
+  // the dashboard agree on first paint; see defaultRangeFor. userPicked keeps
+  // the auto-widen from fighting a range the owner chose themselves.
   const [days, setDays] = useState<AnalyticsDays>(30);
+  const userPicked = useRef(false);
+
+  // ["me"] is a shared cache key with auth/session.tsx, which stores the
+  // unwrapped MeUser. Caching the raw { success, data } wrapper here meant
+  // whichever fetch ran last decided the cache shape, and the shell's
+  // user?.plan.name then read .name off undefined and crashed the whole app.
+  const me = useQuery({
+    queryKey: ["me"],
+    queryFn: async () => (await getMe()).data,
+  });
+  const plan = me.data?.plan.name ?? "FREE";
+
+  // Widen to the plan's default window once the session resolves, unless the
+  // owner already picked a range themselves.
+  useEffect(() => {
+    if (!me.data || userPicked.current) return;
+    const widened = defaultRangeFor(plan, RANGES.map((r) => ({ ...r, days: r.days }))) as AnalyticsDays;
+    if (widened !== days) setDays(widened);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me.data, plan]);
 
   const stats = useQuery({
     queryKey: ["stats", days],
@@ -194,15 +222,6 @@ function OverviewPage() {
     select: (d) => d.data,
   });
 
-  // ["me"] is a shared cache key with auth/session.tsx, which stores the
-  // unwrapped MeUser. Caching the raw { success, data } wrapper here meant
-  // whichever fetch ran last decided the cache shape, and the shell's
-  // user?.plan.name then read .name off undefined and crashed the whole app.
-  const me = useQuery({
-    queryKey: ["me"],
-    queryFn: async () => (await getMe()).data,
-  });
-
   return (
     <>
       <RouteStrip
@@ -214,8 +233,28 @@ function OverviewPage() {
           <Segmented
             ariaLabel="Analytics period"
             value={String(days)}
-            onValueChange={(v) => setDays(Number(v) as AnalyticsDays)}
-            options={RANGES.map((r) => ({ value: String(r.value), label: r.label }))}
+            onValueChange={(v) => {
+              const value = Number(v) as AnalyticsDays;
+              // Ranges beyond the plan are rejected by the API with a 403,
+              // which used to blank the whole overview: stats, top links and
+              // activity all hang off this request. Gate them in the picker
+              // instead, the way the analytics page already does.
+              const range = RANGES.find((r) => r.days === value);
+              if (range && planRank(range.minPlan) > planRank(plan)) return;
+              userPicked.current = true;
+              setDays(value);
+            }}
+            options={RANGES.map((r) => ({
+              value: String(r.days),
+              label: (
+                <>
+                  {planRank(r.minPlan) > planRank(plan) && (
+                    <Lock className="size-3 text-brand" aria-hidden="true" />
+                  )}
+                  {r.label}
+                </>
+              ),
+            }))}
           />
         }
       />
@@ -249,17 +288,31 @@ function OverviewPage() {
             <KpiRowSkeleton />
           ) : (
             <>
-              <div className="grid grid-cols-2 divide-x divide-border-subtle sm:grid-cols-4">
+              <div className="grid grid-cols-2 divide-x divide-border-subtle sm:grid-cols-3 lg:grid-cols-5">
                 <KpiCell label="Total links" value={stats.data?.totalLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
                 <KpiCell label="Active" value={stats.data?.activeLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
                 <KpiCell label="Inactive" value={stats.data?.inactiveLinks ?? 0} className="px-4 py-5 sm:px-5 sm:py-6" />
                 <KpiCell
                   label="Clicks"
                   value={stats.data?.totalScans ?? 0}
+                  previous={stats.data?.prevTotalScans}
                   valueClassName="text-brand"
                   className="px-4 py-5 sm:px-5 sm:py-6"
                 />
+                <KpiCell
+                  label="Unique clicks"
+                  value={stats.data?.uniqueScans ?? 0}
+                  previous={stats.data?.prevUniqueScans}
+                  className="px-4 py-5 sm:px-5 sm:py-6"
+                />
               </div>
+              {(stats.data?.allTimeTotalScans ?? 0) > (stats.data?.totalScans ?? 0) && (
+                <p className="border-t border-border-subtle px-5 py-3 text-[11px] leading-relaxed text-fg-muted sm:px-6">
+                  {(stats.data?.allTimeTotalScans ?? 0).toLocaleString()} human clicks on file
+                  since {new Date(stats.data?.firstScanAt ?? Date.now()).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}.
+                  {" "}This window shows {days}D; the links ledger counts every click ever recorded.
+                </p>
+              )}
               {(stats.data?.botRequests ?? 0) > 0 && (
                 <p className="border-t border-border-subtle px-5 py-3 text-[11px] leading-relaxed text-fg-muted sm:px-6">
                   {(stats.data?.botRequests ?? 0).toLocaleString()} bot request

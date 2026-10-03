@@ -1,10 +1,28 @@
 import { app } from "./app";
 import { config, prisma } from "./config";
-import { assertCorsOriginsConfigured } from "./config/env";
+import { assertCorsOriginsConfigured, assertCriticalEnvConfigured } from "./config/env";
 import { connectRedis, redisClient } from "./config/redis";
 import { log } from "./utils/logger";
 
 const FORCE_EXIT_MS = 10_000;
+
+// Last-resort handlers. A stray rejection must land in the logs and take the
+// process down cleanly rather than leaving a half-alive worker: the platform
+// restarts the container and the error is on record instead of vanishing.
+// The exit is production-only — test workers import this module too, and one
+// suite's stray rejection must not kill an unrelated suite mid-run.
+process.on("unhandledRejection", (reason) => {
+    log.error("unhandled_rejection", {
+        error: reason instanceof Error ? reason.message : String(reason),
+        stack: reason instanceof Error ? reason.stack : undefined,
+    });
+    if (process.env.NODE_ENV === "production") process.exit(1);
+});
+
+process.on("uncaughtException", (err) => {
+    log.error("uncaught_exception", { error: err.message, stack: err.stack });
+    if (process.env.NODE_ENV === "production") process.exit(1);
+});
 
 async function startServer() {
 
@@ -15,6 +33,7 @@ async function startServer() {
     // thing standing between a misconfigured production deploy and an API
     // that silently rejects every browser origin.
     assertCorsOriginsConfigured();
+    assertCriticalEnvConfigured();
 
 
     const server = app.listen(config.port, () => {

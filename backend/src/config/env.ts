@@ -110,3 +110,26 @@ export const config = {
     
     reconSecret : process.env.RECON_SECRET
 }
+
+/**
+ * Fails the boot when production is missing credentials the server cannot
+ * serve without. CORS was already guarded; these are the values whose absence
+ * used to surface as a confusing runtime failure on the first request that
+ * needed them (a JWT signed with `undefined`, a Prisma pool pointed nowhere)
+ * instead of a clear boot error naming the missing variable.
+ */
+export const assertCriticalEnvConfigured = (
+    env: NodeJS.ProcessEnv = process.env,
+): void => {
+    if (env.NODE_ENV !== 'production') return;
+
+    const required = ['DATABASE_URL', 'JWT_SECRET'] as const;
+    const missing = required.filter((key) => !env[key]?.trim());
+
+    if (missing.length > 0) {
+        throw new Error(
+            `Missing required environment variables in production: ${missing.join(', ')}. ` +
+                'Set them in the deployment environment before starting the server.',
+        );
+    }
+};

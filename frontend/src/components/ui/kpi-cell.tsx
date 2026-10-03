@@ -38,29 +38,71 @@ function useRolledValue(value: number, active: boolean): number {
 interface KpiCellProps {
   label: string;
   value: number;
-  
+  /**
+   * Same metric for the immediately preceding window, for a period-over-period
+   * delta. Omitted, no delta is shown (there is no baseline to compare).
+   */
+  previous?: number;
   format?: (n: number) => string;
-  
   roll?: boolean;
   className?: string;
   valueClassName?: string;
 }
 
-function KpiCell({ label, value, format, roll = true, className, valueClassName }: KpiCellProps) {
+function Delta({ current, previous }: { current: number; previous: number }) {
+  const diff = current - previous;
+  if (diff === 0) {
+    return (
+      <span className="font-mono text-[10px] tracking-[0.14em] text-fg-muted uppercase">
+        · no change
+      </span>
+    );
+  }
+  // No baseline means no percentage: "0 → 5" is a first window, not a 100%
+  // rise, and printing the arrow as one misstates the trend. Say so instead.
+  if (previous === 0) {
+    return (
+      <span
+        className="font-mono text-[10px] tracking-[0.12em] text-fg-muted uppercase"
+        title="No activity in the previous window"
+      >
+        · first window
+      </span>
+    );
+  }
+  const up = diff > 0;
+  const pct = Math.round((Math.abs(diff) / previous) * 100);
+  return (
+    <span
+      className={cn(
+        "font-mono text-[10px] font-medium tracking-[0.12em] tabular-nums uppercase",
+        up ? "text-success" : "text-destructive",
+      )}
+      title={`vs ${previous.toLocaleString("en-US")} last window`}
+    >
+      {up ? "↑" : "↓"} {pct}%
+    </span>
+  );
+}
+
+function KpiCell({ label, value, previous, format, roll = true, className, valueClassName }: KpiCellProps) {
   const display = useRolledValue(value, roll);
   return (
     <div data-slot="kpi-cell" className={cn("flex flex-col gap-2", className)}>
       <p className="font-mono text-[10px] font-medium tracking-[0.14em] text-fg-muted uppercase">
         {label}
       </p>
-      <p
-        className={cn(
-          "font-mono text-[26px] leading-none font-medium tracking-tight text-foreground tabular-nums",
-          valueClassName,
-        )}
-      >
-        {format ? format(display) : display.toLocaleString("en-US")}
-      </p>
+      <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+        <p
+          className={cn(
+            "font-mono text-[26px] leading-none font-medium tracking-tight text-foreground tabular-nums",
+            valueClassName,
+          )}
+        >
+          {format ? format(display) : display.toLocaleString("en-US")}
+        </p>
+        {previous !== undefined && <Delta current={value} previous={previous} />}
+      </div>
     </div>
   );
 }
