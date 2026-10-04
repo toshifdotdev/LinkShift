@@ -22,12 +22,12 @@ function Logo({
     >
       <span
         className={cn(
-          "flex items-center justify-center overflow-hidden rounded-md border border-border bg-[#f9f9f9] text-[#141a22] transition-colors duration-200 group-hover/logo:border-border-strong",
+          "flex items-center justify-center overflow-hidden rounded-md border border-border bg-surface transition-colors duration-200 group-hover/logo:border-border-strong",
           size === "sm" ? "size-6" : "size-7",
         )}
       >
         <svg
-          viewBox="0 -1.2 102 91.2"
+          viewBox="-5 -6.2 112 103.2"
           aria-hidden="true"
           focusable="false"
           className={cn(size === "sm" ? "size-[18px]" : "size-[21px]")}
@@ -44,8 +44,8 @@ function Logo({
           </g>
           <path
             d="M 66.32 32.4 L 75.68 40.1 Q 78 42 75.68 43.9 L 66.32 51.6 Q 64 53.5 64 50.5 L 64 33.5 Q 64 30.5 66.32 32.4 Z"
-            fill="currentColor"
-            stroke="currentColor"
+            fill="var(--brand, #e8590c)"
+            stroke="var(--brand, #e8590c)"
             strokeWidth="5"
             strokeLinejoin="round"
           />
